@@ -47,7 +47,7 @@ uninstall-local:
 	  mv "${FSTAB}.new" "${FSTAB}"; fi
 
 0install: 0install.in config.status
-	sed "s:\@zero-install\@:${sbindir}/zero-install:" 0install.in | \
+	sed "s:\@zero-install\@:${sbindir}/zero-install:" $(srcdir)/0install.in | \
 	 sed "s/\@helper_user\@/${HELPER_USER}/" >0install
 	chmod a+x 0install
 

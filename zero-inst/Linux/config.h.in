@@ -1,5 +1,8 @@
 /* Linux/config.h.in.  Generated from configure.in by autoheader.  */
 
+/* Escaped version number */
+#undef COMMA_VERSION
+
 /* The canonical name for @PLATFORM@ symlinks */
 #undef LAZYFS_PLATFORM
 
@@ -22,4 +25,4 @@
 #undef PACKAGE_VERSION
 
 /* Version number of package */
-#undef COMMA_VERSION
+#undef VERSION
