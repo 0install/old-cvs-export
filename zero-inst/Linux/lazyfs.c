@@ -1123,15 +1123,11 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 	struct lazy_de_info *info = dir->d_fsdata;
 	const char *end = listing + size;
 
-	/* Wipe the dcache below this point and reassert this directory's new
-	 * contents into it. The rest of the tree will be rebuilt on demand, as
-	 * usual. Note that all the inode numbers change when we do this, even
-	 * if the new information is the same as before.
-	 */
 	if (strncmp(listing, "LazyFS Dynamic\n", 15) == 0)
 	{
 		if (size != 15)
 			goto bad_list;
+		/* TODO: Wipe the old contents? */
 		info->dynamic = 1;
 		return 0;
 	}
