@@ -206,6 +206,7 @@ static void init_resources(void)
 
 LIST_HEAD(all_dinfo);
 
+#if 0
 static void show_resources(void)
 {
 	int i;
@@ -232,6 +233,7 @@ static void show_resources(void)
 				info->dentry);
 	}
 }
+#endif
 
 static inline void inc(int type)
 {
@@ -1405,8 +1407,10 @@ lazyfs_put_super(struct super_block *sb)
 	else
 		BUG();
 
+#if 0
 	printk("lazyfs: Resource usage after put_super:\n");
 	show_resources();
+#endif
 }
 
 static int
