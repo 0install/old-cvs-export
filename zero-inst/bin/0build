@@ -350,8 +350,9 @@ sig_path = os.path.join(target, 'index.xml.sig')
 file(sig_path, 'w').write(sig)
 
 mirrors_path = os.path.join(target, 'mirrors.xml')
-import bz2
-compressed_index = bz2.compress(file(index_xml).read())
+#import bz2
+#compressed_index = bz2.compress(file(index_xml).read())
+compressed_index = os.popen("bzip2 < '%s'" % index_xml).read()
 try:
 	old_mirrors = minidom.parse(mirrors_path)
 	index_bz_leaf = old_mirrors.documentElement.getAttributeNS(None,
