@@ -48,7 +48,7 @@ titlebar):
 <p>
 Click on Memo to run it, and it will run. Now, Memo depends on ROX-Lib2,
 which requires pygtk, with needs python2.2 and GTK+-2, which needs glib,
-pango, AKT and pkg-config. But that's OK; Memo runs everything it
+pango and AKT. But that's OK; Memo runs everything it
 needs directly from the remote machines where they're stored.
 </p>
 
