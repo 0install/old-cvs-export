@@ -224,7 +224,7 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	struct stat info;
 	pid_t child;
 	const char *argv[] = {"tar", "-xzf", ".tgz", NULL};
-	xmlChar *size;
+	xmlChar *size, *md5;
 	xmlNode *group = archive->parent;
 	
 	if (verbose)
@@ -250,7 +250,13 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	}
 	xmlFree(size);
 
-	printf("\t(TODO: skipping MD5 check)\n");
+	md5 = xmlGetNsProp(group, "MD5sum", NULL);
+	if (!check_md5(archive_path, md5)) {
+		xmlFree(md5);
+		fprintf(stderr, "Downloaded archive has wrong MD5 checksum!\n");
+		return;
+	}
+	xmlFree(md5);
 	
 	if (access(".0inst-tmp", F_OK) == 0) {
 		fprintf(stderr, "Removing old .0inst-tmp directory\n");

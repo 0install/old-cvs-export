@@ -8,3 +8,4 @@ int uri_ensure_absolute(const char *uri, const char *base,
 			char *result, int result_len);
 int ensure_dir(const char *path);
 void close_on_exec(int fd, int close);
+int check_md5(const char *path, const char *md5);

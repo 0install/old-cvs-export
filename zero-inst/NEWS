@@ -2,6 +2,8 @@ Changes since 0.1.14:
 
 * Removed unused expat include (spotted by Stuart Langridge).
 
+* The MD5 checksum for downloaded archives is now checked.
+
 Changes since 0.1.13:
 
 * 0refresh can be given a path and a date (like 0run), and only does
