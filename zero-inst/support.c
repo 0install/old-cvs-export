@@ -71,7 +71,6 @@ int uri_ensure_absolute(const char *uri, const char *base,
 	if (strncmp(uri, "ftp://", 6) == 0 ||
 	    strncmp(uri, "http://", 7) == 0 ||
 	    strncmp(uri, "https://", 8) == 0) {
-		printf("Absolute path\n");
 		int len = strlen(uri) + 1;
 		if (len > result_len) {
 			fprintf(stderr, "URI too long\n");

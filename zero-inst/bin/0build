@@ -208,7 +208,12 @@ class Dir(Item):
 			if name.startswith('.'):
 				if name.endswith('.swp') or name.endswith('.swo'):
 					continue
-				if name is not '.DirIcon':
+				if name.startswith('.#'):
+					continue
+				if name.startswith('.0inst'):
+					print "Skipping", name
+					continue
+				if name != '.DirIcon':
 					print "Including hidden file", path
 
 			if os.path.islink(path):
@@ -257,7 +262,7 @@ root = Dir('.', root = True)
 
 #print root
 
-index_path = os.path.join(target, '.0install-index.xml')
+index_path = os.path.join(target, '.0inst-index.xml')
 old_doc = None
 if os.path.exists(index_path):
 	old_doc = dom.minidom.parse(index_path)

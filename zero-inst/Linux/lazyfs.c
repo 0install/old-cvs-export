@@ -342,6 +342,11 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 	inode = new_inode(sb);
 	if (!inode)
 		return NULL;
+	if (inode->i_sb != sb) {
+		printk("lazyfs_new_inode: superblock at wrong offset!\n");
+		iput(inode);
+		return NULL;
+	}
 	inode->u.generic_ip = NULL;
 
 	inode->i_mode = mode | 0444;	/* Always give read */

@@ -14,6 +14,8 @@
 #include "support.h"
 #include "index.h"
 #include "zero-install.h"
+#include "task.h"
+#include "fetch.h"
 
 typedef struct _Client Client;
 
@@ -33,7 +35,9 @@ struct _Client {
 
 	char command[10 + MAX_PATH_LEN];	/* Command being read */
 
-	Client *next;
+	Task	*task;
+
+	Client	*next;
 };
 
 static Client *clients = NULL;
@@ -88,11 +92,11 @@ int create_control_socket(void)
 
 static void client_push_update(Client *client)
 {
-	Request *request;
+	//Request *request;
 	size_t len = 0;
 	char *buf;
-	int i;
-	char buffer[20];
+	//int i;
+	//char buffer[20];
 
 	client->need_update = 1;
 
@@ -105,6 +109,7 @@ static void client_push_update(Client *client)
 	}
 
 	len += sizeof("UPDATE_END");	/* (final \0 at end) */
+#if 0
 	for (request = open_requests; request; request = request->next) {
 		for (i = 0; i < request->n_users; i++) {
 			if (request->users[i].uid != client->uid)
@@ -124,12 +129,14 @@ static void client_push_update(Client *client)
 			len++;
 		}
 	}
+#endif
 	client->to_send = my_malloc(len);
 	if (!client->to_send)
 		return;
 
 	buf = client->to_send;
 	buf += sprintf(buf, "UPDATE%c", 0);
+#if 0
 	for (request = open_requests; request; request = request->next) {
 		for (i = 0; i < request->n_users; i++) {
 			if (request->users[i].uid != client->uid)
@@ -145,6 +152,7 @@ static void client_push_update(Client *client)
 			*(buf++) = '\0';
 		}
 	}
+#endif
 	buf += sprintf(buf, "END") + 1;	/* (includes \0) */
 	if (buf - client->to_send != len) {
 		fprintf(stderr, "client_push_update: Internal error (%d,%d)\n",
@@ -218,6 +226,10 @@ static void client_free(Client *client)
 		printf("(discarding buffered messages)\n");
 		free(client->to_send);
 	}
+
+	if (client->task)
+		task_destroy(client->task, 0);
+
 	free(client);
 }
 
@@ -246,6 +258,7 @@ static void client_send_reply(Client *client, const char *message)
 /* Client requests the 'directory' be refetched */
 static void client_refresh(Client *client, const char *directory)
 {
+	Task *task;
 	char real[PATH_MAX];
 	char *slash;
 
@@ -261,7 +274,7 @@ static void client_refresh(Client *client, const char *directory)
 		return;
 	}
 
-	slash = strrchr(real + 4, '/');
+	slash = strchr(real + 4, '/');
 	if (slash == real + 4 || !slash) {
 		client_send_reply(client, "Can't refresh top-levels!");
 		return;
@@ -269,10 +282,17 @@ static void client_refresh(Client *client, const char *directory)
 
 	*slash = '\0';
 
-	if (queue_request(real + 4, slash + 1, client->uid, -1))
-		client_send_reply(client, "Error");
+	if (client->task->child_task) {
+		client_send_reply(client, "Busy with another request!");
+		return;
+	}
+
+	task = fetch_site_index(real + 4);
+
+	if (task)
+		client->task->child_task = task;
 	else
-		client_send_reply(client, "Request queued");
+		client_send_reply(client, "Error");
 }
 
 static void client_do_command(Client *client, const char *command)
@@ -354,6 +374,11 @@ static int read_from_client(Client *client)
 
 		printf("Client authenticated as user %ld\n",
 				(long) client->uid);
+
+		client->task = task_new(TASK_CLIENT);
+		if (!client->task)
+			return 1;	/* OOM */
+		client->task->data = client;
 
 		return 0;
 	}

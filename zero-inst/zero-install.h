@@ -1,6 +1,7 @@
 #define URI "/uri"
 #define ZERO_INST_INDEX ".0inst.xml"
 #define MAX_PATH_LEN 4096
+#define MAX_URI_LEN 4096
 
 extern char cache_dir[];
 
@@ -17,6 +18,7 @@ typedef enum {
 	FETCHING_ARCHIVE,	/* Archive fetched - extract files */
 } State;
 
+#if 0
 struct _Request {
 	char *path;
 	Index *index;
@@ -43,5 +45,6 @@ struct _UserRequest {
 
 	char *leaf;
 };
+#endif
 
 extern Request *open_requests;

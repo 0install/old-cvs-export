@@ -25,7 +25,7 @@
  * exist.
  *
  * We may also be asked to cache something that's already in the cache, if
- * it doesn't match its directory entries (wrong type, size, etc), so we may
+ * it doesn't match its directory entry (wrong type, size, etc), so we may
  * have to delete things.
  *
  * If several users try to get the same uncached file at once we will get
@@ -55,15 +55,14 @@
 #include "fetch.h"
 #include "index.h"
 #include "zero-install.h"
+#include "task.h"
 
-#define MAX_URI_LEN 4096
-
-/* When we need to use an index file, if it was created in the last five
- * minutes then don't bother to fetch it again. Otherwise, the overhead
+/* When we need to use an index file, if it was created in the last hour
+ * then don't bother to fetch it again. Otherwise, the overhead
  * of fetching the index again is pretty small compared to fetching the
  * archive.
  */
-#define INDEX_CHECK_TIME (5 * 60)
+#define INDEX_CHECK_TIME (60 * 60)
 
 char cache_dir[MAX_PATH_LEN];
 
@@ -76,7 +75,7 @@ Request *open_requests = NULL;
 static int to_wakeup_pipe = -1;	/* Write here to get noticed */
 
 /* Static prototypes */
-static void request_next_step(Request *request);
+//static void request_next_step(Request *request);
 
 static int open_helper(void)
 {
@@ -102,6 +101,7 @@ static int open_helper(void)
 	return helper;
 }
 
+#if 0
 static void finish_request(Request *request)
 {
 	int i;
@@ -226,6 +226,7 @@ static Request *find_request(const char *path)
 
 	return NULL;
 }
+#endif
 
 static void handle_root_request(int request_fd)
 {
@@ -295,6 +296,7 @@ out:
 	fprintf(stderr, "Done\n");
 }
 
+#if 0
 /* Begins fetching 'uri', storing the file as 'path'.
  * Sets request->child_pid and request->current_download_path.
  * Clears request->current_download_archive.
@@ -364,7 +366,9 @@ static void request_done_head(Request *request)
 	for (i = 0; i < request->n_users; i++)
 		request->users[i] = request->users[i + 1];
 }
+#endif
 
+#if 0
 static void fetched_subindex(Request *request)
 {
 	Index *subindex;
@@ -460,7 +464,9 @@ static void begin_fetch_index(Request *request)
 	request->state = FETCHING_INDEX;
 	wget(request, uri, path, 0);
 }
+#endif
 
+#if 0
 /* Start a new fetch. Sets child->pid on success. */
 static void begin_fetch_toplevel(Request *request)
 {
@@ -702,9 +708,18 @@ static void request_next_step(Request *request)
 
 	return;
 }
+#endif
+
+static void kernel_task_step(Task *task, int success)
+{
+	close(task->fd);
+	free(task->data);
+	task_destroy(task, success);
+}
 
 static void handle_request(int request_fd, uid_t uid, char *path)
 {
+	Task *task, *index;
 	char *slash;
 
 	if (strcmp(path, "/") == 0) {
@@ -717,11 +732,34 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 		handle_toplevel_request(request_fd, path + 1);
 		return;
 	}
-	*slash = '\0';
+	task = task_new(TASK_KERNEL);
+	if (!task) {
+		close(request_fd);
+		return;
+	}
+	task->data = my_strdup(path);
+	if (!task->data) {
+		close(request_fd);
+		task_destroy(task, 0);
+		return;
+	}
+	task->step = kernel_task_step;
 
-	queue_request(path, slash + 1, uid, request_fd);
+	task->uid = uid;
+	task->fd = request_fd;
+
+	index = fetch_site_index(path);
+	if (!index) {
+		close(request_fd);
+		free(task->data);
+		task_destroy(task, 0);
+		return;
+	}
+
+	task->child_task = index;
 }
 
+#if 0
 /* Fetch 'leaf' in 'path' for user 'uid'. fd is the lazyfs request FD,
  * or -1 for client requests (no notification of cancellations needed).
  * 'path' must be relative to /uri, and already checked for safety.
@@ -762,6 +800,7 @@ err:
 		close(fd);
 	return -1;
 }
+#endif
 
 /* This is called as a signal handler; simply ensures that
  * child_died_callback() will get called later.
@@ -828,6 +867,7 @@ static void read_from_helper(int helper)
 static void read_from_wakeup(int wakeup)
 {
 	char buffer[40];
+	int status;
 
 	if (read(wakeup, buffer, sizeof(buffer)) < 0) {
 		perror("read_from_wakeup");
@@ -836,26 +876,15 @@ static void read_from_wakeup(int wakeup)
 
 	while (1)
 	{
-		Request *next;
 		pid_t child;
 
-		child = waitpid(-1, NULL, WNOHANG);
+		child = waitpid(-1, &status, WNOHANG);
 
 		if (child == 0 || child == -1)
 			return;
 
-		for (next = open_requests;; next = next->next) {
-			if (!next) {
-				fprintf(stderr,
-					"Unknown child %ld!\n", (long) child);
-				break;
-			}
-			if (next->child_pid == child) {
-				next->child_pid = -1;
-				request_next_step(next);
-				break;
-			}
-		}
+		task_process_done(child,
+			WIFEXITED(status) && WEXITSTATUS(status) == 0);
 	}
 }
 
@@ -870,13 +899,16 @@ int main(int argc, char **argv)
 	int max_fd;
 	int len;
 
+	index_init();
+
 	if (0)
 	{
-		Index *index = parse_index("index.xml");
+		Index *index = parse_index("/var/www/0install-index.xml");
 		if (index) {
 			index_dump(index);
 			index_free(index);
 		}
+		index_shutdown();
 		return 0;
 	}
 
