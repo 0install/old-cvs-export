@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <expat.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
