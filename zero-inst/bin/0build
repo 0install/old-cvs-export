@@ -79,12 +79,12 @@ def md5sum(path):
 		m.update(data)
 	return m.hexdigest()
 
-def make_archive_path():
+def make_archive_path(ext = '.tgz'):
 	global archive_i
 	x = 100
 	while x:
 		rel_path = os.path.join(archive_dir_leaf,
-				    archive_base + `archive_i` + '.tgz')
+				    archive_base + `archive_i` + ext)
 		path = os.path.join(target, rel_path)
 		archive_i += 1
 		if not os.path.exists(path):
@@ -135,7 +135,7 @@ class Archive:
 		#print "Already archived '%s' as %s" % (self.dir, name)
 
 		if os.path.exists(os.path.join(archive_dir, name)):
-			old_tgz.remove(name)
+			old_files.remove(name)
 			self.tgz = os.path.join(archive_dir_leaf, name)
 		else:
 			print "Old archive is missing!"
@@ -315,7 +315,8 @@ if os.path.exists(index_tgz):
 if os.path.exists(index_xml):
 	old_doc = dom.minidom.parse(index_xml)
 
-old_tgz = [a for a in os.listdir(archive_dir) if a.endswith('.tgz')]
+old_files = [a for a in os.listdir(archive_dir)
+			if a.endswith('.tgz') or a.endswith('.bz2')]
 
 old_archives = {}
 if old_doc:
@@ -336,15 +337,49 @@ assert sig
 sig_path = os.path.join(target, 'index.xml.sig')
 file(sig_path, 'w').write(sig)
 
+mirrors_path = os.path.join(target, 'mirrors.xml')
+import bz2
+compressed_index = bz2.compress(file(index_xml).read())
+try:
+	old_mirrors = minidom.parse(mirrors_path)
+	index_bz_leaf = old_mirrors.documentElement.getAttributeNS(None,
+								'index')
+	index_bz = os.path.join(target, index_bz_leaf)
+	if file(index_bz).read() != compressed_index:
+		print "Index changed"
+		raise Exception('Index changed')
+	print "Using existing index file", index_bz
+except:
+	index_bz, index_bz_leaf = make_archive_path(ext = '.bz2')
+	file(index_bz, 'w').write(compressed_index)
+else:
+	old_files.remove(os.path.basename(index_bz_leaf)) # Don't delete it
+
+def make_mirrors():
+	doc = minidom.Document()
+	root = doc.createElementNS(ZERO_NS, 'mirrors')
+	root.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
+	doc.appendChild(root)
+	root.setAttributeNS(None, 'index', index_bz_leaf)
+	mirror = doc.createElementNS(ZERO_NS, 'mirror')
+	# TODO: put archive_dir_leaf here, not in each link.
+	# But have to cope with older zero-install versions for a while.
+	mirror.setAttributeNS(None, 'base', 'http://%s' % host)
+	root.appendChild(mirror)
+	
+	doc.writexml(file(mirrors_path, 'w'), addindent = ' ', newl = '\n')
+make_mirrors()
+
 assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz, '-C', target,
-	'.0inst-index.xml', 'keyring.pub', 'index.xml.sig']) == 0
+	'.0inst-index.xml', 'keyring.pub', 'mirrors.xml', 'index.xml.sig']) == 0
 
 os.unlink(index_xml)
 os.unlink(pub_key)
 os.unlink(sig_path)
+os.unlink(mirrors_path)
 
-for x in old_tgz:
+for x in old_files:
 	path = os.path.join(archive_dir, x)
-	print "Removing unused tgz file:", path
+	print "Removing unused file:", path
 	assert int(x[:4])
 	os.unlink(path)
