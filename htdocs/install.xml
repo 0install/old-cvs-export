@@ -186,7 +186,13 @@ Zero Install started: using cache directory '/var/cache/zero-inst'
 
 <p>
 The helper will print information about what it's doing when it's used.
-Open another window, and try it out with the following command:
+</p>
+
+<h3>Testing the installation</h3>
+
+<p>
+With /uri mounted and the helper running, open another window, and try
+the following command:
 </p>
 
 <pre>
