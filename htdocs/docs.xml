@@ -105,8 +105,13 @@ gimp1.3
 gimp2.0
 </pre>
 
-</dd>
+<p>Running 0refresh updates the index for the whole site, so everything
+under www.gimp.org will be up-to-date afterwards. You don't have to run it in
+each subdirectory. Of course, the actual files are still only downloaded when
+you try to access them.
+</p>
 
+</dd>
 </dl>
 
 <h2>Documentation for admins</h2>
