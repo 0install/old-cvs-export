@@ -383,10 +383,13 @@ static void may_rotate_log(void) {
  */
 static void wget(Task *task, const char *uri, const char *path, int use_cache)
 {
-	const char *argv[] = {"wget", "-O", NULL, uri,
+	const char *argv[] = {"wget",
+			"-O", NULL,
 			verbose ? "--tries=1" : "--tries=3",
 			"-a", wget_log,
-			use_cache ? NULL : "--cache=off", NULL};
+			use_cache ? uri  : "--cache=off",
+			use_cache ? NULL : uri,
+			NULL};
 	char *slash;
 
 	syslog(LOG_INFO, "Fetching '%s'", uri);

@@ -1,3 +1,6 @@
+* Make the URL the last argument for wget, as some versions require this
+  (Peter Prohaska).
+ 
 Changes since 0.1.25:
 
 * Added new unittest suite (though not with many tests in it yet).
