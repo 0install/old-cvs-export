@@ -10,7 +10,7 @@ class MainWindow(Dialog):
 	progress = None
 	browser = None
 
-	def __init__(self, prog, prog_args):
+	def __init__(self, prog_args):
 		Dialog.__init__(self)
 		self.set_title('Dependency Injector')
 		self.set_default_size(400, 300)
@@ -43,7 +43,6 @@ class MainWindow(Dialog):
 
 		times = [x.time for x in freshness_levels]
 		if policy.freshness not in times:
-			index = len(freshness_levels)
 			freshness_levels.append(Freshness(policy.freshness,
 							  '%d seconds' % policy.freshness))
 			times.append(policy.freshness)
@@ -113,16 +112,8 @@ class MainWindow(Dialog):
 			if resp == gtk.RESPONSE_CANCEL:
 				self.destroy()
 			elif resp == gtk.RESPONSE_OK:
-				import run
-				try:
-					run.execute(policy, prog, prog_args)
-					self.destroy()
-				except SafeException, ex:
-					box = gtk.MessageDialog(self, gtk.DIALOG_MODAL,
-							gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-							str(ex))
-					box.run()
-					box.destroy()
+				import download_box
+				download_box.download_and_run(self, prog_args)
 			elif resp == gtk.RESPONSE_HELP:
 				gui_help.display()
 		self.connect('response', response)
