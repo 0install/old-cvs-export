@@ -16,7 +16,7 @@ very much under developement and has not yet been well tested.</div>
 That said, I'm running it on my machine without any problems so far. Please
 let me know how you get on, and any problems you find. You could also install
 it under <a href="http://user-mode-linux.sf.net">User Mode Linux</a> if you
-want to test it in safely.
+want to test it in safety.
 </p>
 
 <p>The Zero Install system requires a small Linux kernel module to provide
