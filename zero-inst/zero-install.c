@@ -33,6 +33,7 @@
  * own requests without affecting other users.
  */
 
+#include <utime.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -56,6 +57,13 @@
 #include "zero-install.h"
 
 #define MAX_URI_LEN 4096
+
+/* When we need to use an index file, if it was created in the last five
+ * minutes then don't bother to fetch it again. Otherwise, the overhead
+ * of fetching the index again is pretty small compared to fetching the
+ * archive.
+ */
+#define INDEX_CHECK_TIME (5 * 60)
 
 char cache_dir[MAX_PATH_LEN];
 
@@ -360,26 +368,26 @@ static void request_done_head(Request *request)
 
 static void fetched_subindex(Request *request)
 {
-	UserRequest *first_rq = request->users;
 	Index *subindex;
-	char path[MAX_PATH_LEN];
+	char *path = request->current_download_path;
 
 	assert(request->state == FETCHING_SUBINDEX);
-
-	if (snprintf(path, sizeof(path),
-		"%s%s/%s/" ZERO_INST_INDEX, cache_dir, request->path,
-		first_rq->leaf) > sizeof(path) - 1) {
-		fprintf(stderr, "Path too long\n");
-	}
+	assert(path);
+	assert(strcmp(path + strlen(path) - sizeof(ZERO_INST_INDEX) + 1,
+		      ZERO_INST_INDEX) == 0);
 
 	subindex = parse_index(path);
 	if (!subindex)
 		return;
-	path[strlen(path) - sizeof(ZERO_INST_INDEX)] = '\0';
-	/* printf("[ build index in %s ]\n", path); */
+	utime(path, NULL);
 
+	request->current_download_path = NULL;
+
+	path[strlen(path) - sizeof(ZERO_INST_INDEX)] = '\0';
 	build_ddd_from_index(subindex, path);
 	index_free(subindex);
+
+	free(path);
 }
 
 static void fetched_archive(Request *request)
@@ -415,23 +423,41 @@ static void fetched_archive(Request *request)
 	chdir("/");
 }
 
-/* Start a new fetch. Sets child->pid on success */
+/* Start a new fetch. Sets child->pid or request->index on success. */
 static void begin_fetch_index(Request *request)
 {
 	char path[MAX_PATH_LEN];
 	char uri[MAX_URI_LEN];
+	time_t now;
+	struct stat info;
 
 	assert(request->child_pid == -1);
-
-	/* Fetch main directory index */
-	if (!build_uri(uri, sizeof(uri), request->path, ZERO_INST_INDEX, NULL))
-		return;
 
 	if (snprintf(path, sizeof(path), "%s%s/" ZERO_INST_INDEX, cache_dir,
 	    request->path) > sizeof(path) - 1) {
 		fprintf(stderr, "Path too long\n");
 		return;
 	}
+
+	time(&now);
+
+	/* If the index file already exists and was recently fetched, don't
+	 * bother fetching it again.
+	 */
+	if (lstat(path, &info) == 0 && info.st_ctime + INDEX_CHECK_TIME > now) {
+		request->index = parse_index(path);
+		if (request->index) {
+			printf("\t(using cached index)\n");
+			return;
+		}
+		printf("\t(cached index too old... refetching)\n");
+	} else
+		printf("\t(fetching index)\n");
+
+	/* Fetch main directory index */
+	if (!build_uri(uri, sizeof(uri), request->path, ZERO_INST_INDEX, NULL))
+		return;
+
 	request->state = FETCHING_INDEX;
 	wget(request, uri, path, 0);
 }
@@ -593,8 +619,6 @@ static void begin_fetch(Request *request)
  */
 static void request_next_step(Request *request)
 {
-	char path[MAX_PATH_LEN];
-
 	printf("Request %s moving forward...\n", request->path);
 
 	if (request->child_pid != -1) {
@@ -616,32 +640,34 @@ static void request_next_step(Request *request)
 			/* Must get here before adding more users */
 			assert(request->n_users == 1);
 
-			printf("\t(fetching index)\n");
 			begin_fetch_index(request);
-			if (request->child_pid == -1) {
-				finish_request(request);
-			} else {
-				request->state = FETCHING_INDEX;
-				control_notify_user(request->users->uid);
-			}
-			return;
-		} else if (request->state == FETCHING_INDEX) {
-			printf("\t(processing index)\n");
-			if (snprintf(path, sizeof(path),
-			    "%s%s/" ZERO_INST_INDEX, cache_dir,
-			    request->path) > sizeof(path) - 1) {
-				fprintf(stderr, "Path too long\n");
+			if (request->index) {
+				/* Quite recent... no need to fetch */
+			} else if (request->child_pid == -1) {
+				/* Tried to fetch and failed */
 				finish_request(request);
 				return;
+			} else {
+				/* Fetching from remote server */
+				request->state = FETCHING_INDEX;
+				control_notify_user(request->users->uid);
+				return;
 			}
+		} else if (request->state == FETCHING_INDEX) {
+			char *path = request->current_download_path;
+			printf("\t(processing index)\n");
+
 			request->index = parse_index(path);
 			if (!request->index) {
 				finish_request(request);
 				return;
 			}
+			utime(path, NULL);
 			path[strlen(path) - sizeof(ZERO_INST_INDEX)] = '\0';
 			/* TODO: might not need to recreate ... file */
 			build_ddd_from_index(request->index, path);
+			free(path);
+			request->current_download_path = NULL;
 		}
 	}
 	
