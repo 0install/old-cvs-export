@@ -3,7 +3,7 @@ from os.path import expanduser, join, ismount
 
 # You can edit these three lines to suit...
 test_dir = expanduser('~/0inst-test')	# Where to put test files
-version = '0.1.24'				# Version of lazyfs to use
+version = '0.1.25'				# Version of lazyfs to use
 
 log = file('log', 'w', 1)
 print >>log, "Log for zero install test run on %s" % time.ctime()

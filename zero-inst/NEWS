@@ -1,5 +1,7 @@
 Changes since 0.1.24:
 
+* Added new unittest suite (though not with many tests in it yet).
+
 * Added support for D-BUS 0.22 (versions 0.20 and 0.21 are still supported).
 
 * Fixed bug that causes validation of deeply-nested indexes to be very slow
