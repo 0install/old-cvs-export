@@ -130,15 +130,6 @@ $ <b>./configure --with-user=zeroinst</b>
 
 <div class='note'>
 <p>
-If it doesn't work, it may tell you that it can't find the kernel headers.
-You can use --with-kernel to tell it where they are, for example:
-</p>
-
-<pre>
-$ <b>./configure --with-user=zeroinst --with-kernel=/home/fred/linux-2.4.20</b>
-</pre>
-
-<p>
 If it can't find
 <a href="http://freshmeat.net/projects/d-bus/?topic_id=809">D-BUS</a>,
 you may need to do:
@@ -178,11 +169,9 @@ were already running an older version, this step also remounts /uri/0install
 and loads the new module.
 </p>
 
-<div class='note'>
-If you're behind an http (web) proxy, you'll need to use
-<pre>export http_proxy=HOST:PORT</pre> in the <tt>/etc/init.d/0install</tt>
-script.
-</div>
+<ul>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/73">mount: wrong fs type...</a></li>
+</ul>
 
 <p>
 Now, run the helper application (it will just wait, without doing anything).
@@ -197,6 +186,10 @@ $ <b>tail /var/log/daemon.log</b>
 Oct  5 16:00:16 everest zero-install: Started: using cache directory '/var/cache/zero-inst'
 </pre>
 
+<ul>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/332">error while loading shared libraries: libdbus-1.so.0</a></li>
+</ul>
+
 <h2>Testing the installation</h2>
 
 <p>
@@ -208,11 +201,9 @@ $ <b>cat /uri/0install/zero-install.sourceforge.net/demo/test.txt</b>
 It worked!
 </pre>
 
-<div class='note'>
-If you can't mount the /uri/0install filesystem, try running the 'dmesg'
-command to view the kernel log. Usually, it means you've compiled the module
-with different kernel headers, or with a different compiler version.
-</div>
+<ul>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/331">got_site_index_archive: Failed to fetch index archive in log file</a></li>
+</ul>
 
 <p>
 Users can see what they are currently downloading with the ZeroProgress
