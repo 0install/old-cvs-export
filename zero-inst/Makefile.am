@@ -1,4 +1,5 @@
 HELPER_USER := @HELPER_USER@
+FSTAB := /etc/fstab
 
 AUTOMAKE_OPTIONS = foreign
 
@@ -20,7 +21,11 @@ install-exec-local:
 	([ -d /uri ] || mkdir /uri) && \
  	([ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst) && \
  	chown "${HELPER_USER}" /var/cache/zero-inst && \
- 	grep -q "^lazyfs" /etc/fstab ||	echo "lazyfs          /uri            lazyfs  /var/cache/zero-inst            0 0" >> /etc/fstab
+ 	grep -q "^lazyfs" ${FSTAB} ||	echo "lazyfs          /uri            lazyfs  /var/cache/zero-inst            0 0" >> ${FSTAB}
+
+uninstall-local:
+	grep -v "^lazyfs[ \t]*/uri[ \t]" "${FSTAB}" > "${FSTAB}.new" && \
+	mv "${FSTAB}.new" "${FSTAB}"
 
 CFLAGS = -O2 -Wall -Wstrict-prototypes -g
 

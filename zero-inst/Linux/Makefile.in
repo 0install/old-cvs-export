@@ -37,7 +37,7 @@ real-install:
 	if lsmod | grep -q '^lazyfs[ \t]'; then rmmod lazyfs; fi
 
 uninstall:
-	rm ${MODULEDIR}/lazyfs.o
+	rm -f ${MODULEDIR}/lazyfs.o
 
 .PHONY: module-Linux_2_4 module-Linux_2_5
 lazyfs.o: lazyfs.c
