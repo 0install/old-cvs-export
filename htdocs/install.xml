@@ -103,6 +103,10 @@ If you want to port the (small) module to other kernels (BSD, MacOS
 X, etc) please get in touch.
 </p>
 
+<ul>
+  <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/663">Port to PPC competition</a> (competition open to US developers only)</li>
+</ul>
+
 <p>
 We want to make the installation as easy as possible, so if you get stuck,
 please <a href="support.html">write to us</a> or
