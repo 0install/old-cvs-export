@@ -1,3 +1,6 @@
+* More helpful error message when an index is incorrectly signed (reported
+  by Jeffrey Templon).
+
 * Moved 'Linux' subdirectory to its own module, allowing for separate
   development.
 

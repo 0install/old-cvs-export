@@ -174,9 +174,13 @@ const char *gpg_trusted(const char *site, const char *leafname)
 
 	pclose(out);
 
-	if (!trusted)
-		return "New index is NOT signed with a key with "
-		       "a trust path from the old key!";
+	if (!trusted) {
+		if (have_trusted_key)
+			return "New index is NOT signed with a key with "
+				"a trust path from the old key!";
+		else
+			return "New index is not correctly signed!";
+	}
 	
 	if (have_trusted_key)
 		error("New index is signed OK -- trusting");
