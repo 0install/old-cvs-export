@@ -196,7 +196,7 @@ the cache yet):
 <pre>
 $ <b>cd /uri/http/zero-install.sourceforge.net</b>
 $ <b>0refresh</b>
-$ <b>./apps/ZeroProgress/Linux-ix86/head/ZeroProgress</b>
+$ <b>./apps/ZeroProgress/AppRun</b>
 </pre>
 
 <p>
