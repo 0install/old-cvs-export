@@ -13,7 +13,7 @@ and trusted 'core' system, and make sure that the rest of the system can grow
 without introducing additional security problems.
 </p>
 
-<h3>System security key points (design)</h3>
+<h3>Core system security key points (design)</h3>
 <ul>
 <li>No downloaded software is ever run as root, or as any user except the one
 who asked to run it.</li>
@@ -25,21 +25,21 @@ documentation package is given root-level access to the system.</li>
 installed on the machine.</li>
 </ul>
 
-<h3>System security key points (implementation)</h3>
+<h3>Core system security key points (implementation)</h3>
 <ul>
 <li>Zero Install contains a very small kernel module, which is the only
 new vector for a possible root-compromise.</li>
 <li>A small helper runs as a special user. If compromised, it would
-allow trojaning of software run via Zero Install, but not of the system
-itself.</li>
-<li>Zero Install does not listen for incoming connections (any attack
-must be initiated by a local user, intentionally or otherwise).</li>
+allow trojaning of software run via Zero Install.</li>
+<li>Zero Install does not listen for incoming connections, so any attack
+must be initiated by a local user, intentionally or otherwise.</li>
 </ul>
 
 <h3>User security key points</h3>
 <ul>
-<li>Anyone can run any software they please, without endangering anyone
-but themselves.</li>
+<li>Anyone can run any software they please, just as they could anyway by
+installing to their home directories, but Zero Install makes it easy and
+faster (less to download, less use of disk space and memory).</li>
 <li>A user running a malicious program can still lose their own data, but
 Zero Install makes it easier to use other techniques to solve this separate
 problem.</li>
