@@ -11,5 +11,5 @@ void set_blocking(int fd, int blocking);
 int ensure_dir(const char *path);
 void close_on_exec(int fd, int close);
 int check_md5(const char *path, const char *md5);
-char *build_string(const char *format, ...);
+/*@only@*/ char *build_string(const char *format, ...);
 void my_close(int fd);

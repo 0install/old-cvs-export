@@ -1,1 +1,2 @@
-const char *gpg_trusted(const char *site, const char *leafname);
+/*@observer@*/ const char *gpg_trusted(/*@notnull@*/ const char *site,
+				       /*@notnull@*/ const char *leafname);

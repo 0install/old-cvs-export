@@ -38,8 +38,8 @@ struct _Task {
 	void *data;
 	uid_t uid;
 	int fd;
-	char *str;		/* Will be free()d */
-	Index *index;		/* Will be unref'd */
+	/*@owned@*/ char *str;		/* Will be free()d */
+	Index *index;			/* Will be unref'd */
 	long size;
 
 	int notify_on_end;

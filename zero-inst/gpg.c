@@ -86,8 +86,8 @@ const char *gpg_trusted(const char *site, const char *leafname)
 	char *command;
 	FILE *out;
 	int trusted = 0;
-	char current_key[17];
-	int have_trusted_key = 0;
+	char trusted_key[17] = "\0";
+	char current_key[17] = "\0";
 
 	/* TODO: escape it somehow */
 	assert(strchr(site, '\'') == NULL);
@@ -100,34 +100,30 @@ const char *gpg_trusted(const char *site, const char *leafname)
 	/* Try to get the key we used last time */
 	{
 		FILE *old_key;
-		char *trusted_key = NULL;
 
 		old_key = fopen("trusted_key", "r");
 		if (old_key) {
 			current_key[16] = '\0';
-			fread(current_key, 1, 17, old_key);
-			fclose(old_key);
+			(void) fread(current_key, 1, 17, old_key);
+			if (fclose(old_key))
+				abort();
 			if (current_key[16] == '\n') {
 				/* Managed to read the key OK */
 				current_key[16] = '\0';
-				trusted_key = my_strdup(current_key);
-				if (!trusted_key)
-					return "Out of memory";
-			} else
+				memcpy(trusted_key, current_key,
+					sizeof(trusted_key));
+			} else {
 				error("Old key corrupted! "
 					"Skipping security check!");
+			}
 		}
 
-		have_trusted_key = trusted_key != NULL;
-
-		if (trusted_key) {
+		if (*trusted_key) {
 			command = build_string("gpg " GPG_OPTIONS
 				" --status-fd 1"
 				" --trusted-key %s"
 				" --verify index.xml.sig '%s'",
 				trusted_key, leafname);
-
-			free(trusted_key);
 		} else {
 			command = build_string("gpg " GPG_OPTIONS
 				" --status-fd 1"
@@ -170,7 +166,7 @@ const char *gpg_trusted(const char *site, const char *leafname)
 		    MATCH("[GNUPG:] TRUST_FULLY\n") ||
 		    MATCH("[GNUPG:] TRUST_MARGINAL\n") ||
 		    (MATCH("[GNUPG:] TRUST_UNDEFINED\n") &&
-		     		!have_trusted_key)) {
+		     		!*trusted_key)) {
 			FILE *new;
 
 			trusted = 1;
@@ -183,21 +179,23 @@ const char *gpg_trusted(const char *site, const char *leafname)
 			}
 
 			fprintf(new, "%s\n", current_key);
-			fclose(new);
+			if (fclose(new))
+				error("fclose: %m");
 		}
 	}
 
-	pclose(out);
+	if (pclose(out))
+		error("pclose: %m");
 
 	if (!trusted) {
-		if (have_trusted_key)
+		if (*trusted_key)
 			return "New index is NOT signed with a key with "
 				"a trust path from the old key!";
 		else
 			return "New index is not correctly signed!";
 	}
 	
-	if (have_trusted_key)
+	if (*trusted_key)
 		error("New index is signed OK -- trusting");
 	else 
 		error("Blindly trusting key for new site");
