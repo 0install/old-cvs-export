@@ -148,7 +148,8 @@ static void pull_up_files(xmlNode *group)
 	struct stat info;
 	xmlChar *leaf = NULL;
 
-	printf("\t(unpacked OK)\n");
+	if (verbose)
+		printf("\t(unpacked OK)\n");
 
 	for (item = group->children; item; item = item->next) {
 		char up[MAX_PATH_LEN] = "../";
@@ -227,7 +228,8 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	xmlChar *size;
 	xmlNode *group = archive->parent;
 	
-	printf("\t(unpacking %s)\n", archive_path);
+	if (verbose)
+		printf("\t(unpacking %s)\n", archive_path);
 	argv[2] = archive_path;
 
 	if (chdir(archive_dir)) {
@@ -304,7 +306,8 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
 
-	printf("Fetch '%s'\n", uri);
+	if (verbose)
+		printf("Fetch '%s'\n", uri);
 
 	assert(task->child_pid == -1);
 
@@ -504,7 +507,8 @@ Index *get_index(const char *path, Task **task, int force)
 
 	assert(strlen(index_path) + 1 == needed);
 
-	printf("Index for '%s' is '%s'\n", path, index_path);
+	if (verbose)
+		printf("Index for '%s' is '%s'\n", path, index_path);
 
 	/* TODO: compare times */
 	if (force == 0 && stat(index_path, &info) == 0) {
@@ -572,7 +576,8 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	strcpy(path + cache_len + stem_len, "/" TMP_PREFIX);
 	strcpy(path + cache_len + stem_len + sizeof(TMP_PREFIX), md5);
 
-	printf("Fetch archive as '%s'\n", path);
+	if (verbose)
+		printf("Fetch archive as '%s'\n", path);
 	
 	for (task = all_tasks; task; task = task->next) {
 		if (task->type == TASK_ARCHIVE &&

@@ -5,3 +5,5 @@
  */
 typedef struct _Task Task;
 typedef struct _Index Index;
+
+extern int verbose;

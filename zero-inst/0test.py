@@ -66,7 +66,7 @@ class Request:
 def test():
 	if not server:
 		# Helper might not have started yet...
-		time.sleep(0.2)
+		time.sleep(0.8)
 	import test_cases
 
 child = os.fork()

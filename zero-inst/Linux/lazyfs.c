@@ -1459,7 +1459,9 @@ lazyfs_handle_release(struct inode *inode, struct file *file)
 	wake_up_interruptible(&lazy_wait);
 
 	/* TODO: If this was a speculative lookup, remove the
-	 * directory.
+	 * directory. Currently, we make sure the creator is blocking,
+	 * so it can free it, but we'd need to move the remove here to
+	 * make the operation non-blocking.
 	 */
 #if 0
 	if (ensure_cached(existing))

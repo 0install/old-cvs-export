@@ -49,12 +49,14 @@ Task *task_new(TaskType type)
 	task->next = all_tasks;
 	all_tasks = task;
 
-	printf("Created task %d (%s)\n", task->n,
-		type == TASK_KERNEL ? "kernel" :
-		type == TASK_CLIENT ? "client" :
-		type == TASK_INDEX ? "index" :
-		type == TASK_ARCHIVE ? "archive" :
-		"unknown");
+	if (verbose) {
+		printf("Created task %d (%s)\n", task->n,
+				type == TASK_KERNEL ? "kernel" :
+				type == TASK_CLIENT ? "client" :
+				type == TASK_INDEX ? "index" :
+				type == TASK_ARCHIVE ? "archive" :
+				"unknown");
+	}
 
 	return task;
 }
@@ -66,7 +68,8 @@ void task_destroy(Task *task, int success)
 {
 	Task *t;
 
-	printf("Finished task %d\n", task->n);
+	if (verbose)
+		printf("Finished task %d\n", task->n);
 
 	if (all_tasks == task) {
 		all_tasks = task->next;
@@ -85,7 +88,8 @@ void task_destroy(Task *task, int success)
 	t = all_tasks;
 	while (t) {
 		if (t->child_task == task) {
-			printf("Move forward with task %d\n", t->n);
+			if (verbose)
+				printf("Move forward with task %d\n", t->n);
 			t->child_task = NULL;
 			assert(t->step);
 			t->step(t, success);
@@ -106,14 +110,16 @@ void task_process_done(pid_t pid, int success)
 
 	for (t = all_tasks; t; t = t->next) {
 		if (t->child_pid == pid) {
-			printf("Move forward with task %d\n", t->n);
+			if (verbose)
+				printf("Move forward with task %d\n", t->n);
 			t->child_pid = -1;
 			t->step(t, success);
 			return;
 		}
 	}
 
-	printf("No task for process %ld!\n", (long) pid);
+	if (verbose)
+		printf("No task for process %ld!\n", (long) pid);
 }
 
 /* Stores a copy of 'str' in task->str (freeing any existing one).

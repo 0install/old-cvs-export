@@ -103,7 +103,8 @@ static void client_push_update(Client *client)
 		return;
 
 	if (client->to_send) {
-		printf("\t(update already in progress; deferring)\n");
+		if (verbose)
+			printf("\t(update already in progress; deferring)\n");
 		return;
 	}
 
@@ -171,7 +172,8 @@ void read_from_control(int control)
 		return;
 	}
 
-	printf("New client %d\n", fd);
+	if (verbose)
+		printf("New client %d\n", fd);
 
 	client->socket = fd;
 	client->monitor = 0;
@@ -207,11 +209,13 @@ int control_add_select(int n, fd_set *rfds, fd_set *wfds)
 
 static void client_free(Client *client)
 {
-	printf("Lost client %d\n", client->socket);
+	if (verbose)
+		printf("Lost client %d\n", client->socket);
 	close(client->socket);
 	client->next = NULL;
 	if (client->to_send) {
-		printf("(discarding buffered messages)\n");
+		if (verbose)
+			printf("(discarding buffered messages)\n");
 		free(client->to_send);
 	}
 
@@ -368,8 +372,9 @@ static int read_from_client(Client *client)
 		client->task->data = client;
 		client->task->step = client_step;
 
-		printf("Client authenticated as user %ld\n",
-				(long) client->task->uid);
+		if (verbose)
+			printf("Client authenticated as user %ld\n",
+					(long) client->task->uid);
 
 		return 0;
 	}
@@ -386,7 +391,7 @@ static int read_from_client(Client *client)
 	if (got <= 0) {
 		if (got < 0)
 			perror("Reading from client");
-		else
+		else if (verbose)
 			printf("Client closed connection\n");
 		return -1;
 	}
