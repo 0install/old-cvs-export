@@ -2,7 +2,7 @@
 Hash: SHA1
 
 <?xml version="1.0" ?>
-<interface last-modified="1112196530" uri="http://0install.net/2005/interfaces/injector" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch'>
+<interface last-modified="1112196678" uri="http://0install.net/2005/interfaces/injector" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch'>
   <name>Injector</name>
   <summary>Chooses software components to run programs</summary>
   <description>
@@ -31,22 +31,22 @@ buttons). Thus, the injector must choose implementations of each dependancy
     <archive size='21808' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.4.tar.gz' extract='injector-0.4'/>
   </implementation>
 
-  <implementation id="sha1=ff6ad61795e04d2350c9a39ca357aea7a15ba107" stability="stable" version="0.5">
+  <implementation id="sha1=ff6ad61795e04d2350c9a39ca357aea7a15ba107" stability="testing" version="0.5">
     <archive size='22219' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.5.tar.gz' extract='injector-0.5'/>
   </implementation>
 
-  <implementation id="sha1=dbd95891c38dfae844f575cd4774a97c64aa2bd9" stability="stable" version="0.6">
+  <implementation id="sha1=dbd95891c38dfae844f575cd4774a97c64aa2bd9" stability="testing" version="0.6">
     <archive size='22610' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.6.tar.gz' extract='injector-0.6'/>
   </implementation>
 
-  <implementation id="sha1=3e3e94d657d5ced14491b95b20d0be9b7e36d63b" stability="developer" version="0.7">
+  <implementation id="sha1=3e3e94d657d5ced14491b95b20d0be9b7e36d63b" stability="testing" version="0.7">
     <archive size='23467' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.7.tar.gz' extract='injector-0.7'/>
   </implementation>
 </interface>
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCSsXKrgeCgFmlPMERAipLAKCsGQG5gCkQhonGur/xwiSlLN0HbwCfb+CQ
-9X2r1VUIyo+hv3W/l/Lple8=
-=ntF7
+iD8DBQFCSsZtrgeCgFmlPMERAlg5AKCfJLe3Livse0/HqvrOB0YZfaY01wCggoeq
++h5fS7KtqRdAsJL4Ecc7b4k=
+=oGGp
 -----END PGP SIGNATURE-----
