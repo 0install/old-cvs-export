@@ -124,9 +124,14 @@ static void handle_root_request(int request_fd)
 		goto err;
 	goto out;
 err:
-	error("handle_root_request: Unable to write ... file: %m");
+	if (errno == 0)
+		error("Error writing '...' file, but errno is 0! Make sure "
+			"you're NOT using libtrash!");
+	else
+		error("handle_root_request: Unable to write ... file: %m");
 out:
-	close(request_fd);
+	if (request_fd != -1)
+		close(request_fd);
 	chdir("/");
 }
 
@@ -385,7 +390,7 @@ int main(int argc, char **argv)
 	int max_fd;
 	char *pid_file;
 	int background = 1;
-	
+
 	openlog("zero-install", 0, LOG_DAEMON);
 
 	if (0) {
@@ -408,6 +413,11 @@ int main(int argc, char **argv)
 	REQUIRE("gzip", "--version");
 	REQUIRE("wget", "--version");
 	REQUIRE("gpg", "--version");
+
+	if (getuid() == 0) {
+		error("zero-install daemon must not run as root!");
+		return EXIT_FAILURE;
+	}
 
 	umask(0022);
 	

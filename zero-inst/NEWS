@@ -1,3 +1,12 @@
+* Check for libtrash and print a warning if running (reported by Tristan
+  McLeay).
+
+* Minor bugfix: don't try to close FD -1.
+
+* Don't allow the daemon to be started as root. Apart from being a security
+  risk, it tends to create directories that only root can read, which then
+  prevents you from running it correctly in future...
+
 * When running configure with --with-distcheck, don't check that the supplied
   user name and init.d directories exist (for packagers).
 
