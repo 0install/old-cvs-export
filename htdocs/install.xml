@@ -97,7 +97,7 @@ Supported kernels are:
 </p>
 <ul>
 <li> Linux 2.4 series</li>
-<li> Linux 2.6 series</li>
+<li> Linux 2.6 series (2.6.10 requires the CVS version)</li>
 </ul>
 <p>
 If you want to port the (small) module to other kernels (BSD, MacOS
