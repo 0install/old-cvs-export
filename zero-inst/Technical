@@ -89,16 +89,20 @@ sleep and a request sent to the helper in the form of a file handle.
 The file is given the same owner as the cache directory, so there is no
 need for the helper to run as root.
 
-The request is a number (ASCII) followed by \n. You have to read the
+The request is a number (ASCII) followed by "uid=%d\n". You have to read the
 whole line in a single read() operation (and you'll only get one per
 read). The number is a file handle which lazyfs has opened for you.
-Reading from the file with give you the pathname of the file to create
-relative to the mount point (/ = /uri). Again, you must read the whole path
-in one operation.
+The UID is the id of the process requesting the file. Reading from the file
+with give you the pathname of the file to create relative to the mount point (/
+= /uri). Again, you must read the whole path in one operation.
 
 When the handle is closed, the requesting process wakes up (hopefully to
 find that the missing file has appeared). If more processes request the
-file, they will also be put to sleep until the request is handled.
+file, they will also be put to sleep until the request is handled. New
+requests for each different user accessing the same file. This is so that
+the helper can provide information to each user about what requests are
+currently in progress for that user, and allows requests to be cancelled on
+a per-user basis.
 
 If the helper closes the /uri/.lazyfs-helper file then all pending requests
 (those not yet delivered to the helper) return EIO errors. The helper can be
@@ -165,6 +169,17 @@ create a request object (virtual_dentry, user_id) and put it in a queue
 to be delivered to the helper. If we already have a request for that user
 for that dentry, we just block. This allows users to see and cancel their own
 requests without affecting other users.
+
+We keep a count of how many times each open file has been mmapped, and
+how many times each inode has been mmapped (these are incremented together).
+The first time the inode is mmapped, we take a reference to the host inode's
+mapping information. When a file is closed, we decrement the inode count by
+the file count, and reset the mapping if it is now zero. A single source
+inode cannot be mmapped to two different host inodes. This could cause a
+problem if the host inode is deleted and then replaced with an identical
+file (users will get -EBUSY). The helper application could solve this by
+updating the mtime in the ... file, causing LazyFS to create a new virtual
+inode for the file.
 
 Notes on possible kernel DoS attacks:
  

@@ -13,6 +13,10 @@
 
 #define ZERO_NS "http://zero-install.sf.net"
 
+/* Note: the parsing here uses SAX. SAX is hideous. Need to implement some
+ * kind of XML-Pull type interface on top of it to make the code readable.
+ */
+
 /* We only parse one document at a time, so... */
 static int depth;
 static int broken;
@@ -220,10 +224,10 @@ static void end_element_find(void *userData, const XML_Char *name)
 		content_len++;
 		if (content_len <= current_archive_len)
 			memcpy(current_archive, content, content_len);
-		printf("[ got archive '%s' ]\n", current_archive);
+		/* printf("[ got archive '%s' ]\n", current_archive); */
 	}
 	else if (strcmp(content, current_leaf) == 0) {
-		printf("Match in %s!\n", name);
+		/* printf("Match in %s!\n", name); */
 		item_in_group = name[sizeof(ZERO_NS)];
 		if (item_in_group == 'd' || item_in_group == 'l')
 			found_type = item_in_group;
@@ -244,7 +248,7 @@ int get_item_info(const char *index_path, const char *leaf, char *uri, int len)
 
 	assert(len > 0);
 
-	printf("[ lookup '%s' ]\n", leaf);
+	/* printf("[ lookup '%s' ]\n", leaf); */
 
 	index = open(index_path, O_RDONLY);
 	if (index == -1) {
@@ -316,10 +320,10 @@ out:
 
 /* Unpack the archive, which should contain the file 'leaf'. Use the
  * index file to find out what other files should be there and extract them
- * too. Ensure types, sizes and MD5SUMs match.
+ * too. Ensure types, sizes and MD5 sums match.
  */
 void unpack_archive(const char *leaf)
 {
-	printf("TODO: this is just a quick hack!\n");
+	printf("TODO: unpacking '%s'; this is just a quick hack!\n", leaf);
 	system("tar xzf archive.tgz");
 }

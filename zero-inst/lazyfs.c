@@ -155,6 +155,9 @@ struct lazy_file_info {
 /* Any change to the helper_list queues requires this lock */
 static spinlock_t fetching_lock = SPIN_LOCK_UNLOCKED;
 
+/* Any change to an inode's u.generic_ip mapping counter needs this */
+static spinlock_t mapping_lock = SPIN_LOCK_UNLOCKED;
+
 /* Held when modifying the tree in any way. This is held for longer than
  * dcache_lock.
  */
@@ -253,8 +256,8 @@ destroy_request(struct lazy_user_request *request)
 	if (!request)
 		BUG();
 
-	printk("Removing request by user %d for '%s'\n",
-			request->uid, request->dentry->d_name.name);
+	// printk("Removing request by user %d for '%s'\n",
+	// 		request->uid, request->dentry->d_name.name);
 
 	if (list_empty(&request->request_list))
 		BUG();
@@ -1405,7 +1408,7 @@ send_to_helper(char *buffer, size_t count, struct lazy_user_request *request)
 	int fd;
 	int err = 0;
 
-	printk("Sending '%s' to helper\n", dentry->d_name.name);
+	//printk("Sending '%s' to helper\n", dentry->d_name.name);
 
 	file = get_empty_filp();
 	if (!file)
@@ -1695,13 +1698,18 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 		return err;
 
 	/* Make sure the mapping for our inode points to the host file's */
+	spin_lock(mapping_lock);
+
 	((int) inode->u.generic_ip)++;
 	finfo->n_mappings++;
 	if (inode->i_mapping == &inode->i_data) {
-		igrab(host_inode);
+		if (((int) inode->u.generic_ip) != 1)
+			BUG();
 		inc("mapping");
 		inode->i_mapping = host_inode->i_mapping;
 	}
+
+	spin_unlock(mapping_lock);
 
 	return 0;
 }
@@ -1783,15 +1791,19 @@ lazyfs_file_release(struct inode *inode, struct file *file)
 	}
 
 	if (finfo->n_mappings) {
-		printk("File was mmapped %d times\n", finfo->n_mappings);
+		//printk("File was mmapped %d times\n", finfo->n_mappings);
+
+		spin_lock(mapping_lock);
 
 		((int) inode->u.generic_ip) -= finfo->n_mappings;
 
 		if (((int) inode->u.generic_ip) == 0) {
-			printk("Last mapping gone!\n");
+			//printk("Last mapping gone!\n");
 			inode->i_mapping = &inode->i_data;
 			dec("mapping");
 		}
+
+		spin_unlock(mapping_lock);
 	}
 
 	fput(host_file);

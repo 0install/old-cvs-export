@@ -369,7 +369,7 @@ static void request_ensure_running(Request *request)
 	}
 
 	if (request->state == FETCHING_INDEX) {
-		printf("[ process index ]\n");
+		/* printf("[ process index ]\n"); */
 		if (snprintf(path, sizeof(path),
 			"%s%s/%s/", cache_dir, request->path,
 			first_rq->leaf) > sizeof(path) - 1) {
@@ -436,7 +436,7 @@ static void request_ensure_running(Request *request)
 		fprintf(stderr, "Path too long\n");
 		goto err;
 	}
-	printf("[ check index '%s' ]\n", path);
+	/* printf("[ check index '%s' ]\n", path); */
 	/* Find out what kind of thing it is */
 
 	err = get_item_info(path, first_rq->leaf, uri, sizeof(uri));
@@ -599,7 +599,7 @@ static void request_child_finished(Request *request)
 {
 	request->child_pid = -1;
 
-	printf("[ process completed - continue with request ]\n");
+	/* printf("[ process completed - continue with request ]\n"); */
 	request_ensure_running(request);
 }
 
