@@ -86,10 +86,19 @@ However, you have two further programs to help you interact with the cache:
 <dl>
 
 <dt>ZeroProgress</dt>
-<dd>This program pops up a status box while a download is in progress.
+<dd>
+<p>
+This program pops up a status box while a download is in progress.
 Run it with the command
 <b>/uri/0install/zero-install.sourceforge.net/apps/ZeroProgress/AppRun</b>
-(nothing will appear until a download starts).
+(nothing will appear until a download starts). You can right-click over an
+entry in the list to bring up a menu, which can be used to cancel the
+download.
+</p>
+<p style='text-align: center'>
+<img src='progress.png' width='565' height='235'
+     alt='GUI progress indicator' />
+</p>
 </dd>
 
 <dt>0refresh</dt>
@@ -195,7 +204,7 @@ demand.
 <p>
 If you run low on disk space, you can use
 <a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/619">ZeroClean</a>
-to find and remove old files in the cache:
+to find old files in the cache, and remove them:
 </p>
 
 <p style='text-align: center'>
