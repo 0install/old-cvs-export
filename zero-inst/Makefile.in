@@ -7,7 +7,7 @@ PKG_CONFIG_PATH=${CORE}/lib/pkgconfig
 
 ZERO_OBJECTS := zero-install.o support.o fetch.o control.o
 
-all: lazyfs.o zero-install 0show #${TESTS}
+all: lazyfs.o zero-install 0show 0refresh #${TESTS}
 
 CC	 := @CC@
 CFLAGS   := -O2 -Wall -Wstrict-prototypes -g
@@ -15,7 +15,7 @@ CFLAGS   := -O2 -Wall -Wstrict-prototypes -g
 UMFLAGS := -I${KERNEL}/arch/um/include -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
 
 clean:
-	rm -f *.o hello_glib zero-install
+	rm -f *.o hello_glib zero-install 0show 0refresh
 
 KERNELFLAGS := -I${KERNEL}/include -Wno-trigraphs -fno-strict-aliasing -fno-common -Wall -Wstrict-prototypes -O2 -Wall # ${UMFLAGS}
 MODFLAGS := -DMODULE -D__KERNEL__
