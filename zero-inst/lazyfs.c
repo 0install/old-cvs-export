@@ -46,7 +46,7 @@
 
 #include "lazyfs.h"
 
-static void show_refs(struct dentry *dentry, int indent);
+//static void show_refs(struct dentry *dentry, int indent);
 
 static DECLARE_WAIT_QUEUE_HEAD(lazy_wait);
 
@@ -566,6 +566,7 @@ resume:
 	spin_unlock(&dcache_lock);
 }
 
+#if 0
 static void show_refs(struct dentry *dentry, int indent)
 {
 	struct list_head *next;
@@ -585,6 +586,7 @@ static void show_refs(struct dentry *dentry, int indent)
 		next = next->next;
 	}
 }
+#endif
 
 /* Removes dentry from the tree, and any child nodes too */
 static void remove_dentry(struct dentry *dentry)
@@ -718,7 +720,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 	if (listing != end)
 		BUG();
 
-	show_refs(dir->d_inode->i_sb->s_root, 0);
+	//show_refs(dir->d_inode->i_sb->s_root, 0);
 	
 	return 0;
 
@@ -1004,8 +1006,6 @@ lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
 		/* Find the topmost dir which we haven't written out yet */
 		while (this->d_parent != last)
 			this = this->d_parent;
-
-		printk("Add '%s'\n", this->d_name.name);
 
 		if (count < 1)
 			return -ENAMETOOLONG;

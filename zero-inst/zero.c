@@ -52,9 +52,10 @@ static void child_handle(int fd)
 {
 	struct stat info;
 	int got;
-	char buffer[1024] = "/usr/";
+	char buffer[1024] = "/usr";
+	char *target = buffer + 5;
 
-	got = read(fd, buffer + 5, sizeof(buffer) - 5);
+	got = read(fd, buffer + 4, sizeof(buffer) - 4);
 	if (got <= 0)
 	{
 		perror("read");
@@ -62,7 +63,7 @@ static void child_handle(int fd)
 	}
 	printf("Create '%s'\n", buffer);
 
-	if (stat(buffer, &info))
+	if (lstat(buffer, &info))
 	{
 		perror("stat");
 		return;
@@ -74,11 +75,77 @@ static void child_handle(int fd)
 		return;
 	}
 
-	if (S_ISDIR(info.st_mode))
+	if (S_ISREG(info.st_mode))
 	{
+		if (link(buffer, target))
+			perror("link");
+	}
+	else if (S_ISDIR(info.st_mode))
+	{
+		struct dirent *ent;
+		FILE *ddd;
+		DIR *dir;
+		
 		printf("Making directory\n");
-		sleep(1);
-		mkdir(buffer + 5, 0755);
+		if (*target)
+		{
+			//sleep(1);
+			if (mkdir(target, 0755))
+				perror("mkdir");
+			if (chdir(target))
+			{
+				perror("chdir");
+				return;
+			}
+		}
+
+		ddd = fopen("....", "wb");
+		fprintf(ddd, "LazyFS\n");
+
+		dir = opendir(buffer);
+		if (!dir)
+		{
+			perror("opendir");
+			return;
+		}
+
+		while ((ent = readdir(dir)))
+		{
+			struct stat i;
+			char full[4096];
+			
+			if (*ent->d_name == '.')
+			{
+				if (ent->d_name[1] == '.' && !ent->d_name[2])
+					continue;
+				if (!ent->d_name[2])
+					continue;
+			}
+
+			strcpy(full, buffer);
+			strcat(full, "/");
+			strcat(full, ent->d_name);
+			if (lstat(full, &i))
+			{
+				perror("lstat");
+				printf("[ %s ]\n", full);
+				return;
+			}
+			
+			fprintf(ddd, "%c %ld %ld %s",
+				S_ISDIR(i.st_mode) ? 'd' :
+				S_ISLNK(i.st_mode) ? 'l' :
+				i.st_mode & 0111 ? 'x' : 'f',
+				(long) i.st_size,
+				(long) i.st_mtime,
+				ent->d_name);
+
+			fputc('\0', ddd);
+		}
+		
+		fclose(ddd);
+		if (rename("....", "..."))
+			perror("rename");
 	}
 }
 
@@ -113,6 +180,11 @@ int main(int argc, char **argv)
 		sigemptyset(&act.sa_mask);
 		act.sa_flags = 0;
 		sigaction(SIGINT, &act, NULL);
+
+		act.sa_handler = SIG_IGN;
+		sigemptyset(&act.sa_mask);
+		act.sa_flags = 0;
+		sigaction(SIGCHLD, &act, NULL);
 	}
 	
 	helper = open("/uri/.lazyfs-helper", O_RDONLY);

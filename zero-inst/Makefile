@@ -12,6 +12,6 @@ UMFLAGS  := -I${KERNEL}/include -U__i386__ -Ui386 -DUM_FASTCALL -D__arch_um__ -D
 
 clean:
 	rm lazyfs.o zero
-	
+
 lazyfs.o: lazyfs.c
 	${CC} -c ${CFLAGS} ${UMFLAGS} ${MODFLAGS} -o $@ $<
