@@ -264,7 +264,10 @@ Aug 22 15:35:55 everest zero-install: libdbus 0.20 or 0.21 detected.
 </ul>
 
 <p>
-As with lazyfs, users with python and sudo can run the unit-tests:
+As with lazyfs, users with python and sudo may run the unit-tests now. As the tests check that the
+digital signature stuff works, you'll be prompted to
+<a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/670">create a GPG key
+for a test site</a>.
 </p>
 
 <pre>
