@@ -20,6 +20,7 @@ def unmount():
 		lines.reverse()
 		print ">> dmesg output"
 		print ''.join(lines[-i:])
+		os.system('sudo rmmod lazyfs')
 
 unmount()
 os.system('rm -rf /var/cache/zero-inst/0test')
@@ -60,7 +61,6 @@ class Request:
 
 	def reply(self, message):
 		self.c.send('HTTP/1.0 200 OK\n\n')
-		print "sending!..."
 		self.c.send(tgz_containing('.0inst-index.xml', message))
 		self.close()
 	

@@ -951,7 +951,8 @@ static inline void mark_children_may_delete(struct dentry *dentry)
 /* Problem: We can't delete a subtree if any of the dentries
  * in it are still being used. But, we can't rely on a later dput
  * to remove the subtree either.
- * Try turning every node into a separate tree...
+ * Try turning every node into a separate tree, by unhashing every dentry
+ * and setting their parents to themselves.
  */
 static void my_d_genocide(struct dentry *root)
 {
@@ -972,12 +973,19 @@ resume:
 			this_parent = dentry;
 			goto repeat;
 		}
+		list_del(&dentry->d_hash);	/* Unhash */
+		INIT_LIST_HEAD(&dentry->d_hash);
+
 		atomic_dec(&dentry->d_count);
 		atomic_dec(&dentry->d_parent->d_count);
 		dentry->d_parent = dentry;
 	}
 	if (this_parent != root) {
 		next = this_parent->d_child.next; 
+		
+		list_del(&this_parent->d_hash);	/* Unhash */
+		INIT_LIST_HEAD(&this_parent->d_hash);
+
 		atomic_dec(&this_parent->d_count);
 		this_parent = this_parent->d_parent;
 		goto resume;
@@ -1143,6 +1151,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		existing = d_lookup(dir, &name);
 		if (existing && existing->d_inode) {
 			struct inode *i = existing->d_inode;
+			/* TODO: for directories, just update time/size */
 			if (has_changed(i, mode, size, time, &link_target)) {
 				remove_dentry(existing);
 				new_dentry(sb, dir, name.name,

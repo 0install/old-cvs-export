@@ -1,3 +1,5 @@
+* Fix nasty kernel bug (see 0test).
+
 Changes since 0.1.11:
 
 * The index is now fetches as '.0inst-index.tgz' rathen than as '.xml'.
