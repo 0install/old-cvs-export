@@ -14,7 +14,7 @@
 <h1>The Zero Install system</h1>
 <p class='author'>Thomas Leonard &lt;tal197 at users.sf.net&gt;, 2003</p>
 
-Back to the <a href="index.html">main page</a>.
+<p>Back to the <a href="index.html">main page</a>.</p>
 
 <h2>Comparison with other systems</h2>
 
@@ -28,14 +28,14 @@ Back to the <a href="index.html">main page</a>.
 to /usr/local/apps, or run 'make install' for non application-directory apps).</li>
  <li>Run it. You get an error about needing python 2.2.</li>
  <li>Visit <a href="http://www.python.org">www.python.org</a> and download
-python 2.2.
+python 2.2.</li>
  <li>Extract the archive, enter the root password and install.</li>
- <li>Run Memo again. You need <a href="http://rox.sf.net/rox_lib.php3">ROX-Lib2</a>.
- <li>Download that, extract and install.
+ <li>Run Memo again. You need <a href="http://rox.sf.net/rox_lib.php3">ROX-Lib2</a>.</li>
+ <li>Download that, extract and install.</li>
  <li>Run Memo again. Now you need
-<a href="ftp://ftp.gtk.org/pub/gtk/python/v2.0/">pygtk2</a>.
+<a href="ftp://ftp.gtk.org/pub/gtk/python/v2.0/">pygtk2</a>.</li>
  <li>Download pygtk, extract, enter the root password and install.</li>
- <li>Pygtk2 requires GTK+-2.0.
+ <li>Pygtk2 requires GTK+-2.0.</li>
  <li>Visit <a href="http://www.gtk.org">www.gtk.org</a> and fetch GTK,
 GLib, Pango, pkg-config and AKT. Install all of them.</li>
  <li>Memo will now run.</li>
@@ -52,13 +52,8 @@ GLib, Pango, pkg-config and AKT. Install all of them.</li>
 
 <p class='q'>What about package management systems like APT?</p>
 
-These require a central authority to maintain the database. For example, you
-can't install Memo using the Debian, because they don't package it. The best an
-author can do is provide Debian .deb packages on the site. But then the user
-still has to do the manual dependancy resolution above for everything not in
-Debian's system.
-</p><p>
-Also, a user installing from a .deb, .rpm, etc still has to enter the root
+<p>
+A user installing from a .deb, .rpm, etc still has to enter the root
 password and run a script as root. This is inconvenient and a security risk.
 Zero Install allows uses to run software without root privileges.
 </p>
