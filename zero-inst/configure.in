@@ -45,6 +45,24 @@ AC_ARG_WITH(distcheck,,
 	[ROOT_PREFIX=''])
 AC_SUBST(ROOT_PREFIX)
 
+dnl Specify the location of init.d.
+AC_MSG_CHECKING(for init.d directory)
+AC_ARG_WITH(initdir,
+	[  --with-initdir=dir    give the (init.d) directory for the 0install script]
+	[                        [/etc/init.d]],
+	INITDIR="$withval",
+	INITDIR="/etc/init.d")
+AC_MSG_RESULT($INITDIR)
+AC_SUBST(INITDIR)
+if [[ ! -d "$INITDIR" ]]; then
+  echo
+  echo "Directory $INITDIR not found."
+  echo "Use '--with-initdir=/etc/init.d' or similar to set the location for"
+  echo "the 0install script, which can be used to start and stop the "
+  echo "zero-install helper."
+  exit 1
+fi
+
 dnl Check for directory with kernel source... (from ALSA)
 AC_MSG_CHECKING(for directory with kernel source)
 AC_ARG_WITH(kernel,
@@ -77,7 +95,7 @@ fi
 AC_MSG_RESULT($HELPER_USER)
 AC_SUBST(HELPER_USER)
 
-if [ ! id "$HELPER_USER" > /dev/null ]; then
+if ! id "$HELPER_USER" > /dev/null; then
   echo "User '$HELPER_USER' does exist!"
   exit 1
 fi

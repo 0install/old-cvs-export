@@ -2,7 +2,7 @@ HELPER_USER := @HELPER_USER@
 ROOT_PREFIX = @ROOT_PREFIX@
 FSTAB := /etc/fstab
 myexecbindir := ${ROOT_PREFIX}/bin
-initddir := ${ROOT_PREFIX}/etc/init.d
+initddir := ${ROOT_PREFIX}/@INITDIR@
 
 AUTOMAKE_OPTIONS = foreign
 
