@@ -5,7 +5,7 @@
 
 <p>
 Packagers make software available to others through Zero Install.
-To do this, you will need to be able to upload files to publically-accessible
+To do this, you will need to be able to upload files to a publically-accessible
 web server (eg, apache). The web server doesn't need to do anything special
 (there's no dynamic content, CGI scripts or anything like that); it just needs
 to serve the files you upload.
