@@ -159,8 +159,7 @@ If any of the tests fail or (even more exciting!) your system hangs, please
 <a href="support.html">report it</a>! Reliable crashes in the unit tests
 should be easy to track down and fix. Note that if your kernel crashes, it
 might be better to run the tests from a text console. You're more likely
-to get diagnostics printed there than from within X. See also
-<a href="http://sourceforge.net/tracker/index.php?func=detail&amp;aid=934185&amp;group_id=76468&amp;atid=547191">this bug report</a> (for Arch Linux).
+to get diagnostics printed there than from within X.
 </p>
 
 <h3>Installing Zero Install</h3>
