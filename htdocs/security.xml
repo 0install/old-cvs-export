@@ -47,6 +47,34 @@ been compromised. This only works when upgrading software, not when using it
 for the first time.</li>
 </ul>
 
+<h3>Common security questions mini-FAQ</h3>
+<dl>
+<dt>What's the point in securing the system, when all my data is stored as a
+user?</dt>
+<dd>There are several advantages. If more than one person uses the machine,
+one person can cache/install some software without risking the other users'
+data. If a single person uses the machine, they can still create multiple users
+for themselves ('accounts', 'games', etc) and get similar benefits. It takes
+much more work to restore a root-compromised machine (reinstall everything)
+than a user compromise (backup data files and wipe home directory). You
+also don't need to redownload all your software, since the Zero Install cache
+can't be modified by a user compromise.</dd>
+<dt>But isn't this a step backwards from Java sandboxes, etc?</dt>
+<dd>If your application is written in Java or can otherwise be easily
+sandboxed then you should use that sandbox whether you also use Zero Install
+or not (Zero Install still lets you share code between users, etc). For other
+applications (the majority) Zero Install is an improvement.</dd>
+<dt>What if one user causes a virus to be cached? It could infect everyone!</dt>
+<dd>Simply having a virus in the cache isn't dangerous; other users must
+explicitly run it, just as if it wasn't cached.</dd>
+<dt>Doesn't this make it easier for users to run dodgy software?</dt>
+<dd>In so far as it makes installing everything easier, then yes that might
+include undesirable programs. However, there's nothing a user can do with Zero
+Install that they couldn't do without it; Zero Install just makes it more
+efficient. Trojans and virus don't normally have difficult installers anyway
+;-)</dd>
+</dl>
+
 <h2>Security on Unix-type systems</h2>
 
 <p>
