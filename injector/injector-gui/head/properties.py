@@ -3,7 +3,7 @@ import gtk
 
 import help_box
 from dialog import Dialog
-from policy import policy
+from gui import policy
 from impl_list import ImplementationList
 import writer
 
@@ -39,9 +39,7 @@ class Properties(Dialog):
 			if resp == gtk.RESPONSE_CANCEL:
 				self.destroy()
 			elif resp == 1:
-				import reader
-				reader.update_from_network(interface)
-				policy.recalculate()
+				policy.begin_iface_download(interface, True)
 			elif resp == gtk.RESPONSE_HELP:
 				properties_help.display()
 		self.connect('response', response)

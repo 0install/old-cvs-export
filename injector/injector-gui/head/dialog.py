@@ -1,9 +1,5 @@
 import gtk
 
-gtk.rc_parse_string('style "scrolled" { '
-		    'GtkScrolledWindow::scrollbar-spacing = 0}\n'
-		    'class "GtkScrolledWindow" style : gtk "scrolled"\n')
-
 n_windows = 0
 
 class Dialog(gtk.Dialog):
@@ -21,3 +17,11 @@ class Dialog(gtk.Dialog):
 		self.connect('destroy', destroyed)
 
 		n_windows += 1
+
+def alert(parent, message):
+	box = gtk.MessageDialog(parent, gtk.DIALOG_DESTROY_WITH_PARENT,
+				gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+				message)
+	box.set_position(gtk.WIN_POS_CENTER)
+	box.connect('response', lambda b, r: box.destroy())
+	box.show()
