@@ -199,12 +199,12 @@ Hello World from glib!
 </pre>
 
 <p>
-You can open the <a href="http://rox.sf.net/rox_filer.php3">ROX-Filer</a>
+You can open the <a href="http://rox.sf.net/rox_filer.html">ROX-Filer</a>
 window shown on the main page using this command:
 </p>
 
 <pre>
-$ <b>rox /uri/0install/zero-install.sourceforge.net/demo</b>
+$ <b>rox /uri/0install/rox.sourceforge.net/apps</b>
 </pre>
 
 <p>
@@ -224,8 +224,9 @@ Release Date: 27 February 2003
 <p>
 Lots more software, including Mozilla, Python, Acrobat reader, pkg-config,
 GTK, Java and NEdit, can be found in the directory
-<tt>/uri/0install/www-i1.informatik.rwth-aachen.de</tt>. Some ROX applications
-can be found in <tt>/uri/0install/rox.sourceforge.net/</tt>.
+<tt>/uri/0install/www-i1.informatik.rwth-aachen.de</tt>. Some example
+applications can be found in
+<tt>/uri/0install/zero-install.sourceforge.net/demo</tt>.
 </p>
 
 <h2>Further reading</h2>
