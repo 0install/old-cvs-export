@@ -1,0 +1,66 @@
+ifneq ($(KERNELRELEASE),)
+	# We're building for Linux 2.6 from kconfig
+	EXTRA_CFLAGS  += -I${SUBDIRS}/@srcdir@
+	obj-m	:= lazyfs@COMMA_VERSION@.o
+else
+
+.SUFFIXES:
+
+KERNEL := @KERNELDIR@
+KERNEL_TYPE := @KERNEL_TYPE@
+prefix = @prefix@
+srcdir = @srcdir@
+VPATH = @srcdir@
+ROOT_PREFIX = @ROOT_PREFIX@
+MODULEDIR = $(ROOT_PREFIX)/lib/modules/`uname -r`/kernel/fs/lazyfs
+
+ifeq ($(KERNEL_TYPE), Linux_2_6)
+KOBJECT = ko
+else
+KOBJECT = o
+endif
+
+all: lazyfs@COMMA_VERSION@.$(KOBJECT)
+
+CC	 := @CC@
+CFLAGS   := -O2 -Wall -Wstrict-prototypes -g -I$(srcdir)
+
+UMFLAGS := -I${KERNEL}/arch/um/include -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
+
+clean:
+	rm -f lazyfs*.o lazyfs@COMMA_VERSION@.c .lazy* *.mod.c *.ko
+
+# -Werror causes problems on some builds (unsigned int problems in headers)
+KERNELFLAGS := -I${KERNEL}/include -Wno-trigraphs -fno-strict-aliasing -fno-common -Wall -Wstrict-prototypes -O2 -Wall # ${UMFLAGS} -Werror
+MODFLAGS := -DMODULE -D__KERNEL__
+
+install: lazyfs@COMMA_VERSION@.$(KOBJECT)
+	mkdir -p ${MODULEDIR}
+	[ -n "${ROOT_PREFIX}" ] || ${MAKE} real-install
+
+real-install:
+	cp lazyfs@COMMA_VERSION@.$(KOBJECT) ${MODULEDIR}/
+	depmod -a
+	echo Stopping existing daemon...
+	/etc/init.d/0install stop || echo '(not already running)'
+	[ ! -L /uri/0install/.lazyfs-cache ] || umount -l /uri/0install
+	lsmod | grep '^lazyfs' | awk '{print $$1}' | xargs rmmod || echo "*** Old LazyFS module is still in use. You should remove it later."
+
+uninstall:
+	rm -f ${MODULEDIR}/lazyfs*.o
+
+lazyfs@COMMA_VERSION@.c: lazyfs.c
+	rm -f lazyfs@COMMA_VERSION@.c
+	ln $(srcdir)/lazyfs.c lazyfs@COMMA_VERSION@.c
+
+lazyfs@COMMA_VERSION@.o: lazyfs@COMMA_VERSION@.c
+	${CC} -I. -I$(srcdir) -c ${KERNELFLAGS} ${MODFLAGS} -o "$@" "$<"
+
+lazyfs@COMMA_VERSION@.ko: lazyfs@COMMA_VERSION@.c
+	$(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules
+
+distclean: clean
+
+distdir dvi check installcheck:
+
+endif
