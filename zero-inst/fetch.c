@@ -409,9 +409,7 @@ static Index *unpack_site_index(const char *site)
 
 	if (system("tar xzf index.tgz keyring.pub mirrors.xml index.xml.sig")) {
 		error("Failed to extract GPG signature/keyring/mirrors!");
-		error("XXX I should refuse this, but need to "
-				"cope with old archives for a bit...");
-		//XXX: goto out;
+		goto out;
 	} else if (gpg_trusted(site) != 1)
 		goto out;
 
