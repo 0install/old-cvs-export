@@ -89,7 +89,7 @@ sleep and a request sent to the helper in the form of a file handle.
 The pipe is given the same owner as the cache directory, so there is no
 need for the helper to run as root.
 
-The request is a number (ASCII) followed by "uid=%d\n". You have to read the
+The request is a number (ASCII) followed by " uid=%d\n". You have to read the
 whole line in a single read() operation (and you'll only get one per
 read). The number is a file handle which lazyfs has opened for you.
 The UID is the id of the process requesting the file. Reading from the file
@@ -99,8 +99,8 @@ with give you the pathname of the file to create relative to the mount point (/
 When the handle is closed, the requesting process wakes up (hopefully to
 find that the missing file has appeared). If more processes request the
 file, they will also be put to sleep until the request is handled. New
-requests for each different user accessing the same file. This is so that
-the helper can provide information to each user about what requests are
+requests will be sent for each different user accessing the same file. This is
+so that the helper can provide information to each user about what requests are
 currently in progress for that user, and allows requests to be cancelled on
 a per-user basis.
 
