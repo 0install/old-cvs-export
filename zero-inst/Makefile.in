@@ -1,7 +1,7 @@
 KERNEL := @KERNELDIR@
 MODULEDIR := /lib/modules/`uname -r`/kernel/fs/lazyfs
 
-all: lazyfs.o zero
+all: lazyfs.o
 
 CC=gcc
 CFLAGS   := -O2 -Wall -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -g
