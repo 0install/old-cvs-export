@@ -8,9 +8,8 @@
 
 <h3>How do I provide software using Zero Install?</h3>
 <p>You need to create some index files using the 0build script, and then
-upload them to a web server. See <a href="docs.html">the documentation page</a>
-for details. There is also a tutorial in this
-<a href="http://freshmeat.net/articles/view/1049/">freshmeat editorial</a>.
+upload them to a web server. See <i><a href="packagers.html">Documentation
+for packagers</a></i> for more information.
 </p>
 
 <h3>Isn't fetching stuff over the web really slow?</h3>
