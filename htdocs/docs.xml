@@ -125,6 +125,7 @@ you try to access them.
 
 <ul>
   <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/623">DBus.error.Disconnected: Disconnected before receiving a reply</a></li>
+  <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/740">assertion failed "!_dbus_transport_get_is_connected"</a> (0refresh works; the error is harmless)</li>
 </ul>
 
 <!--
