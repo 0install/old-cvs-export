@@ -57,7 +57,7 @@
 #include "zero-install.h"
 #include "task.h"
 
-int verbose = 0;
+int verbose = 0; /* (debug) */
 
 /* When we need to use an index file, if it was created in the last hour
  * then don't bother to fetch it again. Otherwise, the overhead
@@ -85,19 +85,18 @@ static int open_helper(void)
 	if (helper == -1) {
 		int error = errno;
 
-		perror("Error opening " MNT_DIR "/.lazyfs-helper");
+		error("Error opening " MNT_DIR "/.lazyfs-helper: %m");
 
 		if (error == EACCES)
-			fprintf(stderr, "\nEnsure that %s is owned \n"
-					"by the user that runs %s before "
-					MNT_DIR " is mounted.\n",
+			error("Ensure that %s is owned "
+				"by the user that runs %s before "
+				MNT_DIR " is mounted.",
 					cache_dir, prog);
 		else if (error == EBUSY)
-			fprintf(stderr, "\nEnsure that zero-install is not "
-					"already running.\n");
+			error("Ensure that zero-install is not "
+					"already running.");
 		else
-			fprintf(stderr,
-				"\nEnsure that " MNT_DIR " is mounted.\n");
+			error("Ensure that " MNT_DIR " is mounted.");
 
 		exit(EXIT_FAILURE);
 	}
@@ -123,7 +122,7 @@ static void handle_root_request(int request_fd)
 		goto err;
 	goto out;
 err:
-	perror("handle_root_request: Unable to write ... file");
+	error("handle_root_request: Unable to write ... file: %m");
 out:
 	close(request_fd);
 	chdir("/");
@@ -156,7 +155,7 @@ static void kernel_got_index(Task *task)
 		item = index_get_root(task->index);
 	if (!item) {
 		/* TODO: rebuild index files? */
-		printf("%s not found in index!\n", task->str);
+		error("%s not found in index!", task->str);
 		close(task->fd);
 		task_destroy(task, 0);
 		return;
@@ -263,32 +262,28 @@ static void read_from_helper(int helper)
 
 	len = read(helper, buffer, sizeof(buffer));
 	if (len == 0) {
-		fprintf(stderr, "lazyfs closed connection!");
+		error("lazyfs closed connection!");
 		exit(EXIT_FAILURE);
 	}
 
 	if (len < 0) {
-		perror("Error reading from request pipe");
+		error("Error reading from request pipe: %m");
 		exit(EXIT_FAILURE);
 	}
 
 	if (len < 2 || buffer[len - 1] != '\0' || buffer[0] == '\0') {
-		fprintf(stderr, "Internal error: bad request FD\n");
+		error("Internal error: bad request FD");
 		exit(EXIT_FAILURE);
 	}
 
 	request_fd = strtol(buffer, &end, 10);
 	if (strncmp(end, " uid=", 5) != 0 || !end[5]) {
-		fprintf(stderr,
-				"Internal error: bad request FD '%s'\n",
-				buffer);
+		error("Internal error: bad request FD '%s'", buffer);
 		exit(EXIT_FAILURE);
 	}
 	uid = strtol(end + 5, &end, 10);
 	if (*end != '\0') {
-		fprintf(stderr,
-				"Internal error: bad request FD '%s'\n",
-				buffer);
+		error("Internal error: bad request FD '%s'", buffer);
 		exit(EXIT_FAILURE);
 	}
 
@@ -305,12 +300,12 @@ static void read_from_helper(int helper)
 	}
 
 	if (len < 0) {
-		perror("read from request FD");
+		error("read from request FD: %m");
 		exit(EXIT_FAILURE);
 	}
 
 	if (len < 2 || buffer[len - 1] != '\0' || buffer[0] != '/') {
-		fprintf(stderr, "Internal error: bad request\n");
+		error("Internal error: bad request");
 		exit(EXIT_FAILURE);
 	}
 
@@ -323,7 +318,7 @@ static void read_from_wakeup(int wakeup)
 	int status;
 
 	if (read(wakeup, buffer, sizeof(buffer)) < 0) {
-		perror("read_from_wakeup");
+		error("read_from_wakeup: %m");
 		exit(EXIT_FAILURE);
 	}
 
@@ -341,8 +336,7 @@ static void read_from_wakeup(int wakeup)
 	}
 }
 
-/* Returns the pathname of the created file. On error, doesn't return. */
-static char *create_pid_file(void)
+static void create_pid_file(pid_t child)
 {
 	char *pid_file = NULL;
 	FILE *file;
@@ -355,16 +349,16 @@ static char *create_pid_file(void)
 	if (!file)
 		goto err;
 
-	fprintf(file, "%ld\n", (long) getpid());
+	fprintf(file, "%ld\n", (long) child);
 	if (fclose(file))
 		goto err;
 
-	return pid_file;
+	return;
 err:
 	if (pid_file)
 		free(pid_file);
-	perror("Creating PID file");
-	fprintf(stderr, "Unable to create zero-install.pid file!\n");
+	error("Creating PID file: %m "
+		"(unable to create zero-install.pid file!)");
 	exit(EXIT_FAILURE);
 }
 
@@ -378,10 +372,12 @@ int main(int argc, char **argv)
 	int control_socket;
 	int max_fd;
 	char *pid_file;
+	
+	openlog("zero-install", 0, LOG_DAEMON);
 
 	index_init();
 
-	if (argv[1] && strcmp(argv[1], "--verbose") == 0)
+	if (argv[1] && strcmp(argv[1], "--debug") == 0)
 		verbose = 1;
 
 	umask(0022);
@@ -390,18 +386,17 @@ int main(int argc, char **argv)
 
 	cache_dir_len = readlink(CACHE_LINK, cache_dir, sizeof(cache_dir));
 	if (cache_dir_len == -1) {
-		perror("readlink(" CACHE_LINK ")");
-		fprintf(stderr, "\nCan't find location of cache directory.\n"
-			"Make sure " MNT_DIR " is mounted and that you are \n"
-			"running the latest version of the lazyfs kernel \n"
-			"module.\n");
+		error("readlink(" CACHE_LINK "): %m");
+		error("Can't find location of cache directory."
+			"Make sure " MNT_DIR " is mounted and that you are "
+			"running the latest version of the lazyfs kernel "
+			"module.");
 		return EXIT_FAILURE;
 	}
 	assert(cache_dir_len >= 1 && cache_dir_len < sizeof(cache_dir));
 	cache_dir[cache_dir_len] = '\0';
-	if (verbose)
-		printf("Zero Install started: using cache directory '%s'\n",
-				cache_dir);
+
+	syslog(LOG_INFO, "Started: using cache directory '%s'", cache_dir);
 
 	if (0) {
 		printf("Literal: %s\n", build_string("Hello world"));
@@ -434,7 +429,7 @@ int main(int argc, char **argv)
 	 * deal with the event next time we're idle.
 	 */
 	if (pipe(wakeup_pipe)) {
-		perror("pipe");
+		error("pipe: %m");
 		return EXIT_FAILURE;
 	}
 	to_wakeup_pipe = wakeup_pipe[1];
@@ -463,7 +458,37 @@ int main(int argc, char **argv)
 	if (control_socket > max_fd)
 		max_fd = control_socket;
 
-	pid_file = create_pid_file();
+	if (!verbose) {
+		/* Daemon mode if we're not debugging... */
+		pid_t child;
+		int null;
+
+		child = fork();
+		if (child == -1) {
+			error("fork: %m");
+			exit(EXIT_FAILURE);
+		} else if (child) {
+			waitpid(child, NULL, 0);
+			_exit(0);
+		}
+		if (setsid() == -1)
+			error("setsid: %m");
+		child = fork();
+		if (child == -1) {
+			error("fork: %m");
+			exit(EXIT_FAILURE);
+		} else if (child) {
+			create_pid_file(child);
+			_exit(0);
+		}
+		if (chdir("/"))
+			error("chdir: %m");
+		null = open("/dev/null", O_RDWR);
+		dup2(null, 0);
+		dup2(null, 1);
+		dup2(null, 2);
+		close(null);
+	}
 
 	while (!finished) {
 		fd_set rfds, wfds;
@@ -483,7 +508,7 @@ int main(int argc, char **argv)
 		if (select(n, &rfds, &wfds, NULL, NULL) == -1) {
 			if (errno == EINTR)
 				continue;
-			perror("select");
+			error("select: %m");
 			exit(EXIT_FAILURE);
 		}
 
@@ -500,14 +525,18 @@ int main(int argc, char **argv)
 	}
 
 	/* Doing a clean shutdown is mainly for valgrind's benefit */
-	printf("%s: Got SIGINT... terminating...\n", prog);
+	syslog(LOG_WARNING, "Got SIGINT. Terminating.");
 
 	control_drop_clients();
 
+	pid_file = build_string("%s/.0inst-pid", cache_dir);
 	if (unlink(pid_file))
-		perror("unlink pid file");
+		error("unlink pid file: %m");
+	free(pid_file);
 
 	close(helper);
+
+	closelog();
 
 	return EXIT_SUCCESS;
 }

@@ -133,10 +133,9 @@ static void refresh(const char *site, int force)
 		exit(EXIT_FAILURE);
 	}
 	if (connect(control, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
-		perror("connect");
 		fprintf(stderr,
 			"Can't connect to Zero Install helper application.\n"
-			"Is it running?\n");
+			"%m\nIs it running?\n");
 		exit(EXIT_FAILURE);
 	}
 

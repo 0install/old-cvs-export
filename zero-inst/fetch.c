@@ -34,7 +34,7 @@ void fetch_create_directory(const char *path, xmlNode *node)
 
 	if (snprintf(cache_path, sizeof(cache_path), "%s%s", cache_dir,
 	    path) > sizeof(cache_path) - 1) {
-		fprintf(stderr, "Path too long\n");
+		error("Path too long");
 		return;
 	}
 
@@ -56,7 +56,7 @@ static void recurse_ddd(xmlNode *item, void *data)
 	assert(strchr(name, '/') == NULL);
 
 	if (len + strlen(name) + 2 >= MAX_PATH_LEN) {
-		fprintf(stderr, "Path %s/%s too long\n", path, name);
+		error("Path %s/%s too long", path, name);
 		return;
 	}
 
@@ -138,7 +138,7 @@ static void build_ddd_from_index(xmlNode *dir_node, char *dir)
 	index_foreach(dir_node, recurse_ddd, dir);
 	return;
 err:
-	perror("build_ddd_from_index");
+	error("build_ddd_from_index: %m");
 }
 
 /* Called with cwd in directory where files have been extracted.
@@ -151,7 +151,7 @@ static void pull_up_files(xmlNode *group)
 	xmlChar *leaf = NULL;
 
 	if (verbose)
-		printf("\t(unpacked OK)\n");
+		syslog(LOG_DEBUG, "(unpacked OK)");
 
 	for (item = group->children; item; item = item->next) {
 		char up[MAX_PATH_LEN] = "../";
@@ -178,36 +178,34 @@ static void pull_up_files(xmlNode *group)
 		xmlFree(mtime_s);
 
 		if (lstat(leaf, &info)) {
-			perror("lstat");
-			fprintf(stderr, "'%s' missing from archive\n", leaf);
+			error("lstat: %m ('%s' missing from archive)", leaf);
 			goto out;
 		}
 
 		if (!S_ISREG(info.st_mode)) {
-			fprintf(stderr, "'%s' is not a regular file!\n", leaf);
+			error("'%s' is not a regular file!", leaf);
 			goto out;
 		}
 
 		if (info.st_size != size) {
-			fprintf(stderr, "'%s' has wrong size!\n", leaf);
+			error("'%s' has wrong size!", leaf);
 			goto out;
 		}
 
 		if (info.st_mtime != mtime) {
-			fprintf(stderr, "'%s' has wrong mtime!\n", leaf);
+			error("'%s' has wrong mtime!", leaf);
 			goto out;
 		}
 
 		if (strlen(leaf) > sizeof(up) - 4) {
-			fprintf(stderr, "'%s' way too long\n", leaf);
+			error("'%s' way too long", leaf);
 			goto out;
 		}
 		strcpy(up + 3, leaf);
 		if (rename(leaf, up)) {
-			perror("rename");
+			error("rename: %m");
 			goto out;
 		}
-		/* printf("\t(extracted '%s')\n", leaf); */
 		xmlFree(leaf);
 		leaf = NULL;
 	}
@@ -231,16 +229,16 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	xmlNode *group = archive->parent;
 	
 	if (verbose)
-		printf("\t(unpacking %s)\n", archive_path);
+		syslog(LOG_DEBUG, "(unpacking %s)", archive_path);
 	argv[2] = archive_path;
 
 	if (chdir(archive_dir)) {
-		perror("chdir");
+		error("chdir: %m");
 		return;
 	}
 
 	if (lstat(archive_path, &info)) {
-		perror("lstat");
+		error("lstat: %m");
 		return;
 	}
 
@@ -248,7 +246,7 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 
 	if (info.st_size != atol(size)) {
 		xmlFree(size);
-		fprintf(stderr, "Downloaded archive has wrong size!\n");
+		error("Downloaded archive has wrong size!");
 		return;
 	}
 	xmlFree(size);
@@ -256,35 +254,35 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	md5 = xmlGetNsProp(group, "MD5sum", NULL);
 	if (!check_md5(archive_path, md5)) {
 		xmlFree(md5);
-		fprintf(stderr, "Downloaded archive has wrong MD5 checksum!\n");
+		error("Downloaded archive has wrong MD5 checksum!");
 		return;
 	}
 	xmlFree(md5);
 	
 	if (access(".0inst-tmp", F_OK) == 0) {
-		fprintf(stderr, "Removing old .0inst-tmp directory\n");
+		/* error("Removing old .0inst-tmp directory"); */
 		system("rm -r .0inst-tmp");
 	}
 
 	if (mkdir(".0inst-tmp", 0700)) {
-		perror("mkdir");
+		error("mkdir: %m");
 		return;
 	}
 	
 	if (chdir(".0inst-tmp")) {
-		perror("chdir");
+		error("chdir: %m");
 		return;
 	}
 
 	child = fork();
 	if (child == -1) {
-		perror("fork");
+		error("fork: %m");
 		return;
 	}
 
 	if (child == 0) {
 		execvp(argv[0], (char **) argv);
-		perror("Trying to run tar: execvp");
+		error("Trying to run tar: execvp: %m");
 		_exit(1);
 	}
 
@@ -294,7 +292,7 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	}
 
 	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
-		printf("\t(error unpacking archive)\n");
+		error("Error unpacking archive");
 	} else {
 		pull_up_files(group);
 	}
@@ -314,7 +312,7 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
 
-	printf("Fetching '%s'\n", uri);
+	syslog(LOG_INFO, "Fetching '%s'", uri);
 
 	assert(task->child_pid == -1);
 
@@ -333,14 +331,14 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 
 	task->child_pid = fork();
 	if (task->child_pid == -1) {
-		perror("fork");
+		error("fork: %m");
 		goto err;
 	} else if (task->child_pid)
 		return;
 
 	execvp(argv[0], (char **) argv);
 
-	perror("Trying to run wget: execvp");
+	error("Trying to run wget: execvp: %m");
 	_exit(1);
 err:
 	task_set_string(task, NULL);
@@ -357,7 +355,7 @@ static void got_archive(Task *task, int success)
 			free(dir);
 		}
 	} else {
-		fprintf(stderr, "Failed to fetch archive\n");
+		error("Failed to fetch archive (%s)", task->str);
 	}
 
 	unlink(task->str);
@@ -380,7 +378,7 @@ int build_ddds_for_site(Index *index, const char *site)
 		return 0;
 
 	if (strlen(dir) + 1 >= MAX_PATH_LEN) {
-		fprintf(stderr, "Path %s too long\n", dir);
+		error("Path %s too long", dir);
 		free(dir);
 		return 0;
 	}
@@ -412,28 +410,28 @@ static Index *unpack_site_index(const char *site)
 			goto out;
 
 		if (chdir(meta)) {
-			perror("chdir");
+			error("chdir: %m");
 			free(meta);
 			goto out;
 		}
 		
 #if 0
 		if (chmod(".", 0700))
-			perror("chmod");	/* Quiet GPG */
+			error("chmod: %m");	/* Quiet GPG */
 #endif
 
 		free(meta);
 	}
 
 	if (system("tar xzf index.tgz -O .0inst-index.xml >index.new")) {
-		fprintf(stderr, "Failed to extract index file\n");
+		error("Failed to extract index file");
 		goto out;
 	}
 
 	if (system("tar xzf index.tgz keyring.pub index.xml.sig")) {
-		fprintf(stderr, "Failed to extract GPG signature/keyring!\n");
-		fprintf(stderr, "XXX I should refuse this, but need to "
-				"cope with old archives for a bit...\n");
+		error("Failed to extract GPG signature/keyring!");
+		error("XXX I should refuse this, but need to "
+				"cope with old archives for a bit...");
 		//XXX: goto out;
 	} else if (gpg_trusted(site) != 1)
 		goto out;
@@ -441,14 +439,14 @@ static Index *unpack_site_index(const char *site)
 	index = parse_index("index.new", 1, site);
 	if (!index) {
 		if (unlink("index.new"))
-			perror("unlink");
+			error("unlink: %m");
 		goto out;
 	}
 
 	assert(index);
 
 	if (rename("index.new", "index.xml")) {
-		perror("rename");
+		error("rename: %m");
 		index_free(index);
 		index = NULL;
 		goto out;
@@ -470,7 +468,7 @@ static void got_site_index(Task *task, int success)
 	assert(task->child_pid == -1);
 
 	if (!success)
-		fprintf(stderr, "Failed to fetch archive\n");
+		error("Failed to fetch archive");
 	else {
 		char *site = NULL;
 
@@ -503,7 +501,7 @@ static Task *fetch_site_index(const char *path, int use_cache)
 
 	for (task = all_tasks; task; task = task->next) {
 		if (task->type == TASK_INDEX && strcmp(task->str, tgz) == 0) {
-			fprintf(stderr, "Merging with task %d\n", task->n);
+			syslog(LOG_INFO, "Merging with task %d", task->n);
 			goto out;
 		}
 	}
@@ -654,7 +652,7 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	for (task = all_tasks; task; task = task->next) {
 		if (task->type == TASK_ARCHIVE &&
 				strcmp(task->str, tgz) == 0) {
-			fprintf(stderr, "Merging with task %d\n", task->n);
+			syslog(LOG_INFO, "Merging with task %d", task->n);
 			goto out;
 		}
 	}

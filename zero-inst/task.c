@@ -50,7 +50,7 @@ Task *task_new(TaskType type)
 	all_tasks = task;
 
 	if (verbose) {
-		printf("Created task %d (%s)\n", task->n,
+		syslog(LOG_DEBUG, "Created task %d (%s)", task->n,
 				type == TASK_KERNEL ? "kernel" :
 				type == TASK_CLIENT ? "client" :
 				type == TASK_INDEX ? "index" :
@@ -69,7 +69,7 @@ void task_destroy(Task *task, int success)
 	Task *t;
 
 	if (verbose)
-		printf("Finished task %d\n", task->n);
+		syslog(LOG_DEBUG, "Finished task %d", task->n);
 
 	if (all_tasks == task) {
 		all_tasks = task->next;
@@ -89,7 +89,8 @@ void task_destroy(Task *task, int success)
 	while (t) {
 		if (t->child_task == task) {
 			if (verbose)
-				printf("Move forward with task %d\n", t->n);
+				syslog(LOG_DEBUG,
+					"Move forward with task %d", t->n);
 			t->child_task = NULL;
 			assert(t->step);
 			t->step(t, success);
@@ -111,7 +112,8 @@ void task_process_done(pid_t pid, int success)
 	for (t = all_tasks; t; t = t->next) {
 		if (t->child_pid == pid) {
 			if (verbose)
-				printf("Move forward with task %d\n", t->n);
+				syslog(LOG_DEBUG,
+					"Move forward with task %d", t->n);
 			t->child_pid = -1;
 			t->step(t, success);
 			return;
@@ -119,7 +121,7 @@ void task_process_done(pid_t pid, int success)
 	}
 
 	if (verbose)
-		printf("No task for process %ld!\n", (long) pid);
+		syslog(LOG_DEBUG, "No task for process %ld!\n", (long) pid);
 }
 
 /* Stores a copy of 'str' in task->str (freeing any existing one).

@@ -49,7 +49,7 @@ int create_control_socket(void)
 	addr.sun_family = AF_UNIX;
 	if (snprintf(addr.sun_path, sizeof(addr.sun_path),
 		     "%s/control", cache_dir) >= sizeof(addr.sun_path)) {
-		fprintf(stderr, "Control socket path too long!\n");
+		error("Control socket path too long!");
 		exit(EXIT_FAILURE);
 	}
 
@@ -61,25 +61,23 @@ int create_control_socket(void)
 
 	control = socket(PF_UNIX, SOCK_STREAM, PF_UNIX);
 	if (control == -1) {
-		perror("Failed to create control socket");
+		error("Failed to create control socket: %m");
 		exit(EXIT_FAILURE);
 	}
 
 	unlink(addr.sun_path);
 	if (bind(control, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
-		perror("Failed to bind control socket");
-		fprintf(stderr, "(trying to create socket %s)\n",
-				addr.sun_path);
+		error("Failed to bind control socket: %m "
+			"(trying to create socket %s)", addr.sun_path);
 		exit(EXIT_FAILURE);
 	}
 	if (chmod(addr.sun_path, 0777)) {
-		perror("chmod");
-		fprintf(stderr, "(trying to give access to socket %s)\n",
+		error("chmod: %m, (trying to give access to socket %s)",
 				addr.sun_path);
 	}
 
 	if (listen(control, 5) == -1) {
-		perror("Failed to listen on control socket");
+		error("Failed to listen on control socket: %m");
 		exit(EXIT_FAILURE);
 	}
 
@@ -144,7 +142,7 @@ static void client_push_update(Client *client)
 
 	buf += sprintf(buf, "END") + 1;	/* (includes \0) */
 	if (buf - client->to_send != len) {
-		fprintf(stderr, "client_push_update: Internal error (%d,%d)\n",
+		error("client_push_update: Internal error (%d,%d)",
 				buf - client->to_send, len);
 		exit(EXIT_FAILURE);
 	}
@@ -162,7 +160,7 @@ void read_from_control(int control)
 
 	fd = accept(control, NULL, 0);
 	if (fd == -1) {
-		perror("Error accepting control connection");
+		error("Error accepting control connection: %m");
 		return;
 	}
 
@@ -172,8 +170,7 @@ void read_from_control(int control)
 		return;
 	}
 
-	if (verbose)
-		printf("New client %d\n", fd);
+	syslog(LOG_INFO, "New client %d", fd);
 
 	client->socket = fd;
 	client->monitor = 0;
@@ -188,7 +185,7 @@ void read_from_control(int control)
 	clients = client;
 
 	if (setsockopt(fd, SOL_SOCKET, SO_PASSCRED, &one, sizeof(one))) {
-		perror("Can't set socket to get credentials");
+		error("Can't set socket to get credentials: %m");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -211,14 +208,11 @@ int control_add_select(int n, fd_set *rfds, fd_set *wfds)
 static void client_free(Client *client)
 {
 	if (verbose)
-		printf("Lost client %d\n", client->socket);
+		syslog(LOG_INFO, "Lost client %d", client->socket);
 	close(client->socket);
 	client->next = NULL;
-	if (client->to_send) {
-		if (verbose)
-			printf("(discarding buffered messages)\n");
+	if (client->to_send)
 		free(client->to_send);
-	}
 
 	if (client->task)
 		task_destroy(client->task, 0);
@@ -305,7 +299,7 @@ static void client_do_command(Client *client, const char *command)
 	} else if (strncmp(command, "REBUILD ", 8) == 0) {
 		client_refresh(client, command + 8, 0);
 	} else {
-		fprintf(stderr, "Unknown command '%s' from client %d\n",
+		error("Unknown command '%s' from client %d",
 				command, client->socket);
 		client_send_reply(client, "Bad command");
 		client->terminate = 1;
@@ -355,22 +349,20 @@ static int read_from_client(Client *client)
 		msg.msg_controllen = sizeof(buffer);
 		msg.msg_flags = 0;
 		if (recvmsg(client->socket, &msg, 0) != 1) {
-			fprintf(stderr,
-				"Failed to get credentials from client\n");
+			error("Failed to get credentials from client");
 			return -1;
 		}
 
 		cmsg = CMSG_FIRSTHDR(&msg);
 		if (!cmsg) {
-			fprintf(stderr, "No control message attached "
-				"to client greeting\n");
+			error("No control message attached "
+				"to client greeting");
 			return -1;
 		}
 
 		if (cmsg->cmsg_level != SOL_SOCKET ||
 		    cmsg->cmsg_type != SCM_CREDENTIALS) {
-			fprintf(stderr,
-				"Control message not SCM_CREDENTIALS\n");
+			error("Control message not SCM_CREDENTIALS");
 			return -1;
 		}
 
@@ -381,7 +373,8 @@ static int read_from_client(Client *client)
 		client->task->data = client;
 		client->task->step = client_step;
 
-		printf("New client for user %ld\n", (long) client->task->uid);
+		syslog(LOG_INFO, "New client for user %ld",
+				(long) client->task->uid);
 
 		return 0;
 	}
@@ -389,7 +382,7 @@ static int read_from_client(Client *client)
 	current_len = strlen(client->command);
 
 	if (current_len >= sizeof(client->command) - 1) {
-		fprintf(stderr, "Command too long from %d\n", client->socket);
+		error("Command too long from %d", client->socket);
 		return -1;
 	}
 
@@ -397,9 +390,9 @@ static int read_from_client(Client *client)
 			sizeof(client->command) - 1 - current_len);
 	if (got <= 0) {
 		if (got < 0)
-			perror("Reading from client");
+			error("Reading from client: %m");
 		else if (verbose)
-			printf("Client closed connection\n");
+			syslog(LOG_INFO, "Client closed connection");
 		return -1;
 	}
 
@@ -419,7 +412,7 @@ static int write_to_client(Client *client)
 	char *data = client->to_send + client->send_offset;
 
 	if (!client->to_send) {
-		fprintf(stderr, "write_to_client: Internal error\n");
+		error("write_to_client: Internal error");
 		return -1;
 	}
 

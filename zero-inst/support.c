@@ -18,7 +18,7 @@ void *my_malloc(size_t size)
 
 	new = malloc(size);
 	if (!new) {
-		fprintf(stderr, "zero-install: Out of memory");
+		error("zero-install: Out of memory");
 		return NULL;
 	}
 
@@ -31,7 +31,7 @@ void *my_realloc(void *old, size_t size)
 
 	new = realloc(old, size);
 	if (!new) {
-		fprintf(stderr, "zero-install: Out of memory");
+		error("zero-install: Out of memory");
 		return NULL;
 	}
 
@@ -55,7 +55,7 @@ char *my_strdup(const char *str)
 void set_blocking(int fd, int blocking)
 {
 	if (fcntl(fd, F_SETFL, blocking ? 0 : O_NONBLOCK))
-		perror("fcntl() failed");
+		error("fcntl() failed: %m");
 }
 
 /* Ensure that 'path' is a directory, creating it if not.
@@ -68,21 +68,20 @@ int ensure_dir(const char *path)
 	struct stat info;
 
 	if (strncmp(path, cache_dir, strlen(cache_dir)) != 0) {
-		fprintf(stderr, "'%s' is not in cache directory!\n", path);
+		error("'%s' is not in cache directory!", path);
 		exit(1);
 	}
 	
 	if (lstat(path, &info) == 0) {
 		if (S_ISDIR(info.st_mode))
 			return 1;	/* Already exists */
-		fprintf(stderr, "%s should be a directory... unlinking!\n",
+		syslog(LOG_INFO, "%s should be a directory... unlinking!",
 				path);
 		unlink(path);
 	}
 
 	if (mkdir(path, 0755)) {
-		perror("mkdir");
-		fprintf(stderr, "(while creating %s)\n", path);
+		error("mkdir: %m, while creating %s)", path);
 		return 0;
 	}
 
@@ -95,7 +94,7 @@ int ensure_dir(const char *path)
 void close_on_exec(int fd, int close)
 {
 	if (fcntl(fd, F_SETFD, close)) {
-		perror("fcntl() failed");
+		error("fcntl() failed: %m");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -354,7 +353,7 @@ int check_md5(const char *path, const char *md5)
 
 	fd = open(path, O_RDONLY);
 	if (fd == -1) {
-		perror("open");
+		error("open: %m");
 		return 0;
 	}
 
@@ -363,14 +362,14 @@ int check_md5(const char *path, const char *md5)
 
 		got = read(fd, buffer, sizeof(buffer));
 		if (got < 0)
-			perror("read");
+			error("read: %m");
 		if (got <= 0)
 			break;
 		MD5Update(&ctx, buffer, got);
 	}
 
 	if (close(fd))
-		perror("close");
+		error("close: %m");
 	
 	real = MD5Final(&ctx);
 

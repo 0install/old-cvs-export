@@ -53,7 +53,7 @@ int gpg_trusted(const char *site)
 	assert(strchr(site, '\\') == NULL);
 	
 	if (system("gpg " GPG_OPTIONS " --import keyring.pub")) {
-		fprintf(stderr, "Failed to merge new keys!\n");
+		error("Failed to merge new keys!");
 		return 0;
 	}
 
@@ -74,8 +74,8 @@ int gpg_trusted(const char *site)
 				if (!trusted_key)
 					return 0;	/* OOM */
 			} else
-				fprintf(stderr, "Old key corrupted! "
-					"Skipping security check!\n");
+				error("Old key corrupted! "
+					"Skipping security check!");
 		}
 
 		have_trusted_key = trusted_key != NULL;
@@ -98,7 +98,7 @@ int gpg_trusted(const char *site)
 	out = popen(command, "r");
 	free(command);
 	if (!out) {
-		perror("popen");
+		error("popen: %m");
 		return 0;
 	}
 
@@ -135,7 +135,7 @@ int gpg_trusted(const char *site)
 
 			new = fopen("trusted_key", "w");
 			if (!new) {
-				perror("fopen");
+				error("fopen: %m");
 				return 0;
 			}
 
@@ -147,15 +147,15 @@ int gpg_trusted(const char *site)
 	pclose(out);
 
 	if (!trusted) {
-		fprintf(stderr, "New index is NOT signed with a key with "
-			"a trust path from the old key!\n");
+		error("New index is NOT signed with a key with "
+			"a trust path from the old key!");
 		return 0;
 	}
 	
 	if (have_trusted_key)
-		fprintf(stderr, "New index is signed OK -- trusting\n");
+		error("New index is signed OK -- trusting");
 	else 
-		fprintf(stderr, "Blindly trusting key for new site\n");
+		error("Blindly trusting key for new site");
 
 	return 1;
 }

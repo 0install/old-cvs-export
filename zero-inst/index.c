@@ -161,11 +161,11 @@ static int dir_valid(xmlNode *dir)
 		    strcmp(names[i], ".") == 0 ||
 		    strcmp(names[i], "..") == 0 ||
 		    strcmp(names[i], "...") == 0) {
-			fprintf(stderr, "Ilegal leafname '%s'\n", names[i]);
+			error("Ilegal leafname '%s'", names[i]);
 			ok = 0;
 		}
 		if (i < n - 1 && strcmp(names[i], names[i + 1]) == 0) {
-			fprintf(stderr, "Duplicate leafname '%s'\n", names[i]);
+			error("Duplicate leafname '%s'", names[i]);
 			ok = 0;
 		}
 		xmlFree(names[i]);
@@ -189,14 +189,14 @@ static int index_valid(Index *index)
 	char *path;
 
 	if (!index) {
-		fprintf(stderr, "Bad index (missing/bad XML?)\n");
+		error("Bad index (missing/bad XML?)");
 		return 0;
 	}
 	
 	assert(schema);
 
 	if (xmlRelaxNGValidateDoc(schema, index->doc)) {
-		fprintf(stderr, "Index file does not validate -- aborting\n");
+		error("Index file does not validate -- aborting");
 		return 0;
 	}
 
@@ -204,8 +204,7 @@ static int index_valid(Index *index)
 	path = xmlGetNsProp(node, "path", NULL);
 	assert(path);
 	if (strncmp(path, MNT_DIR "/", sizeof(MNT_DIR)) != 0) {
-		fprintf(stderr,
-			"WARNING: Path attribute must start with '%s'\n",
+		error("WARNING: Path attribute must start with '%s'",
 			MNT_DIR);
 	}
 
@@ -227,7 +226,7 @@ static void index_link(Index *index, xmlNode *node)
 	size = xmlGetNsProp(node, "size", NULL);
 
 	if (!src || !target || !mtime || !size) {
-		fprintf(stderr, "Missing attribute for <link>\n");
+		error("Missing attribute for <link>");
 		goto out;
 	}
 
@@ -245,7 +244,7 @@ static void index_link(Index *index, xmlNode *node)
 	leaf[-1] = '\0';
 	old = index_lookup(index, src);
 	if (!old) {
-		fprintf(stderr, "Can't override '%s'; doesn't exist!\n", src);
+		error("Can't override '%s'; doesn't exist!", src);
 		goto out;
 	}
 
@@ -288,7 +287,7 @@ static int index_merge_overrides(Index *index, const char *site)
 	doc = xmlParseFile(links);
 	free(links);
 	if (!doc) {
-		fprintf(stderr, "Failed to parse override.xml for '%s'\n",
+		error("Failed to parse override.xml for '%s'",
 				site);
 		return 0;	/* Corrupt */
 	}
@@ -356,16 +355,6 @@ void index_free(Index *index)
 		xmlFreeDoc(index->doc);
 		free(index);
 	}
-}
-
-void index_dump(Index *index)
-{
-	if (!index) {
-		printf("No index!\n");
-		return;
-	}
-
-	printf("Index:\n");
 }
 
 void index_foreach(xmlNode *dir,

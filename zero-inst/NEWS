@@ -1,3 +1,7 @@
+Changes since 0.1.15:
+
+* The helper now runs as a daemon, with output going to syslog.
+
 Changes since 0.1.14:
 
 * Removed unused expat include (spotted by Stuart Langridge).
