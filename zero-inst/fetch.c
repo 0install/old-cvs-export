@@ -17,9 +17,9 @@
 #include "task.h"
 #include "zero-install.h"
 
-#define ZERO_INSTALL_INDEX ".0inst-index.xml"
-
 #define TMP_PREFIX ".0inst-tmp-"
+
+#define ZERO_INSTALL_INDEX ".0inst-index.xml"
 
 static void build_ddd_from_index(xmlNode *dir_node, char *dir);
 
@@ -374,15 +374,33 @@ static void got_site_index(Task *task, int success)
 	}
 
 	/* printf("[ got '%s' ]\n", task->str); */
+
+	slash = strrchr(task->str, '/');
+	*slash = '\0';
+
+	if (chdir(task->str)) {
+		perror("chdir");
+		task_destroy(task, 0);
+		return;
+	}
+
+	if (system("tar xzf .0inst-index.tgz " ZERO_INSTALL_INDEX)) {
+		fprintf(stderr, "Failed to unpack index\n");
+		task_destroy(task, 0);
+		return;
+	}
+
+	strcpy(slash + sizeof(ZERO_INSTALL_INDEX) - 3, "xml");
+	*slash = '/';
+
 	task_steal_index(task, parse_index(task->str));
+
+	*slash = '\0';
 
 	if (!task->index) {
 		task_destroy(task, 0);
 		return;
 	}
-
-	slash = strrchr(task->str, '/');
-	*slash = '\0';
 
 	if (strlen(task->str) >= MAX_PATH_LEN) {
 		fprintf(stderr, "Path %s too long\n", task->str);
@@ -400,23 +418,32 @@ static void got_site_index(Task *task, int success)
 
 /* Fetch the index file 'path' (in the cache).
  * path must be in the form <cache>/site/ZERO_INSTALL_INDEX.
+ * (this actually fetches the .tgz file, checks it, and then unpacks it
+ * to create ZERO_INSTALL_INDEX)
  */
 static Task *fetch_site_index(const char *path, int use_cache)
 {
 	Task *task;
 	char buffer[MAX_URI_LEN];
+	char *tgz;
+	int l;
 
 	assert(strncmp(path, cache_dir, strlen(cache_dir)) == 0);
 
+	tgz = my_strdup(path);
+	l = strlen(path);
+	assert(strcmp(path + l - 4, ".xml") == 0);
+	strcpy(tgz + l - 4, ".tgz");
+
 	for (task = all_tasks; task; task = task->next) {
-		if (task->type == TASK_INDEX && strcmp(task->str, path) == 0) {
+		if (task->type == TASK_INDEX && strcmp(task->str, tgz) == 0) {
 			fprintf(stderr, "Merging with task %d\n", task->n);
 			return task;
 		}
 	}
 	
 	if (!build_uri(buffer, sizeof(buffer),
-			path + strlen(cache_dir), NULL, NULL))
+			tgz + strlen(cache_dir), NULL, NULL))
 		return NULL;
 
 	task = task_new(TASK_INDEX);
@@ -425,7 +452,7 @@ static Task *fetch_site_index(const char *path, int use_cache)
 
 	task->step = got_site_index;
 
-	wget(task, buffer, path, use_cache);
+	wget(task, buffer, tgz, use_cache);
 	if (task->child_pid == -1) {
 		task_destroy(task, 0);
 		task = NULL;

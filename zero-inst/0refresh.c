@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
 	addr.sun_family = AF_UNIX;
 	if (snprintf(addr.sun_path, sizeof(addr.sun_path),
-	     "/uri/0http/.lazyfs-cache/control") >= sizeof(addr.sun_path)) {
+	     "/uri/0install/.lazyfs-cache/control") >= sizeof(addr.sun_path)) {
 		fprintf(stderr, "Control socket path too long!\n");
 		return 1;
 	}

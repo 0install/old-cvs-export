@@ -23,11 +23,11 @@ install-exec-local:
 	make uninstall-local
 	[ ! -L /uri/.lazyfs-cache ] || umount /uri
 	([ -d /uri ] || mkdir /uri) && \
-	([ -d /uri/0http ] || mkdir /uri/0http) && \
+	([ -d /uri/0install ] || mkdir /uri/0install) && \
  	([ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst) && \
 	([ -n "${ROOT_PREFIX}" ] || \
  	 chown "${HELPER_USER}" /var/cache/zero-inst && \
- 	 echo "lazyfs	/uri/0http	lazyfs	/var/cache/zero-inst	0 0" >> ${FSTAB})
+ 	 echo "lazyfs	/uri/0install	lazyfs	/var/cache/zero-inst	0 0" >> ${FSTAB})
 
 uninstall-local:
 	if [ -z "${ROOT_PREFIX}" ]; then \

@@ -99,7 +99,7 @@ static int open_helper(void)
 	return helper;
 }
 
-/* Handle the top-level dir (0http) by marking it as dynamic */
+/* Handle the top-level dir (0install) by marking it as dynamic */
 static void handle_root_request(int request_fd)
 {
 	FILE *ddd;

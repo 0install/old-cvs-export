@@ -18,7 +18,7 @@ def unmount():
 		print ''.join(lines[-i:])
 
 unmount()
-os.system('rm -rf /var/cache/zero-inst/0http/0test')
+os.system('rm -rf /var/cache/zero-inst/0test')
 os.system('sudo mount /uri')
 
 http = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

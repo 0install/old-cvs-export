@@ -266,7 +266,7 @@ static void client_refresh(Client *client, const char *directory)
 		return;
 	}
 
-	task_set_string(client->task, real + 10);
+	task_set_string(client->task, real + sizeof(MNT_DIR) - 1);
 	if (!client->task->str) {
 		client_send_reply(client, "Out of memory");
 		return;
