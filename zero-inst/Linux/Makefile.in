@@ -57,7 +57,7 @@ lazyfs@COMMA_VERSION@.o: lazyfs@COMMA_VERSION@.c
 	${CC} -I. -I$(srcdir) -c ${KERNELFLAGS} ${MODFLAGS} -o "$@" "$<"
 
 lazyfs@COMMA_VERSION@.ko: lazyfs@COMMA_VERSION@.c
-	$(MAKE) V=1 -C $(KERNEL) SUBDIRS=`pwd` modules
+	$(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules
 
 distclean: clean
 
