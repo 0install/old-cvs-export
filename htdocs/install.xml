@@ -8,7 +8,7 @@ Although the system makes installing other software very easy, the Zero
 Install system itself still requires some work to install. You'll also
 need to have <a href="http://freshmeat.net/depends/download-all/39759/">a few
 other things</a> installed first (expat to parse the XML index files, wget to
-download archives, tar and gzip to extract them, GPG to check they are
+download archives, tar, bzip2 and gzip to extract them, GPG to check they are
 correctly signed, and D-BUS to report progress to graphical utilities). Most
 systems will have these installed already, although you may be missing the
 header files for expat (expat-dev). Note that, while you need libdbus
@@ -48,7 +48,7 @@ Supported kernels are:
 </p>
 <ul>
 <li> Linux 2.4 series</li>
-<li> Linux 2.6 (tested with 2.6.0-pre7) - <strong>Experimental</strong> (may crash; try the <a href="http://cvs.sourceforge.net/viewcvs.py/*checkout*/zero-install/zero-inst/Linux/lazyfs.c">CVS lazyfs.c</a> if you have problems)</li>
+<li> Linux 2.6 (tested with 2.6.0-pre7) - <strong>Experimental</strong></li>
 </ul>
 <p>
 If you want to port the (small) module to other kernels (BSD, MacOS
