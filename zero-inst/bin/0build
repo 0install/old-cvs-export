@@ -25,10 +25,6 @@ elif len(sys.argv) == 3:
 	target = sys.argv[1]
 	host = sys.argv[2]
 
-assert "'" not in host
-assert "\\" not in host
-key = '<0install@' + host + '>'
-
 if not (target and host):
 	print >>sys.stderr, "Usage: 0build <targetdir> <your.host>\n\n" \
 		"The <targetdir>/%s directory will be created/updated,\n" \
@@ -40,6 +36,10 @@ if not (target and host):
 		"The values are saved; in future, just run '0build'" % \
 		(archive_dir_leaf, index_leaf, index_leaf)
 	raise SystemExit(1)
+
+assert "'" not in host
+assert "\\" not in host
+key = '<0install@' + host + '>'
 
 print >> file(saved_build, 'w'), \
 	'target=%s\nhost=%s' % (target, host)
