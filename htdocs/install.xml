@@ -23,7 +23,7 @@ want to test it in safety.
 the /uri/0install directory. Like all kernel modules, you <strong>must</strong>
 compile this using the actual kernel headers for the kernel you're actually
 running. The easiest way to ensure this is to have compiled your own kernel
-(eg, from <a href="http://kernel.org">kernel.org</a>) and be running it.
+(eg, from <a href="http://kernel.org">kernel.org</a>) and be running that.
 </p>
 
 <p>
@@ -105,21 +105,10 @@ in the makefile.
 </div>
 
 <p>
-Then run make to compile it:
+The build and install it (use su to get the root prompt, #):
 </p>
 <pre>
 $ <b>make</b>
-</pre>
-
-<!--
-<div class='note'>People installing a binary version rejoin us here...</div>
--->
-
-<p>
-Now install it (use su to get the root prompt, #):
-</p>
-
-<pre>
 $ <b>su</b>
 # <b>make install</b>
 </pre>
@@ -170,9 +159,8 @@ It worked!
 </pre>
 
 <p>
-Users can run the 0show command to see what they are currently downloading.
-This is just a command-line client, but there is also a
-graphical version called ZeroProgress, itself available via Zero Install:
+Users can see what they are currently downloading with the ZeroProgress
+utility, itself available via Zero Install:
 </p>
 
 <pre>

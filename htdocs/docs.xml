@@ -82,12 +82,12 @@ However, you have two further programs to help you interact with the cache:
 
 <dl>
 
-<dt>0show</dt>
-<dd>This command displays a list of your current downloads. The display
-updates automatically as the list changes. There is also a graphical GTK
-version; just run
-<b>/uri/0install/zero-install.sourceforge.net/apps/ZeroProgress/AppRun</b>. A
-progress box will popup whenever a download is in progress.</dd>
+<dt>ZeroProgress</dt>
+<dd>This program pops up a status box while a download is in progress.
+Run it with the command
+<b>/uri/0install/zero-install.sourceforge.net/apps/ZeroProgress/AppRun</b>
+(nothing will appear until a download starts).
+</dd>
 
 <dt>0refresh</dt>
 <dd>For speed reasons, the cache is never automatically updated. If you
