@@ -12,7 +12,7 @@ class InvalidInterface(SafeException):
 	def __init__(self, message, ex = None):
 		if ex:
 			message += "\n\n(exact error: %s)" % ex
-		Exception.__init__(self, message)
+		SafeException.__init__(self, message)
 
 def get_singleton_text(parent, ns, localName, user):
 	names = parent.getElementsByTagNameNS(ns, localName)
@@ -116,6 +116,9 @@ def update(interface, source, user_overrides = False):
 		if not time_str:
 			raise InvalidInterface("Missing last-modified attribute on root element.")
 		interface.last_modified = parse_time(time_str)
+		main = root.getAttribute('main')
+		if main:
+			interface.main = main
 
 	if user_overrides:
 		last_checked = root.getAttribute('last-checked')
@@ -141,37 +144,52 @@ def update(interface, source, user_overrides = False):
 			if item.localName == 'group':
 				process_group(item, item_attrs, depends)
 			elif item.localName == 'implementation':
-				sha1 = item.getAttribute('sha1')
-				if sha1:
-					try:
-						long(sha1, 16)
-					except Exception, ex:
-						raise InvalidInterface('Bad SHA1 attribute: %s' % ex)
-					impl = interface.get_impl('sha1=' + sha1)
-				else:
-					path = item.getAttribute('path')
-					if not path.startswith('/'):
-						raise InvalidInterface('Need absolute path, not ' + path)
-					impl = interface.get_impl(path)
+				process_impl(item, item_attrs, depends)
+	
+	def process_impl(item, item_attrs, depends):
+		id = item.getAttribute('id')
+		if id is None:
+			raise InvalidInterface("Missing 'id' attribute on %s" % item)
+		if id.startswith('/'):
+			impl = interface.get_impl(id)
+		else:
+			if '=' not in id:
+				raise InvalidInterface('Invalid "id"; form is "alg=value" (got "%s")' % id)
+			alg, sha1 = id.split('=')
+			try:
+				long(sha1, 16)
+			except Exception, ex:
+				raise InvalidInterface('Bad SHA1 attribute: %s' % ex)
+			impl = interface.get_impl(id)
 
-				if user_overrides:
-					user_stability = item.getAttribute('user-stability')
-					if user_stability:
-						impl.user_stability = stability_levels[str(user_stability)]
-				else:
-					impl.version = map(int, item_attrs.version.split('.'))
+		if user_overrides:
+			user_stability = item.getAttribute('user-stability')
+			if user_stability:
+				impl.user_stability = stability_levels[str(user_stability)]
+		else:
+			impl.version = map(int, item_attrs.version.split('.'))
 
-					size = item.getAttribute('size')
-					if size:
-						impl.size = long(size)
-					impl.arch = item_attrs.arch
-					try:
-						stability = stability_levels[str(item_attrs.stability)]
-					except KeyError:
-						raise InvalidInterface('Stability "%s" invalid' % item_attrs.stability)
-					if stability >= preferred:
-						raise InvalidInterface("Upstream can't set stability to preferred!")
-					impl.upstream_stability = stability
-				impl.dependencies.update(depends)
+			size = item.getAttribute('size')
+			if size:
+				impl.size = long(size)
+			impl.arch = item_attrs.arch
+			try:
+				stability = stability_levels[str(item_attrs.stability)]
+			except KeyError:
+				raise InvalidInterface('Stability "%s" invalid' % item_attrs.stability)
+			if stability >= preferred:
+				raise InvalidInterface("Upstream can't set stability to preferred!")
+			impl.upstream_stability = stability
+		impl.dependencies.update(depends)
+
+		for elem in item.getElementsByTagNameNS(XMLNS_IFACE, 'archive'):
+			url = elem.getAttribute('href')
+			if not url:
+				raise InvalidInterface("Missing href attribute on <archive>")
+			size = elem.getAttribute('size')
+			if not size:
+				raise InvalidInterface("Missing size attribute on <archive>")
+			impl.add_download_source(url = url, size = long(size),
+					extract = elem.getAttribute('extract'))
 
 	process_group(root, Attrs(testing), {})

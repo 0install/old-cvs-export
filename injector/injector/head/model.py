@@ -62,11 +62,22 @@ class Dependency(object):
 	def __str__(self):
 		return "<Dependency on %s; bindings: %d>" % (self.interface, len(self.bindings))
 
+class DownloadSource(object):
+	"""A DownloadSource provides a way to fetch an implementation."""
+	__slots__ = ['implementation', 'url', 'size', 'extract']
+
+	def __init__(self, implementation, url, size, extract):
+		assert url.startswith('http:') or url.startswith('/')
+		self.implementation = implementation
+		self.url = url
+		self.size = size
+		self.extract = extract
+
 class Implementation(object):
 	"""An Implementation is a package which implements an Interface."""
 	__slots__ = ['arch', 'upstream_stability', 'user_stability',
 		     'version', 'size', 'dependencies', '_cached',
-		     'id']
+		     'id', 'download_sources']
 
 	def __init__(self, id):
 		"""id can be a local path (string starting with /) or a manifest hash (eg "sha1=XXX")"""
@@ -79,6 +90,10 @@ class Implementation(object):
 		self.arch = None
 		self._cached = None
 		self.dependencies = {}	# URI -> Dependency
+		self.download_sources = []	# [DownloadSource]
+	
+	def add_download_source(self, url, size, extract):
+		self.download_sources.append(DownloadSource(self, url, size, extract))
 	
 	def get_stability(self):
 		return self.user_stability or self.upstream_stability or testing
@@ -95,7 +110,8 @@ class Implementation(object):
 class Interface(object):
 	"""An Interface represents some contract of behaviour."""
 	__slots__ = ['uri', 'implementations', 'name', 'description', 'summary',
-		     'stability_policy', 'last_updated', 'last_modified', 'last_checked']
+		     'stability_policy', 'last_updated', 'last_modified', 'last_checked',
+		     'main']
 	
 	# stability_policy:
 	# Implementations at this level or higher are preferred.
@@ -120,6 +136,7 @@ class Interface(object):
 		self.stability_policy = None
 		self.last_modified = None
 		self.last_checked = None
+		self.main = None
 	
 	def get_name(self):
 		return self.name or '(' + os.path.basename(self.uri) + ')'

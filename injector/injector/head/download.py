@@ -1,5 +1,5 @@
 import tempfile, os, sys
-from model import Interface
+from model import Interface, DownloadSource, SafeException
 import traceback
 from urllib2 import urlopen
 
@@ -18,18 +18,15 @@ class Download:
 	url = None
 	tempfile = None		# Stream for result
 	status = None		# download_*
-	interface = None
 	errors = None
 
 	child_pid = None
 	child_stderr = None
 
-	def __init__(self, interface, url = None):
+	def __init__(self, url):
 		"Initial status is starting."
-		assert isinstance(interface, Interface)
-		self.url = url or interface.uri
+		self.url = url
 		self.status = download_starting
-		self.interface = interface
 	
 	def start(self):
 		"""Returns stderr stream from child. Call error_stream_closed() when
@@ -58,11 +55,9 @@ class Download:
 	
 	def download_as_child(self):
 		try:
-			import time
 			import shutil
-			print "Child downloading", self.url
+			#print "Child downloading", self.url
 			if self.url.startswith('/'):
-				#time.sleep(1)
 				if not os.path.isfile(self.url):
 					print >>sys.stderr, "File '%s' does not " \
 						"exist!" % self.url
@@ -125,24 +120,54 @@ class Download:
 			os.kill(self.child_pid, signal.SIGTERM)
 		else:
 			self.status = download_failed
+
+class InterfaceDownload(Download):
+	def __init__(self, interface, url = None):
+		assert isinstance(interface, Interface)
+		Download.__init__(self, url or interface.uri)
+		self.interface = interface
+
+class ImplementationDownload(Download):
+	def __init__(self, source):
+		assert isinstance(source, DownloadSource)
+		Download.__init__(self, source.url)
+		self.source = source
 	
-def begin_download(interface, force):
+	def error_stream_closed(self):
+		stream = Download.error_stream_closed(self)
+		size = os.fstat(stream.fileno()).st_size
+		if size != self.source.size:
+			raise SafeException('Downloaded archive has incorrect size.\n'
+					'URL: %s\n'
+					'Expected: %d bytes\n'
+					'Received: %d bytes' % (self.url, self.source.size, size))
+		return stream
+	
+	def get_current_fraction(self):
+		current_size = os.fstat(self.tempfile.fileno()).st_size
+		return float(current_size) / self.source.size
+	
+def begin_iface_download(interface, force):
 	"""Start downloading interface.
 	If a Download object already exists (any state; in progress, failed or
 	completed) and force is False, does nothing and returns None.
 	If force is True, any existing download is destroyed and a new one created."""
-	dl = downloads.get(interface.uri, None)
+	return _begin_download(InterfaceDownload(interface), force)
+
+def begin_impl_download(source, force = False):
+	#print "Need to downlaod", source.url
+	return _begin_download(ImplementationDownload(source), force)
+	
+def _begin_download(new_dl, force):
+	dl = downloads.get(new_dl.url, None)
 	if dl:
 		if force:
 			dl.abort()
-			del downloads[interface.uri]
+			del downloads[new_dl.url]
 		else:
 			return None	# Already downloading
 	
-	#print "Creating new Download(%s)" % interface.uri
-	# Create new download
-	dl = Download(interface)
-	downloads[interface.uri] = dl
+	downloads[new_dl.url] = new_dl
 
-	assert dl.status == download_starting
-	return dl
+	assert new_dl.status == download_starting
+	return new_dl
