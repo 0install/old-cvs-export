@@ -1,0 +1,33 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+<?xml version="1.0" ?>
+<interface last-modified="1110401472" uri="/home/talex/Projects/injector/injector/injector.xml.asc" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch-auto'>
+  <name>Injector</name>
+  <summary>Chooses software components to run programs</summary>
+  <description>
+A program is made up of many different components, typically written by
+different groups of people. Each component is available in multiple versions.
+The injector is used when starting a program. Its job is to decide which
+implementation of each required component to use.
+
+An interface describes what a component does. The injector starts with the
+interface for the program you want to run (like 'The Gimp') and chooses an
+implementation (like 'The Gimp 2.2.0'). However, this implementation will in
+turn depend on other interfaces, such as 'GTK' (which draws the menus and
+buttons). Thus, the injector must choose implementations of each dependancy
+(each of which may require further interfaces, and so on).
+  </description>
+  
+  <implementation id="sha1=235cb9dd77ef78ef2a79abe98f1fcc404bba4889" stability="testing" version="0.2">
+    <archive size='13575' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.2.tgz' extract='injector-0.2'/>
+  </implementation>
+  <!-- <implementation id="/home/talex/Projects/injector/injector/head" stability="developer" version="0.3"/> -->
+</interface>
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.0 (GNU/Linux)
+
+iD8DBQFCNLcDrgeCgFmlPMERAvWqAJ0VOBeqAbpuNibUUZ3/09U4hZUJawCgwfC0
+iBejJl6+CA/tmecbkcIQSc8=
+=Y/3A
+-----END PGP SIGNATURE-----
