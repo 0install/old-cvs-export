@@ -19,9 +19,6 @@ without introducing additional security problems.
 who asked to run it.</li>
 <li>The system is fully protected from software users 'install'.</li>
 <li>Users are fully protected from each other.</li>
-<li>Zero Install performs checks to try to detect when a remote server has
-been compromised. This only works when upgrading software, not when using it
-for the first time.</li>
 </ul>
 
 <h3>System security key points (implementation)</h3>
@@ -42,6 +39,9 @@ but themselves.</li>
 <li>A user running a malicious program can still lose their own data, but
 Zero Install makes it easier to use other techniques to solve this separate
 problem.</li>
+<li>Zero Install performs checks to try to detect when a remote server has
+been compromised. This only works when upgrading software, not when using it
+for the first time.</li>
 </ul>
 
 <h2>Security on Unix-type systems</h2>
