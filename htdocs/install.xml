@@ -54,7 +54,11 @@ this <a href="http://www.ilrt.bris.ac.uk/discovery/chatlogs/rdfig/2004-08-31.htm
 <p>The Zero Install system requires a small Linux kernel module to provide
 the <tt>/uri/0install</tt> directory. Like all kernel modules, you must
 compile this using the actual kernel headers for the kernel you're actually
-running. The easiest way to ensure this is to have compiled your own kernel
+running.
+</p>
+
+<p>
+One way to ensure this is to have compiled your own kernel
 (eg, from <a href="http://kernel.org">kernel.org</a>) and be running that.
 There are plenty of guides on the net if you don't feel confident about
 compiling your own kernel. For example,
@@ -62,8 +66,24 @@ compiling your own kernel. For example,
 to Updating and Compiling Your Debian Kernel</a> (which isn't very Debian
 specific, despite the name) and
 <a href="http://www.osnews.com/story.php?news_id=443">Compiling the Linux
-Kernel</a>.
+Kernel</a>. When you install a kernel yourself, the headers get installed
+automatically at the same time.
 </p>
+
+<p>
+If you're using a kernel provided with your distribution, you
+should find there is a package with the matching kernel headers supplied
+with the distribution, which you can install now. Use the <strong>uname -a</strong>
+command to find out which kernel version you are using. For example, on a
+Debian system, you could check the version and install the headers like
+this (things you type are shown in bold):
+</p>
+
+<pre>
+# <b>uname -a</b>
+Linux everest 2.4.25 #1 [...] i386 GNU/Linux
+# <b>apt-get install kernel-headers-2.4.25-1-386</b>
+</pre>
 
 <p>
 Supported kernels are:
