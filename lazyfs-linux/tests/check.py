@@ -1,15 +1,36 @@
 #!/usr/bin/env python
 import unittest
+import sys
 import os, signal, time
 import traceback
 import mmap
 
-version = '0.1.23'.replace('.', 'd')
+# You can edit these three lines to suit...
+test_dir = os.path.expanduser('~/lazyfs-test')	# Where to put test files
+version = '0.1.23'				# Version of lazyfs to test
+verbose = False					# Give extra debug information
 
-verbose = False
+if len(sys.argv) > 1 and sys.argv[1] == '--read-hello':
+	fd = os.open('hello', os.O_RDONLY)
+	try:
+		print os.read(fd, 100)
+	except OSError:
+		print "IOError"
+	sys.exit()
 
-fs = os.path.expanduser('~/test/0install')
-cache = os.path.expanduser('~/test/cache')
+prog_name = os.path.abspath(sys.argv[0])
+
+if os.getuid() == 0:
+	print "Unit-tests must not be run as root."
+	sys.exit()
+
+# Setup the test environment...
+version = version.replace('.', 'd')
+
+if not os.path.isdir(test_dir):
+	os.mkdir(test_dir)
+fs = os.path.join(test_dir, '0install')
+cache = os.path.join(test_dir, 'cache')
 
 if os.path.ismount(fs):
 	os.system("sudo umount " + fs)
@@ -18,19 +39,23 @@ if os.path.ismount(fs):
 os.system("sudo rmmod lazyfs" + version)
 
 if not os.path.isdir(fs):
-	raise Exception('Create %s first' % fs)
+	print "Creating", fs
+	os.mkdir(fs)
 if not os.path.isdir(cache):
-	raise Exception('Create %s first' % cache)
+	print "Creating", cache
+	os.mkdir(cache)
 uid = os.geteuid()
 cache_uid = os.stat(cache).st_uid 
 if cache_uid != uid:
 	raise Exception('%s must be owned by user %s (not %s)' %
 			(cache, uid, cache_uid))
 
+# Base classes for the test cases
 class LazyFS(unittest.TestCase):
 	def setUp(self):
 		for item in os.listdir(cache):
 			os.system("rm -r '%s'" % os.path.join(cache, item))
+		assert not os.path.ismount(fs)
 		os.system("sudo mount -t lazyfs%s lazyfs %s -o %s" % (version, fs, cache))
 
 	def tearDown(self):
@@ -86,6 +111,8 @@ class WithHelper(LazyFS):
 		self.c = None
 		LazyFS.tearDown(self)
 
+# The actual tests
+
 class Test1WithoutHelper(LazyFS):
 	def test1CacheLink(self):
 		assert os.path.islink(fs + '/.lazyfs-cache')
@@ -101,14 +128,19 @@ class Test1WithoutHelper(LazyFS):
 class Test2WithHelper(WithHelper):
 	def read_rq(self):
 		if verbose:
-			print "Reading request..."
+			print "Server: reading request..."
 		fd = os.read(self.c, 1000)
+		assert fd[-1] == '\0'
+		if verbose:
+			print "Server: got request " + fd
 		return int(fd.split(' ', 1)[0])
 	
 	def next(self):
 		fd = self.read_rq()
 		path = os.read(fd, 1000)
 		assert path[-1] == '\0'
+		if verbose:
+			print "Server: got request '" + path[:-1] + "'"
 		return (fd, path[:-1])
 	
 	def assert_ls(self, dir, ls):
@@ -121,7 +153,7 @@ class Test2WithHelper(WithHelper):
 
 	def clientNothing(self): pass
 	def serverNothing(self): pass
-	test1Nothing = cstest('Nothing')
+	test01Nothing = cstest('Nothing')
 	
 	def clientReleaseHelper(self):
 		os.open(fs + '/.lazyfs-helper', os.O_RDONLY)
@@ -130,7 +162,7 @@ class Test2WithHelper(WithHelper):
 		os.close(self.c)
 		self.c = None
 
-	test2ReleaseHelper = cstest('ReleaseHelper')
+	test02ReleaseHelper = cstest('ReleaseHelper')
 	
 	def clientDoubleOpen(self):
 		# Check that we can't open the helper a second time
@@ -145,19 +177,19 @@ class Test2WithHelper(WithHelper):
 		fd = self.read_rq()
 		os.close(fd)
 
-	test3DoubleOpen = cstest('DoubleOpen')
+	test03DoubleOpen = cstest('DoubleOpen')
 
 	def clientLsRoot(self):
 		self.assert_ls(fs, ['.lazyfs-helper', '.lazyfs-cache'])
 	def serverLsRoot(self):
 		self.send_dir('/', [])
 
-	test4LsRoot = cstest('LsRoot')
+	test04LsRoot = cstest('LsRoot')
 
-	def clientGetROX(self):
+	def clientGetDir(self):
 		self.assert_ls(fs + '/rox', ['apps'])
 	
-	def serverGetROX(self):
+	def serverGetDir(self):
 		fd, path = self.next()
 		self.assertEquals('/', path)
 		f = file(cache + '/...', 'w').write('LazyFS\nd 1 1 rox\0')
@@ -169,7 +201,7 @@ class Test2WithHelper(WithHelper):
 		f = file(cache + '/rox/...', 'w').write('LazyFS\nd 1 1 apps\0')
 		os.close(fd)
 	
-	test5GetROX = cstest('GetROX')
+	test05GetDir = cstest('GetDir')
 
 	def put_dir(self, dir, contents):
 		"""contents is None for a dynamic directory"""
@@ -182,12 +214,16 @@ class Test2WithHelper(WithHelper):
 			f.write('LazyFS\n')
 		f.close()
 		os.rename(cache + dir + '/....', cache + dir + '/...')
+	
+	def put_file(self, rq, contents, mtime):
+		f = file(cache + rq, 'w')
+		f.write(contents)
+		f.close()
+		os.utime(cache + rq, (mtime, mtime))
 
 	def send_dir(self, dir, contents = None):
 		assert dir.startswith('/')
 		fd, path = self.next()
-		if verbose:
-			print "Got request for ", dir
 		self.assertEquals(dir, path)
 		self.put_dir(dir, contents)
 		os.close(fd)
@@ -198,10 +234,7 @@ class Test2WithHelper(WithHelper):
 			print "Expecting", rq
 		fd, path = self.next()
 		self.assertEquals(rq, path)
-		f = file(cache + rq, 'w')
-		f.write(contents)
-		f.close()
-		os.utime(cache + rq, (mtime, mtime))
+		self.put_file(rq, contents, mtime)
 		os.close(fd)
 
 	def send_reject(self, rq):
@@ -228,7 +261,7 @@ class Test2WithHelper(WithHelper):
 		self.send_file('/hello', 'World', 3)
 		self.send_file('/hello', 'Worlds', 3)
 
-	test6Download = cstest('Download')
+	test06Download = cstest('Download')
 
 	def clientDynamic(self):
 		assert not os.path.exists(cache + '/...')
@@ -249,7 +282,7 @@ class Test2WithHelper(WithHelper):
 		self.send_reject('/dir')
 		self.send_reject('/foo')
 		
-	test7Dynamic = cstest('Dynamic')
+	test07Dynamic = cstest('Dynamic')
 
 	def clientMMap1(self):
 		# File is changed in-place
@@ -267,7 +300,7 @@ class Test2WithHelper(WithHelper):
 		self.send_file('/hello', 'Hello', 3)
 		self.send_file('/hello', 'Worlds', 3)
 
-	test8MMap1 = cstest('MMap1')
+	test08MMap1 = cstest('MMap1')
 
 	def clientMMap2(self):
 		# A new file is created
@@ -288,7 +321,7 @@ class Test2WithHelper(WithHelper):
 	
 	serverMMap2 = serverMMap1
 	
-	test8MMap2 = cstest('MMap2')
+	test09MMap2 = cstest('MMap2')
 
 	def clientMMap3(self):
 		# A new file is created in the cache, but the lazyfs
@@ -322,9 +355,99 @@ class Test2WithHelper(WithHelper):
 		self.send_file('/hello', 'Hello', 3)
 		self.send_file('/hello', 'World', 3)
 	
-	test8MMap3 = cstest('MMap3')
+	test10MMap3 = cstest('MMap3')
+
+	def clientMultiple(self):
+		# Opening a file again before the file is cached from the
+		# first request doesn't send another request.
+		# Hello isn't cached until after bob has been requested.
+		f1 = file(fs + '/hello')
+		f2 = file(fs + '/hello')
+		f3 = file(fs + '/bob')
+		self.assertEquals('Bob', f3.read())
+		self.assertEquals('Hello', f1.read())
+		self.assertEquals('Hello', f2.read())
 	
-if __name__ == '__main__':
-	import sys
-	sys.argv.append('-v')
-	unittest.main()
+	def serverMultiple(self):
+		self.send_dir('/', ['f 5 3 hello',
+				    'f 3 3 bob'])
+		fd1, path = self.next()
+		self.assertEquals('/hello', path)
+		fd2, path = self.next()
+		self.assertEquals('/bob', path)
+		self.put_file('/bob', 'Bob', 3)
+		os.close(fd2)
+		self.put_file('/hello', 'Hello', 3)
+		os.close(fd1)
+	
+	test11Multiple = cstest('Multiple')
+
+	def clientMultiUser(self):
+		# Like clientMultiple, but we do get multiple requests
+		# because we have different users. We can cancel requests
+		# individually.
+		os.chdir(fs)
+		f1 = os.open('hello', os.O_RDONLY)
+		f2 = os.popen("sudo '%s' --read-hello" % prog_name)
+		self.assertEquals('IOError\n', f2.read())
+		self.assertEquals('Bob', file('bob').read())
+		self.assertEquals('Hello', os.read(f1, 100))
+	
+	def serverMultiUser(self):
+		self.send_dir('/', ['f 5 3 hello',
+				    'f 3 3 bob'])
+		fd1, path = self.next()
+		self.assertEquals('/hello', path)
+		fd2, path = self.next()
+		self.assertEquals('/hello', path)
+		os.close(fd2)
+		self.send_file('/bob', 'Bob', 3)
+		self.put_file('/hello', 'Hello', 3)
+		os.close(fd1)
+	
+	test12MultiUser = cstest('MultiUser')
+
+	def clientParallelReads(self):
+		# Try to read from an uncached file from two processes
+		# This causes a ref-leak in lazyfs 0.1.22 and earlier, but
+		# we only trigger it, we don't report it. You have to enable
+		# ref counting debugging in the kernel module to see it.
+		fd = os.open(fs + '/hello', os.O_RDONLY)
+		def child_mmap():
+			child = os.fork()
+			if child == 0:
+				try:
+					m = mmap.mmap(fd, 5, mmap.MAP_SHARED, mmap.PROT_READ)
+					os.close(fd)
+					assert m[0] == 'H'
+					os._exit(0)
+				except:
+					os._exit(1)
+		child_mmap()
+		# Blocks until the subprocess mmaps the file
+		self.assertEquals('Bob', file(fs + '/bob').read())
+
+		child_mmap()
+		# Blocks until the subprocess mmaps the file
+		self.assertEquals('Fred', file(fs + '/fred').read())
+
+		m = mmap.mmap(fd, 5, mmap.MAP_SHARED, mmap.PROT_READ)
+		os.close(fd)
+		assert m[0] == 'H'
+	
+	def serverParallelReads(self):
+		self.send_dir('/', ['f 5 3 hello',
+				    'f 3 3 bob',
+				    'f 4 3 fred'])
+		fd, path = self.next()
+		self.assertEquals('/hello', path)
+		self.send_file('/bob', 'Bob', 3)
+		self.send_file('/fred', 'Fred', 3)
+		self.put_file('/hello', 'Hello', 3)
+		os.close(fd)
+
+	test13ParallelReads = cstest('ParallelReads')
+
+# Run the tests
+sys.argv.append('-v')
+unittest.main()
