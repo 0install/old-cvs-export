@@ -55,7 +55,7 @@ titlebar):
 </p>
 
 <p style='text-align: center'>
-<img src='memo.png' width='343' height='130'
+<img src='memo.png' width='371' height='134'
      alt='ROX-Filer window showing Memo application on the remote machine' />
 </p>
 
@@ -64,6 +64,11 @@ Click on Memo to run it, and it will run. Now, Memo depends on ROX-Lib2,
 which requires pygtk, with needs python2.2 and GTK+-2, which needs glib,
 pango and AKT. But that's OK; Memo runs everything it
 needs directly from the remote machines where they're stored.
+</p>
+
+<p style='text-align: center'>
+<img src='progress.png' width='435' height='169'
+     alt='GUI progress indicator' />
 </p>
 
 <p>
