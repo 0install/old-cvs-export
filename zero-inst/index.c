@@ -250,9 +250,10 @@ void index_free(Index *index)
 
 	index->ref--;
 	
-	if (!index->ref)
+	if (!index->ref) {
 		xmlFreeDoc(index->doc);
-	free(index);
+		free(index);
+	}
 }
 
 void index_dump(Index *index)
