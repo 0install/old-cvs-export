@@ -77,24 +77,13 @@ href="http://sourceforge.net/pm/?group_id=76468">Task List</a>. Please
 <a href="support.html">let us know</a> if you want to help out with any of
 these.
 
-<h3>The glib library</h3>
+<h3>Libraries</h3>
 
 <p>
-Thought you might like to know that I now have a glib program compiling
-and running from zero-install (glib is a common library used by GTK and
-many other programs):
-</p>
-
-<pre>
-$ cd /uri/0install/zero-install.sourceforge.net/demo
-$ ./hello_glib
-Hello World from glib!
-</pre>
-
-<p>
-It compiles using the pkg-config .pc files under /uri (source is in CVS)
-and runs from there too. So you don't need glib installed to compile it,
-and you don't need it installed to run it :-)
+As an example, the glib library has been packaged for Zero Install.
+Programs using it compile using the pkg-config .pc files under /uri and get
+the headers from there too. So you don't need glib installed to compile them,
+and you don't need it installed to run them :-)
 </p>
 
 <p>
@@ -113,19 +102,5 @@ For a better approach than using --rpath, see the
 <tt>/uri/0install/zero-install.sourceforge.net/libs/libhello-1.0</tt>
 example library, which changes the soname to an absolute path.
 </div>
-
-<p>
-Version 0.1.6 of zero-install also handles downloading using .tgz files
-a directory at a time (so is much faster than before).
-</p>
-
-<p>
-In fact, it's cleverer than that; you can decide how to group the files
-within a directory between archives. The 0build script (which scans a
-directory tree and builds all the indexes and archives) will automatically
-put .DirIcon and AppInfo.xml files in one archive and everything else in
-another. Thus, you can view a directory full of applications and you only
-download what you need (AppInfo.xml is for the tool-tips).
-</p>
 
 </html>
