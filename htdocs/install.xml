@@ -99,11 +99,11 @@ Check the GPG signature, unpack the archive, and move to the new directory
 </p>
 
 <pre>
-$ <b>gpg lazyfs-linux-0.1.23.tgz.gpg</b>
+$ <b>gpg lazyfs-linux-0.1.23-smp.tgz.gpg</b>
 gpg: Signature made Sun 15 Feb 2004 12:46:54 GMT using DSA key ID 59A53CC1
 gpg: Can't check signature: public key not found
-$ <b>tar xzf lazyfs-linux-0.1.23.tgz</b>
-$ <b>cd lazyfs-linux-0.1.23</b>
+$ <b>tar xzf lazyfs-linux-0.1.23-smp.tgz</b>
+$ <b>cd lazyfs-linux-0.1.23-smp</b>
 </pre>
 
 <p>If you have my GPG key (see page header) in your keyring, the first step
