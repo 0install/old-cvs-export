@@ -7,42 +7,51 @@
 This page discusses some of the security issues relating to Zero Install.
 </p>
 
-<p>
-The key idea behind making secure systems is always the same: make a small
-and trusted 'core' system, and make sure that the rest of the system can grow
-without introducing additional security problems.
+<h3>System security key points</h3>
+
+<p>These points are about the risk to the security of your system from
+running Zero Install on it. Risks to users actually running software through
+Zero Install are covered below; this is about the effect it has on users
+who don't use it, and on the core system itself.
 </p>
 
-<h3>Core system security key points (design)</h3>
 <ul>
 <li>No downloaded software is ever run as root, or as any user except the one
 who asked to run it.</li>
-<li>Software installed through Zero Install poses no more risk to the system
+
+<li>Software installed through Zero Install poses no more risk to the core
 than that installed by users into their home directories.
 With traditional (non-zero-install) systems, every application, library and
 documentation package is given root-level access to the system.</li>
+
 <li>Users are at risk only from the software they run, not all software
 installed on the machine.</li>
+
 <li>Zero Install does not listen for incoming connections, so any attack
 must be initiated by a local user, intentionally or otherwise.</li>
-</ul>
 
-<h3>Core system security key points (implementation)</h3>
-<ul>
 <li>Zero Install contains a very small kernel module, which is the only
 new vector for a possible root-compromise.</li>
+
 <li>A small helper runs as a special user. If compromised, it would
 allow trojaning of software run via Zero Install.</li>
 </ul>
 
 <h3>User security key points</h3>
+
+<p>These points are for users who are on a system running Zero Install,
+detailing the risks from making use of it.
+</p>
+
 <ul>
-<li>Anyone can run any software they please, just as they could anyway by
-installing to their home directories, but Zero Install makes it easy and
-faster (less to download, less use of disk space and memory).</li>
-<li>A user running a malicious program can still lose their own data, but
+<li>You can run any software you please, just as you could anyway by
+installing to your home directory, but Zero Install makes it easier,
+faster, and more efficient.</li>
+
+<li>If you run a malicious program you can still lose your own data, but
 Zero Install makes it easier to use other techniques to solve this separate
 problem.</li>
+
 <li>Zero Install performs checks to try to detect when a remote server has
 been compromised. This only works when upgrading software, not when using it
 for the first time.</li>
@@ -75,6 +84,52 @@ Install that they couldn't do without it; Zero Install just makes it more
 efficient. Trojans and virus don't normally have difficult installers anyway
 ;-)</dd>
 </dl>
+
+<h2>Introduction</h2>
+
+<p>
+The goal of security is to allow you control over what access others have
+to your data and resources. For example, you should be able to prevent other
+people from reading your email, deleting your files, seeing your credit card
+number, and so on.
+</p>
+
+<p>
+The problem is that it is impossible to look at a every piece of software and
+verify that it will only do what you want. Thus, we must sandbox programs so
+that their actions are restricted. Then, risks come only from the software
+enforcing the sandbox. Because a single sandbox can be used to restrict any
+number of programs, there is much less code to check for security problems.
+</p>
+
+<p>
+Linux (and most other modern operating systems) creates a separate sandbox
+environment for each user of the system. This means that users are only at high
+risk from software they run, not from software other users run (except due to
+bugs in Linux, which are rare and quickly fixed). Users can, in turn, create
+more restrictive sandboxes within their own sandbox, so that a Java applet they
+run in a webpage cannot delete their files, for example.
+</p>
+
+<p>
+However, there is a problem with this model: software installation. When
+installing a program for users (such as a word processor), that program is
+first run as 'root' (not in any sandbox). Every application, library and
+documentation package installed on a Linux system is given complete access
+to everything. The more software you install, the more at risk you are. If
+several people use the same machine, then each is at risk from <i>all</i>
+the software installed, not just from the software they actually use.
+</p>
+
+<p>
+Further, users gain little by running installed software in sub-sandboxes,
+since the software has already been executed with full access. Previously,
+the only solution was for users to perform the installation step itself
+within their sandbox (installing to their home directory). This is much
+more secure, but also very inefficient (as applications can no longer be
+shared between users).
+</p>
+
 
 <h2>Security on Unix-type systems</h2>
 
