@@ -123,6 +123,13 @@ programs are run from the cache, without even checking the original sites for
 updates (you have to tell it to update manually).
 </p>
 
+<p>To be absolutely clear about this: you're running the same code that you
+would have run anyway, but you're running it as a user instead of running it as
+root. How much of an advantage this is depends on whether you have multiple
+users and whether you use any sandboxing. However, it's never <i>less</i>
+secure, which is what many people seem to imagine.
+</p>
+
 <p>See the <a href="security.html">security model</a> document for more
 information about security in Zero Install.</p>
 
