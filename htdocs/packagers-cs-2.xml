@@ -73,7 +73,7 @@ traditional systems).
 </p>
 
 <p>
-Now we run 0build to build the archives, as before:
+Now we run <b>0build</b> to build the archives, as before:
 </p>
 
 <pre>
@@ -83,9 +83,9 @@ $ 0build ../export scons.org
 </pre>
 
 <p>
-After creating a new GPG key for the site (as before), 0build populates the export directory.
-Again, we create a <b>0push</b> script to rsync the archives to the remote web server,
-and run that:
+After creating a new GPG key for the site (as before), <b>0build</b> populates
+the <b>export</b> directory. Again, we create a <b>0push</b> script to rsync the
+archives to the remote web server, and run that:
 </p>
 
 <pre>
@@ -131,7 +131,7 @@ People who want to use scons can 'install' it into their PATH in the usual way, 
 </p>
 
 <pre>
-# ln -s /uri/0install/zero-install.sourceforge.net#scons.org/scons-1 /usr/local/bin/scons
+# ln -s /uri/0install/scons.org/scons-1 /usr/local/bin/scons
 # scons
 </pre>
 
