@@ -31,7 +31,7 @@ the root password. But then he'd lose APT's dependency handling.
 <p>
 Imagine if running Mozilla from the shell prompt would run it directly,
 but running it from GNOME's panel required the user to enter the root
-password first. Requiring the root password unnecessarily is clearly
+password first. Requiring root privileges unnecessarily is clearly
 unacceptable. It is both inconvenient and a security risk.
 </p>
 
