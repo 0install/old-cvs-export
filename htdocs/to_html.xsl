@@ -12,18 +12,20 @@
 
   <xsl:template name='page'>
     <xsl:param name="href">unknown</xsl:param>
-    <xsl:choose>
-      <xsl:when test='$file = $href'>
-        <a class='selected' href="{$href}"><xsl:value-of select='$label'/></a>
-      </xsl:when>
-      <xsl:otherwise>
-        <a href="{$href}"><xsl:value-of select='$label'/></a>
-      </xsl:otherwise>
-    </xsl:choose>
+    <span>
+      <xsl:if test='$file = $href'>
+        <xsl:attribute name='class'>selected</xsl:attribute>
+      </xsl:if>
+      <xsl:text>&#160;</xsl:text>
+      <a href="{$href}"><xsl:value-of select='$label'/></a>
+      <xsl:text>&#160;</xsl:text>
+    </span>
   </xsl:template>
 
   <xsl:template name='make-links'>
-    <p class='pages'>
+<xsl:text>
+</xsl:text>
+    <div class='pages'>
       <xsl:call-template name='page'>
         <xsl:with-param name='href'>index.html</xsl:with-param>
         <xsl:with-param name='label'>Overview</xsl:with-param>
@@ -56,7 +58,9 @@
         <xsl:with-param name='href'>technical.html</xsl:with-param>
         <xsl:with-param name='label'>Technical</xsl:with-param>
       </xsl:call-template>
-    </p>
+    </div>
+<xsl:text>
+</xsl:text>
   </xsl:template>
 
   <xsl:template match='/*'>

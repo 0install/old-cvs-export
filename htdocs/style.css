@@ -15,25 +15,32 @@ div.heading p {
 	text-align: center;
 }
 
-p.pages a {
+div.heading div {
+	text-align: center;
+}
+
+div.pages span {
 	padding: 2px;
 	border: 2px solid #c17419;
+}
+
+div.pages a {
 	text-decoration: none;
 	color: blue;
 }
 
-p.pages a + a {
+div.pages span + span {
 	border-left: 0;
 }
 
-div.heading a.selected {
+div.heading span.selected {
 	background: #ffefa1;
 }
-div.heading a.selected:hover {
+div.heading span.selected:hover {
 	background: #ffefa1;
 }
 
-div.heading a:hover {
+div.heading span:hover {
 	background: #d9a05c;
 }
 
