@@ -17,12 +17,11 @@
 #include "zero-install.h"
 #include "gpg.h"
 #include "xml.h"
+#include "mirrors.h"
 
 #define TMP_PREFIX ".0inst-tmp-"
 
 #define ZERO_INSTALL_INDEX ".0inst-index.xml"
-
-#define META ".0inst-meta"
 
 static void build_ddd_from_index(Element *dir_node, char *dir);
 
@@ -204,14 +203,13 @@ static void pull_up_files(Element *group)
  * Changes cwd.
  */
 static void unpack_archive(const char *archive_path, const char *archive_dir,
-				Element *archive)
+				Element *group)
 {
 	int status = 0;
 	struct stat info;
 	pid_t child;
 	const char *argv[] = {"tar", "-xzf", ".tgz", NULL};
 	const char *size, *md5;
-	Element *group = archive->parentNode;
 	
 	if (verbose)
 		syslog(LOG_DEBUG, "(unpacking %s)", archive_path);
@@ -409,8 +407,8 @@ static Index *unpack_site_index(const char *site)
 		goto out;
 	}
 
-	if (system("tar xzf index.tgz keyring.pub index.xml.sig")) {
-		error("Failed to extract GPG signature/keyring!");
+	if (system("tar xzf index.tgz keyring.pub mirrors.xml index.xml.sig")) {
+		error("Failed to extract GPG signature/keyring/mirrors!");
 		error("XXX I should refuse this, but need to "
 				"cope with old archives for a bit...");
 		//XXX: goto out;
@@ -574,26 +572,6 @@ Index *get_index(const char *path, Task **task, int force)
 	return NULL;
 }
 
-/* Decide the URI where the archive is to be downloaded from.
- * file is the cache-relative path of a file in the group.
- * free() the result.
- */
-static char *get_uri_for_archive(const char *file, Element *archive)
-{
-	const char *href;
-	char *uri;
-
-	href = xml_get_attr(archive, "href");
-	assert(href);
-
-	/* Make URI absolute if needed */
-	if (!strstr(href, "://")) {
-		uri = build_string("http://%H/%s", file + 1, href);
-	} else
-		uri = my_strdup(href);
-
-	return uri;
-}
 /* file is the cache-relative path of a file in the group.
  * Returns a full path for the new tmp file. The MD5sum is used
  * to make the name unique within the directory.
@@ -614,16 +592,20 @@ static char *get_tmp_path_for_group(const char *file, Element *group)
 }
 
 /* 'file' is the path of a file within the archive */
-Task *fetch_archive(const char *file, Element *archive, Index *index)
+Task *fetch_archive(const char *file, Element *group, Index *index)
 {
 	Task *task = NULL;
 	char *uri = NULL;
 	char *tgz = NULL;
 
-	uri = get_uri_for_archive(file, archive);
-	tgz = get_tmp_path_for_group(file, archive->parentNode);
+	assert(group->name[0] == 'g');
 
-	if (!tgz || !uri)
+	uri = mirrors_get_best_url(index->site, xml_get_attr(group, "href"));
+	if (!uri)
+		goto out;
+
+	tgz = get_tmp_path_for_group(file, group);
+	if (!tgz)
 		goto out;
 
 	if (verbose)
@@ -645,12 +627,12 @@ Task *fetch_archive(const char *file, Element *archive, Index *index)
 
 	task->step = got_archive;
 	wget(task, uri, tgz, 1);
-	task->data = archive;
+	task->data = group;
 
 	/* Store the size, for progress indicators */
 	{
 		const char *size_s;
-		size_s = xml_get_attr(archive->parentNode, "size");
+		size_s = xml_get_attr(group, "size");
 		task->size = atol(size_s);
 	}
 

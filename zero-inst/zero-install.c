@@ -159,14 +159,16 @@ static void kernel_got_index(Task *task)
 
 	if (item->name[0] == 'd')
 		fetch_create_directory(task->str, item);
+	else if (item->name[0] == 'l')
+		error("Warning: '%s' is a link!", task->str);
 	else {
-		Element *archive;
+		Element *group;
 
-		archive = index_find_archive(item);
-		assert(archive);
+		group = item->parentNode;
+		assert(group->name[0] == 'g');
 
 		task->child_task = fetch_archive(task->str,
-						 archive, task->index);
+						 group, task->index);
 		if (task->child_task) {
 			task->step = kernel_got_archive;
 			control_notify_update(task);

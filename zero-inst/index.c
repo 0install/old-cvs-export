@@ -279,13 +279,14 @@ static void index_link(Index *index, Element *node)
 	xml_add_child(old, new);
 }
 
-static int index_merge_overrides(Index *index, const char *site)
+static int index_merge_overrides(Index *index)
 {
 	char *links;
 	Element *doc;
 	Element *node;
 
-	links = build_string("%s/%h/.0inst-meta/override.xml", cache_dir, site);
+	links = build_string("%s/%h/.0inst-meta/override.xml", cache_dir,
+					index->site);
 	if (!links)
 		return 0;
 
@@ -297,7 +298,7 @@ static int index_merge_overrides(Index *index, const char *site)
 	doc = xml_new(NULL, links);
 	free(links);
 	if (!doc) {
-		error("Failed to parse override.xml for '%s'", site);
+		error("Failed to parse override.xml for '%s'", index->site);
 		return 0;	/* Corrupt */
 	}
 
@@ -335,6 +336,12 @@ Index *parse_index(const char *pathname, int validate, const char *site)
 	}
 	index->doc = doc;
 	index->ref = 1;
+	index->site = my_strdup(site);
+
+	if (!index->site) {
+		index_free(index);
+		return NULL;
+	}
 
 	if (validate && !index_valid(index)) {
 		error("Index for '%s' does not validate!", site);
@@ -342,7 +349,7 @@ Index *parse_index(const char *pathname, int validate, const char *site)
 		return NULL;
 	}
 	
-	if (!index_merge_overrides(index, site)) {
+	if (!index_merge_overrides(index)) {
 		index_free(index);
 		return NULL;
 	}
@@ -360,6 +367,8 @@ void index_free(Index *index)
 	
 	if (!index->ref) {
 		xml_destroy(index->doc);
+		if (index->site)
+			free(index->site);
 		free(index);
 	}
 }

@@ -1,5 +1,6 @@
 struct _Index {
 	Element *doc;
+	char *site;
 	int ref;
 };
 
