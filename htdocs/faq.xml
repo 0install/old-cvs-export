@@ -193,10 +193,13 @@ broadband, that might mean removing anything that hasn't been accessed
 for a year. For users with dial-up and 80Gb disks, that probably means
 never ever removing anything.
 </p><p>
-Possibly, running gimp-1.2.3 could check for, and offer to remove,
-gimp-1.2.2, etc. It would also be possible to start from the user's
-list of applications (menu, panel, etc) and see which resources in the
-cache were 'reachable' and offer to delete any that weren't.
+You can run <b>/uri/0install/zero-install.sourceforge.net/apps/ZeroClean</b>
+to scan the cache for good removal candidates:
+</p>
+
+<p style='text-align: center'>
+<img width="618" height="338" src="ZeroClean.png"
+     alt='ZeroClean find somes files to remove' />
 </p>
 
 <h3>Why are you abandoning application directories after supporting
