@@ -21,7 +21,7 @@
 
 #define TMP_NAME ".0inst-archive.tgz"
 
-static int build_ddd_from_index(xmlNode *dir_node, char *dir);
+static void build_ddd_from_index(xmlNode *dir_node, char *dir);
 
 /* Create directory 'path' from 'node' */
 void fetch_create_directory(const char *path, xmlNode *node)
@@ -36,31 +36,38 @@ void fetch_create_directory(const char *path, xmlNode *node)
 		return;
 	}
 
-	if (!ensure_dir(cache_path))
-		return;
-
 	build_ddd_from_index(node, cache_path);
+	chdir("/");
 }
 
-#if 0
 static void recurse_ddd(xmlNode *item, void *data)
 {
-	int *retval = data;
+	char *path = data;
 	xmlChar *name;
+	int len = strlen(path);
 
 	if (item->name[0] != 'd')
 		return;
 
-	if (*retval)
-		return;
-	
 	name = xmlGetNsProp(item, "name", NULL);
 
-	*retval = build_ddd_from_index(item, name);
+	assert(strchr(name, '/') == NULL);
 
+	if (len + strlen(name) + 2 >= MAX_PATH_LEN) {
+		fprintf(stderr, "Path %s/%s too long\n", path, name);
+		return;
+	}
+
+	path[len] = '/';
+	strcpy(path + len + 1, name);
 	xmlFree(name);
+
+	/* TODO: only if path exists? */
+
+	build_ddd_from_index(item, path);
+
+	path[len] = '\0';
 }
-#endif
 
 static void write_item(xmlNode *item, void *data)
 {
@@ -100,12 +107,14 @@ static void write_item(xmlNode *item, void *data)
  * Changes dir (MAX_PATH_LEN).
  * 0 on success.
  */
-static int build_ddd_from_index(xmlNode *dir_node, char *dir)
+static void build_ddd_from_index(xmlNode *dir_node, char *dir)
 {
-	int retval = -1;
 	FILE *ddd = NULL;
 
-	printf("Building %s/...\n", dir);
+	/* printf("Building %s/...\n", dir); */
+
+	if (!ensure_dir(dir))
+		goto err;
 
 	if (chdir(dir))
 		goto err;
@@ -122,13 +131,12 @@ static int build_ddd_from_index(xmlNode *dir_node, char *dir)
 	if (rename("....", "..."))
 		goto err;
 
-	retval = 0;
-	//index_foreach(dir_node, recurse_ddd, &retval);
+	/* TODO: delete old stuff */
 
-	return retval;
+	index_foreach(dir_node, recurse_ddd, dir);
+	return;
 err:
 	perror("build_ddd_from_index");
-	return -1;
 }
 
 /* Called with cwd in directory where files have been extracted.
@@ -343,7 +351,6 @@ static void got_site_index(Task *task, int success)
 {
 	char *slash;
 	char path[MAX_PATH_LEN];
-	int dir_len;
 
 	assert(task->type == TASK_INDEX);
 	assert(task->child_pid == -1);
@@ -354,7 +361,7 @@ static void got_site_index(Task *task, int success)
 		return;
 	}
 
-	printf("[ got '%s' ]\n", task->str);
+	/* printf("[ got '%s' ]\n", task->str); */
 	task_steal_index(task, parse_index(task->str));
 
 	if (!task->index) {
@@ -365,17 +372,16 @@ static void got_site_index(Task *task, int success)
 	slash = strrchr(task->str, '/');
 	*slash = '\0';
 
-	dir_len = strlen(task->str) - sizeof(ZERO_INSTALL_INDEX);
-
-	if (dir_len >= MAX_PATH_LEN) {
+	if (strlen(task->str) >= MAX_PATH_LEN) {
+		fprintf(stderr, "Path %s too long\n", task->str);
 		task_destroy(task, 0);
 		return;
 	}
 
-	memcpy(path, task->str, dir_len);
-	path[dir_len] = '\0';
+	strcpy(path, task->str);
 
 	build_ddd_from_index(index_get_root(task->index), path);
+	chdir("/");
 
 	task_destroy(task, 1);
 }
@@ -462,9 +468,11 @@ Index *get_index(const char *path, Task **task, int force)
 		
 		index = parse_index(index_path);
 		if (index) {
-			/* Testing: */
+#if 0
 			index_path[cache_len + stem_len] = '\0';
 			build_ddd_from_index(index_get_root(index), index_path);
+			chdir("/");
+#endif
 			return index;
 		}
 	}

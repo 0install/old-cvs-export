@@ -20,7 +20,7 @@
 #include "task.h"
 #include "index.h"
 
-static Task *all_tasks = NULL;
+Task *all_tasks = NULL;
 static int n = 0;
 
 /* Create a new task of the given type. Returns NULL on OOM.
@@ -86,6 +86,7 @@ void task_destroy(Task *task, int success)
 		if (t->child_task == task) {
 			printf("Move forward with task %d\n", t->n);
 			t->child_task = NULL;
+			assert(t->step);
 			t->step(t, success);
 			t = all_tasks;
 		} else

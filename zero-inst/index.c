@@ -71,6 +71,8 @@ static xmlRelaxNGValidCtxtPtr schema = NULL;
 static xmlRelaxNGParserCtxtPtr context = NULL;
 static xmlRelaxNGPtr sc = NULL;
 
+static int dir_valid(xmlNode *dir);
+
 void index_init(void)
 {
 	assert(!schema);
@@ -90,6 +92,91 @@ void index_shutdown(void)
 	xmlRelaxNGFree(sc);
 	xmlRelaxNGFreeParserCtxt(context);
 	xmlRelaxNGCleanupTypes();
+}
+
+static void count(xmlNode *item, void *data)
+{
+	int *i = data;
+
+	if (item->name[0] == 'a')
+		return;
+	assert(item->name[0] == 'f' || item->name[0] == 'e' ||
+	       item->name[0] == 'd' || item->name[0] == 'l');
+
+	(*i)++;
+}
+
+static void get_names(xmlNode *item, void *data)
+{
+	xmlChar ***name = data;
+
+	if (item->name[0] == 'a')
+		return;
+
+	(*name)[0] = xmlGetNsProp(item, "name", NULL);
+	(*name)++;
+}
+
+static void valid_subdirs(xmlNode *item, void *data)
+{
+	int *ok = data;
+
+	if (item->name[0] != 'd')
+		return;
+	if (!dir_valid(item))
+		*ok = 0;
+}
+
+int compar(const void *a, const void *b)
+{
+	const char *aa = * (const char **) a;
+	const char *bb = * (const char **) b;
+
+	return strcmp(aa, bb);
+}
+
+static int dir_valid(xmlNode *dir)
+{
+	int i, n = 0;
+	int ok = 1;
+	xmlChar **names, **name;
+
+	assert(dir->name[0] == 'd');
+
+	index_foreach(dir, count, &n);
+
+	if (n == 0)
+		return 1;
+
+	name = names = my_malloc(sizeof(char *) * n);
+	index_foreach(dir, get_names, &name);
+
+	qsort(names, n, sizeof(char *), compar);
+
+	for (i = 0; i < n; i++) {
+		if (names[i][0] == '\0' ||
+		    strchr(names[i], '/') ||
+		    strncmp(names[i], ".0inst-", 7) == 0 ||
+		    strcmp(names[i], ".") == 0 ||
+		    strcmp(names[i], "..") == 0 ||
+		    strcmp(names[i], "...") == 0) {
+			fprintf(stderr, "Ilegal leafname '%s'\n", names[i]);
+			ok = 0;
+		}
+		if (i < n - 1 && strcmp(names[i], names[i + 1]) == 0) {
+			fprintf(stderr, "Duplicate leafname '%s'\n", names[i]);
+			ok = 0;
+		}
+		xmlFree(names[i]);
+	}
+
+	free(names);
+	if (!ok)
+		return 0;
+
+	index_foreach(dir, valid_subdirs, &ok);
+
+	return ok;
 }
 
 /* Load 'pathname' as an XML index file. Returns NULL if document is invalid
@@ -117,9 +204,13 @@ Index *parse_index(const char *pathname)
 		xmlFreeDoc(doc);
 		return NULL;
 	}
-
 	index->doc = doc;
 	index->ref = 1;
+
+	if (!dir_valid(index_get_root(index))) {
+		index_free(index);
+		return NULL;
+	}
 
 	return index;
 }

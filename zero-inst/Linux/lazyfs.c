@@ -16,6 +16,8 @@
 
 #include <linux/autoconf.h>
 
+#define LAZYFS_DEBUG
+
 #define LAZYFS_MAX_LISTING_SIZE (100*1024)
 
 #include "config.h"
@@ -60,111 +62,6 @@
 #include "lazyfs.h"
 
 const char platform[] = LAZYFS_PLATFORM;
-
-#if 1	/* Debugging */
-
-enum {
-	R_DDD_FILE,
-	R_DENTRY_INFO,
-	R_FILE_HOST_FILE,
-	R_HELPER,
-	R_HOST_DENTRY,
-	R_INFO_HOST_DENTRY,
-	R_INFO_LIST_DENTRY,
-	R_LIST_DENTRY,
-	R_LISTING,
-	R_MAPPING,
-	R_PARENT_HOST,
-	R_REQUEST,
-	R_ROOT_CACHE_DENTRY,
-	R_ROOT_HOST_DENTRY,
-	R_ROOT_HOST_MNT,
-	R_SBI,
-	R_TARGET,
-	R_USER_REQUEST,
-
-	N_RESOURCES
-};
-static const char *resource_names[] = {
-	"ddd_file",
-	"dentry_info",
-	"file->host_file",
-	"helper",
-	"host_dentry",
-	"info_host_dentry",
-	"info_list_dentry",
-	"list_dentry",
-	"listing",
-	"mapping",
-	"parent_host",
-	"request",
-	"root cache_dentry",
-	"root host_dentry",
-	"root host_mnt",
-	"sbi",
-	"target",
-	"user_request"
-};
-
-static atomic_t resources[N_RESOURCES];
-
-static void init_resources(void)
-{
-	int i;
-	if (sizeof(resource_names) / sizeof(*resource_names) != N_RESOURCES)
-		printk("Wrong array size!!\n");
-	for (i = 0; i < N_RESOURCES; i++)
-		atomic_set(&resources[i], 0);
-}
-
-static void show_resources(void)
-{
-	int i;
-	int any_non_zero = 0;
-
-	printk("Lazyfs current resource usage:\n");
-
-	for (i = 0; i < N_RESOURCES; i++) {
-		int j = atomic_read(&resources[i]);
-		if (j) {
-			printk("  %s: %d\n", resource_names[i], j);
-			any_non_zero = 1;
-		}
-	}
-	if (!any_non_zero)
-		printk("No resources still in use.\n");
-}
-
-static inline void inc(int type)
-{
-	//printk("+ %s\n", m);
-	atomic_inc(&resources[type]);
-}
-static inline void dec(int type)
-{
-	//printk("- %s\n", m);
-	atomic_dec(&resources[type]);
-}
-static void show_refs(struct dentry *dentry, int indent)
-{
-	struct list_head *next;
-	int i;
-
-	for (i = 0; i < indent; i++)
-		printk(" ");
-	printk("'%s' [%d] %s %s\n", dentry->d_name.name,
-			atomic_read(&dentry->d_count),
-			indent != 0 && d_unhashed(dentry) ? "(unhashed)" : "",
-			!dentry->d_inode ? "(negative)" : "");
-
-	next = dentry->d_subdirs.next;
-	while (next != &dentry->d_subdirs) {
-		struct dentry *c = list_entry(next, struct dentry, d_child);
-		show_refs(c, indent + 2);
-		next = next->next;
-	}
-}
-#endif
 
 /* Everyone waiting for the helper to fetch a file waits on
  * this queue. They all get woken up when the fetcher completes any
@@ -233,6 +130,10 @@ struct lazy_de_info {
 	 * Protected by fetching_lock.
 	 */
 	struct list_head request_list;
+
+#ifdef LAZYFS_DEBUG
+	struct list_head all_dinfo;
+#endif
 };
 
 /* Extra information attached to each open file */
@@ -241,6 +142,123 @@ struct lazy_file_info {
 	int n_mappings;		/* Number of times mmap increased inode's
 				   mmap count */
 };
+
+#ifdef LAZYFS_DEBUG
+
+enum {
+	R_DDD_FILE,
+	R_DENTRY_INFO,
+	R_FILE_HOST_FILE,
+	R_HELPER,
+	R_HOST_DENTRY,
+	R_INFO_HOST_DENTRY,
+	R_INFO_LIST_DENTRY,
+	R_LIST_DENTRY,
+	R_LISTING,
+	R_MAPPING,
+	R_PARENT_HOST,
+	R_REQUEST,
+	R_ROOT_CACHE_DENTRY,
+	R_ROOT_HOST_DENTRY,
+	R_ROOT_HOST_MNT,
+	R_SBI,
+	R_TARGET,
+	R_USER_REQUEST,
+
+	N_RESOURCES
+};
+static const char *resource_names[] = {
+	"ddd_file",
+	"dentry_info",
+	"file->host_file",
+	"helper",
+	"host_dentry",
+	"info_host_dentry",
+	"info_list_dentry",
+	"list_dentry",
+	"listing",
+	"mapping",
+	"parent_host",
+	"request",
+	"root cache_dentry",
+	"root host_dentry",
+	"root host_mnt",
+	"sbi",
+	"target",
+	"user_request"
+};
+
+static atomic_t resources[N_RESOURCES];
+
+static void init_resources(void)
+{
+	int i;
+	if (sizeof(resource_names) / sizeof(*resource_names) != N_RESOURCES)
+		printk("Wrong array size!!\n");
+	for (i = 0; i < N_RESOURCES; i++)
+		atomic_set(&resources[i], 0);
+}
+
+LIST_HEAD(all_dinfo);
+
+static void show_resources(void)
+{
+	int i;
+	int any_non_zero = 0;
+	struct list_head *pos;
+
+	printk("Lazyfs current resource usage:\n");
+
+	for (i = 0; i < N_RESOURCES; i++) {
+		int j = atomic_read(&resources[i]);
+		if (j) {
+			printk("  %s: %d\n", resource_names[i], j);
+			any_non_zero = 1;
+		}
+	}
+	if (!any_non_zero)
+		printk("No resources still in use.\n");
+
+	list_for_each(pos, &all_dinfo) {
+		struct lazy_de_info *info = 
+			list_entry(pos, struct lazy_de_info, all_dinfo);
+
+		printk("Dentry still allocated: '%s'\n",
+				info->dentry->d_name.name);
+	}
+}
+
+static inline void inc(int type)
+{
+	//printk("+ %s\n", m);
+	atomic_inc(&resources[type]);
+}
+static inline void dec(int type)
+{
+	//printk("- %s\n", m);
+	atomic_dec(&resources[type]);
+}
+static void show_refs(struct dentry *dentry, int indent)
+{
+	struct list_head *next;
+	int i;
+
+	for (i = 0; i < indent; i++)
+		printk(" ");
+	printk("'%s' [%d] %s %s\n", dentry->d_name.name,
+			atomic_read(&dentry->d_count),
+			indent != 0 && d_unhashed(dentry) ? "(unhashed)" : "",
+			!dentry->d_inode ? "(negative)" : "");
+
+	next = dentry->d_subdirs.next;
+	while (next != &dentry->d_subdirs) {
+		struct dentry *c = list_entry(next, struct dentry, d_child);
+		show_refs(c, indent + 2);
+		next = next->next;
+	}
+}
+
+#endif
 
 /* Any change to the helper_list queues requires this lock */
 static spinlock_t fetching_lock = SPIN_LOCK_UNLOCKED;
@@ -390,6 +408,10 @@ lazyfs_release_dentry(struct dentry *dentry)
 	if (!list_empty(&info->request_list))
 		BUG();
 
+#ifdef LAZYFS_DEBUG
+	list_del(&info->all_dinfo);
+#endif
+
 	if (info->host_dentry) {
 		dec(R_INFO_HOST_DENTRY);
 		dput(info->host_dentry);
@@ -509,6 +531,9 @@ new_dentry(struct super_block *sb, struct dentry *parent_dentry,
 	info->may_delete = 0;
 	info->dynamic = 0;
 	INIT_LIST_HEAD(&info->request_list);
+
+	INIT_LIST_HEAD(&info->all_dinfo);
+	list_add(&info->all_dinfo, &all_dinfo);
 
 	if (parent_dentry)
 		d_add(new, inode);

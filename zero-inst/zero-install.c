@@ -168,7 +168,7 @@ out:
 
 static void kernel_got_archive(Task *task, int success)
 {
-	printf("Todo: unpack archive\n");
+	control_notify_user(task->uid);
 	close(task->fd);
 	task_destroy(task, 0);
 }
@@ -182,6 +182,8 @@ static void kernel_got_index(Task *task)
 	const char *slash;
 
 	assert(task->index);
+
+	control_notify_user(task->uid);
 
 	slash = strchr(task->str + 1, '/');
 	slash = strchr(slash + 1, '/');
@@ -220,6 +222,8 @@ static void kernel_got_index(Task *task)
 
 static void kernel_task_step(Task *task, int success)
 {
+	control_notify_user(task->uid);
+
 	if (success)
 		task_steal_index(task, get_index(task->str, NULL, 0));
 
@@ -266,6 +270,7 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	task_steal_index(task, get_index(path, &task->child_task, 0));
 	if (task->child_task) {
 		assert(!task->index);
+		control_notify_user(uid);
 		return;		/* Download in progress */
 	}
 

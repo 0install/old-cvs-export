@@ -1,3 +1,5 @@
+extern Task *all_tasks;
+
 typedef enum {
 	TASK_KERNEL,	/* Handles a request from the kernel */
 	TASK_CLIENT,	/* Handles a request from 0refresh or similar */

@@ -21,8 +21,6 @@ typedef struct _Client Client;
 
 struct _Client {
 	int socket;
-	int have_uid;
-	uid_t uid;
 	int monitor;
 	int terminate;
 
@@ -35,7 +33,7 @@ struct _Client {
 
 	char command[10 + MAX_PATH_LEN];	/* Command being read */
 
-	Task	*task;
+	Task	*task;	/* NULL => not auth'd */
 
 	Client	*next;
 };
@@ -92,11 +90,13 @@ int create_control_socket(void)
 
 static void client_push_update(Client *client)
 {
-	//Request *request;
+	Task *task;
 	size_t len = 0;
 	char *buf;
 	//int i;
 	//char buffer[20];
+
+	assert(client->task);
 
 	client->need_update = 1;
 
@@ -109,16 +109,19 @@ static void client_push_update(Client *client)
 	}
 
 	len += sizeof("UPDATE_END");	/* (final \0 at end) */
-#if 0
-	for (request = open_requests; request; request = request->next) {
-		for (i = 0; i < request->n_users; i++) {
-			if (request->users[i].uid != client->uid)
-				continue;
-		
-			/* The path of the request */
-			len += strlen(request->path) + 1 +
-				strlen(request->users[i].leaf) + 1;
 
+	for (task = all_tasks; task; task = task->next) {
+		if ((task->type == TASK_CLIENT || task->type == TASK_KERNEL) &&
+				task->child_task &&
+				task->uid == client->task->uid) {
+			assert(task->str);
+			assert(task->child_task->str);
+			/* The path of the request */
+			len += strlen(task->str) + 1;
+			len += strlen(task->child_task->str) + 1;
+			len += 3;
+
+#if 0
 			/* The current download (even if not head) */
 			if (request->current_download_path)
 				len += strlen(request->current_download_path);
@@ -127,32 +130,28 @@ static void client_push_update(Client *client)
 				len += snprintf(buffer, sizeof(buffer), "%ld",
 				       request->current_download_archive->size);
 			len++;
+#endif
 		}
 	}
-#endif
+
 	client->to_send = my_malloc(len);
 	if (!client->to_send)
 		return;
 
 	buf = client->to_send;
 	buf += sprintf(buf, "UPDATE%c", 0);
-#if 0
-	for (request = open_requests; request; request = request->next) {
-		for (i = 0; i < request->n_users; i++) {
-			if (request->users[i].uid != client->uid)
-				continue;
-			buf += sprintf(buf, "%s/%s%c%s%c", request->path,
-				request->users[i].leaf, 0,
-				request->current_download_path
-					? request->current_download_path : "",
-				0);
-			if (request->current_download_archive)
-				buf += sprintf(buf, "%ld",
-				       request->current_download_archive->size);
-			*(buf++) = '\0';
+
+	for (task = all_tasks; task; task = task->next) {
+		if ((task->type == TASK_CLIENT || task->type == TASK_KERNEL) &&
+				task->child_task &&
+				task->uid == client->task->uid) {
+			buf += sprintf(buf, "%s%c%s%c%ld%c",
+					task->str, 0,
+					task->child_task->str, 0,
+				      	(long) -1, 0);
 		}
 	}
-#endif
+
 	buf += sprintf(buf, "END") + 1;	/* (includes \0) */
 	if (buf - client->to_send != len) {
 		fprintf(stderr, "client_push_update: Internal error (%d,%d)\n",
@@ -187,8 +186,8 @@ void read_from_control(int control)
 
 	client->socket = fd;
 	client->monitor = 0;
-	client->have_uid = 0;
 	client->send_offset = 0;
+	client->task = NULL;
 	client->to_send = NULL;
 	client->command[0] = '\0';
 	client->next = clients;
@@ -258,7 +257,6 @@ static void client_send_reply(Client *client, const char *message)
 /* Client requests the 'directory' be refetched */
 static void client_refresh(Client *client, const char *directory)
 {
-	Task *task;
 	char real[PATH_MAX];
 	char *slash;
 	Index *index;
@@ -275,24 +273,28 @@ static void client_refresh(Client *client, const char *directory)
 		return;
 	}
 
-	slash = strchr(real + 4, '/');
-	if (slash == real + 4 || !slash) {
+	slash = strchr(real + 5, '/');
+	if (!slash) {
 		client_send_reply(client, "Can't refresh top-levels!");
 		return;
 	}
-
-	*slash = '\0';
 
 	if (client->task->child_task) {
 		client_send_reply(client, "Busy with another request!");
 		return;
 	}
 
-	index = get_index(real + 4, &task, 1);
+	task_set_string(client->task, real + 4);
+	if (!client->task->str) {
+		client_send_reply(client, "Out of memory");
+		return;
+	}
+
+	index = get_index(client->task->str, &client->task->child_task, 1);
 	assert(!index);
 
-	if (task)
-		client->task->child_task = task;
+	if (client->task->child_task)
+		control_notify_user(client->task->uid);
 	else
 		client_send_reply(client, "Error");
 }
@@ -329,12 +331,18 @@ static void client_do_commands(Client *client)
 	}
 }
 
+static void client_step(Task *task, int success)
+{
+	control_notify_user(task->uid);
+	client_send_reply((Client *) task->data, success ? "OK" : "FAIL");
+}
+
 static int read_from_client(Client *client)
 {
 	int got;
 	int current_len;
 
-	if (!client->have_uid) {
+	if (!client->task) {
 		char buffer[256];
 		struct msghdr msg;
 		struct iovec vec[1];
@@ -371,16 +379,15 @@ static int read_from_client(Client *client)
 			return -1;
 		}
 
-		client->have_uid = 1;
-		client->uid = ((struct ucred *) CMSG_DATA(cmsg))->uid;
-
-		printf("Client authenticated as user %ld\n",
-				(long) client->uid);
-
 		client->task = task_new(TASK_CLIENT);
 		if (!client->task)
 			return 1;	/* OOM */
+		client->task->uid = ((struct ucred *) CMSG_DATA(cmsg))->uid;
 		client->task->data = client;
+		client->task->step = client_step;
+
+		printf("Client authenticated as user %ld\n",
+				(long) client->task->uid);
 
 		return 0;
 	}
@@ -473,7 +480,7 @@ void control_notify_user(uid_t uid)
 	Client *client;
 
 	for (client = clients; client; client = client->next) {
-		if (client->have_uid && client->uid == uid)
+		if (client->task && client->task->uid == uid)
 			client->update_flagged = 1;
 	}
 }
