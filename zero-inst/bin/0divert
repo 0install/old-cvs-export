@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+import sys, os, time
+from xml.dom import minidom
+import xml
+
+def usage():
+	prog = sys.argv[0]
+	print """Usage:
+  0divert [old] [new]  -- make 'old' a symlink to 'new'
+  0divert -r [link]    -- remove diversion (symlink)
+  0divert -l [site]    -- show all links for site.
+
+Examples:
+  0divert /uri/0install/example.com/lib/mylib-1.1 ~/mylib-1.1-fixed
+  0divert -l example.com
+  0divert -r /uri/0install/example.com/lib/mylib-1.1
+
+When making a diversion and 'old' exists then it changes into a symlink,
+otherwise a new symlink is created. Removing a diversion puts things
+back the way they were."""
+	raise SystemExit(1)
+
+if len(sys.argv) > 1 and sys.argv[1] == '-f':
+	del sys.argv[1]
+	force = True
+else:
+	force = False
+
+if len(sys.argv) != 3:
+	usage()
+
+cache = os.readlink('/uri/0install/.lazyfs-cache')
+meta = '.0inst-meta'
+
+def abspath(path):
+	path = os.path.abspath(path)
+	if not path.startswith('/uri/0install/'):
+		print >>sys.stderr, \
+			"'%s' does not start with /uri/0install/" % path
+		raise SystemExit(1)
+	path = path[14:]
+	if '/' not in path:
+		print >>sys.stderr, "'%s' is just a site! (missing /)" % path
+		raise SystemExit(1)
+	host, path = path.split('/', 1)
+	path = '/' + path
+	return host, path
+
+def remove(path):
+	host, path = abspath(path)
+	links = links_for(host)
+	if path not in links:
+		print >>sys.stderr, "Diversion '%s' not set for site '%s'!" % \
+			(path, host)
+		raise SystemExit(1)
+	del links[path]
+	save_links(host, links)
+
+def link(old, target):
+	host, path = abspath(old)
+	if not force:
+		abs_old = os.path.join('/uri/0install', host, path[1:])
+		old_parent = os.path.dirname(abs_old)
+		if not os.path.exists(old_parent):
+			print >>sys.stderr, \
+				"'%s' does not exist. Use -f to force." % \
+				old_parent
+			raise SystemExit(1)
+	links = links_for(host)
+	links[path] = (target, str(len(target)), str(long(time.time())))
+	save_links(host, links)
+
+def list(site):
+	links = links_for(site)
+	if links:
+		for link in links:
+			target, size, mtime = links[link]
+			print "%s -> %s (set %s)" % (link, target,
+					time.ctime(long(mtime)))
+	else:
+		print "No diversions set for site '%s'" % site
+
+def links_for(site):
+	assert '/' not in site
+	meta_dir = os.path.join(cache, site, meta)
+	if not force and not os.path.isdir(meta_dir):
+		print >>sys.stderr, "Site '%s' is not cached yet! " \
+			"Use -f to force." % site
+		raise SystemExit(1)
+	path =  os.path.join(meta_dir, 'override.xml')
+	links = {}
+	if os.path.exists(path):
+		doc = minidom.parse(path)
+		for n in doc.documentElement.childNodes:
+			if n.nodeType != xml.dom.Node.ELEMENT_NODE:
+				continue
+			if n.nodeName != 'link':
+				print "Unknown element", n
+				continue
+			links[n.getAttribute('src')] = (
+				n.getAttribute('target'),
+				n.getAttribute('size'),
+				n.getAttribute('mtime'))
+	return links
+
+def save_links(site, links):
+	meta_dir = os.path.join(cache, site, meta)
+	path =  os.path.join(meta_dir, 'override.xml')
+	if not links:
+		if os.path.exists(path):
+			os.unlink(path)
+		return
+	if not os.path.exists(meta_dir):
+		os.makedirs(meta_dir)
+	doc = minidom.Document()
+	root = doc.createElement('diversions')
+	doc.appendChild(root)
+
+	for link in links:
+		node = doc.createElement('link')
+		target, size, mtime = links[link]
+		node.setAttribute('mtime', mtime)
+		node.setAttribute('src', link)
+		node.setAttribute('target', target)
+		node.setAttribute('size', size)
+		root.appendChild(node)
+	
+	stream = file(path + '.new', 'w')
+	doc.writexml(stream)
+	stream.write('\n')
+	os.rename(path + '.new', path)
+	if os.spawnlp(os.P_WAIT, '0refresh', '0refresh', '-l', site):
+		print >>sys.stderr, "0refresh failed"
+
+if sys.argv[1] == '-r':
+	remove(sys.argv[2])
+elif sys.argv[1] == '-l':
+	list(sys.argv[2])
+else:
+	link(sys.argv[1], sys.argv[2])
