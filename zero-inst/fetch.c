@@ -350,6 +350,8 @@ static void got_archive(Task *task, int success)
 			unpack_archive(task->str, dir, task->data);
 			free(dir);
 		}
+	} else {
+		fprintf(stderr, "Failed to fetch archive\n");
 	}
 
 	unlink(task->str);
@@ -397,7 +399,7 @@ static void got_site_index(Task *task, int success)
 }
 
 /* Fetch the index file 'path' (in the cache).
- * path must be in the form <cache>/http/site/ZERO_INSTALL_INDEX.
+ * path must be in the form <cache>/site/ZERO_INSTALL_INDEX.
  */
 static Task *fetch_site_index(const char *path, int use_cache)
 {
@@ -452,13 +454,11 @@ Index *get_index(const char *path, Task **task, int force)
 		force = 0;
 
 	assert(path[0] == '/');
-	slash = strchr(path + 1, '/');
-	assert(slash);
 	
-	if (strcmp(slash + 1, "AppRun") == 0 || slash[1] == '.')
+	if (strcmp(path + 1, "AppRun") == 0 || path[1] == '.')
 		return NULL;	/* Don't waste time looking for these */
 
-	slash = strchr(slash + 1, '/');
+	slash = strchr(path + 1, '/');
 
 	if (slash)
 		stem_len = slash - path;
@@ -531,7 +531,6 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	if (!strstr(relative_uri, "://")) {
 		/* Make URI absolute */
 		slash = strchr(path + cache_len + 1, '/');
-		slash = strchr(slash + 1, '/');
 		*slash = '\0';
 		
 		if (!build_uri(uri, sizeof(uri),

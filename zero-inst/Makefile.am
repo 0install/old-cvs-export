@@ -20,15 +20,18 @@ INCLUDES = `pkg-config --cflags libxml-2.0`
 zero_install_LDFLAGS = `pkg-config --libs libxml-2.0`
 
 install-exec-local:
+	make uninstall-local
+	[ ! -L /uri/.lazyfs-cache ] || umount /uri
 	([ -d /uri ] || mkdir /uri) && \
+	([ -d /uri/0http ] || mkdir /uri/0http) && \
  	([ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst) && \
 	([ -n "${ROOT_PREFIX}" ] || \
  	 chown "${HELPER_USER}" /var/cache/zero-inst && \
- 	 grep -q "^lazyfs" ${FSTAB} ||	echo "lazyfs          /uri            lazyfs  /var/cache/zero-inst            0 0" >> ${FSTAB})
+ 	 echo "lazyfs	/uri/0http	lazyfs	/var/cache/zero-inst	0 0" >> ${FSTAB})
 
 uninstall-local:
 	if [ -z "${ROOT_PREFIX}" ]; then \
-	  grep -v "^lazyfs[ \t]*/uri[ \t]" "${FSTAB}" > "${FSTAB}.new" && \
+	  grep -v "^lazyfs[ 	]*/uri" "${FSTAB}" > "${FSTAB}.new" && \
 	  mv "${FSTAB}.new" "${FSTAB}"; fi
 
 CFLAGS = -O2 -Wall -Wstrict-prototypes -g

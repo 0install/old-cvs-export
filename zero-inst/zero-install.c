@@ -78,19 +78,20 @@ static int open_helper(void)
 {
 	int helper;
 
-	helper = open(URI "/.lazyfs-helper", O_RDONLY);
+	helper = open(MNT_DIR "/.lazyfs-helper", O_RDONLY);
 	if (helper == -1) {
 		int error = errno;
 
-		perror("Error opening " URI "/.lazyfs-helper");
+		perror("Error opening " MNT_DIR "/.lazyfs-helper");
 
 		if (error == EACCES)
 			fprintf(stderr, "\nEnsure that %s is owned \n"
 					"by the user that runs %s before "
-					URI " is mounted.\n",
+					MNT_DIR " is mounted.\n",
 					cache_dir, prog);
 		else
-			fprintf(stderr, "\nEnsure that " URI " is mounted.\n");
+			fprintf(stderr,
+				"\nEnsure that " MNT_DIR " is mounted.\n");
 
 		exit(EXIT_FAILURE);
 	}
@@ -98,52 +99,12 @@ static int open_helper(void)
 	return helper;
 }
 
+/* Handle the top-level dir (0http) by marking it as dynamic */
 static void handle_root_request(int request_fd)
 {
 	FILE *ddd;
-	long now;
-
-	now = time(NULL);
 
 	if (chdir(cache_dir))
-		goto err;
-
-	ddd = fopen("....", "w");
-	if (!ddd)
-		goto err;
-	fprintf(ddd, "LazyFS\n"
-		"d 0 %ld 0http%c"
-		"l 6 %ld http%c0http%c",
-		now, 0, now, 0, 0);
-	if (fclose(ddd))
-		goto err;
-
-	if (rename("....", "..."))
-		goto err;
-	fprintf(stderr, "Write root ... file\n");
-	goto out;
-err:
-	perror("handle_root_request");
-	fprintf(stderr, "Unable to write root ... file\n");
-out:
-	if (request_fd != -1)
-		close(request_fd);
-	chdir("/");
-}
-
-/* Handle one of the top-level dirs (http, ftp, etc) by marking it as
- * dynamic.
- */
-static void handle_toplevel_request(int request_fd, const char *dir)
-{
-	FILE *ddd;
-
-	if (chdir(cache_dir))
-		goto err;
-
-	if (mkdir(dir, 0755) && errno != EEXIST)
-		goto err;
-	if (chdir(dir))
 		goto err;
 
 	ddd = fopen("....", "w");
@@ -156,14 +117,10 @@ static void handle_toplevel_request(int request_fd, const char *dir)
 		goto err;
 	goto out;
 err:
-	perror("handle_toplevel_request");
-	fprintf(stderr, "Unable to write %s ... file\n", dir);
+	perror("handle_root_request: Unable to write ... file");
 out:
 	close(request_fd);
 	chdir("/");
-
-	sleep(1);
-	fprintf(stderr, "Done\n");
 }
 
 static void kernel_got_archive(Task *task, int success)
@@ -186,7 +143,6 @@ static void kernel_got_index(Task *task)
 	control_notify_user(task->uid);
 
 	slash = strchr(task->str + 1, '/');
-	slash = strchr(slash + 1, '/');
 
 	if (slash)
 		item = index_lookup(task->index, slash);
@@ -239,18 +195,12 @@ static void kernel_task_step(Task *task, int success)
 static void handle_request(int request_fd, uid_t uid, char *path)
 {
 	Task *task;
-	char *slash;
 
 	if (strcmp(path, "/") == 0) {
 		handle_root_request(request_fd);
 		return;
 	}
 
-	slash = strrchr(path, '/');
-	if (slash == path) {
-		handle_toplevel_request(request_fd, path + 1);
-		return;
-	}
 	task = task_new(TASK_KERNEL);
 	if (!task) {
 		close(request_fd);
@@ -372,7 +322,7 @@ static void read_from_wakeup(int wakeup)
 	}
 }
 
-#define CACHE_LINK "/uri/.lazyfs-cache"
+#define CACHE_LINK MNT_DIR "/.lazyfs-cache"
 
 int main(int argc, char **argv)
 {
@@ -404,8 +354,9 @@ int main(int argc, char **argv)
 	if (len == -1) {
 		perror("readlink(" CACHE_LINK ")");
 		fprintf(stderr, "\nCan't find location of cache directory.\n"
-			"Make sure /uri is mounted and that you are running\n"
-			"the latest version of the lazyfs kernel module.\n");
+			"Make sure " MNT_DIR " is mounted and that you are \n"
+			"running the latest version of the lazyfs kernel \n"
+			"module.\n");
 		return EXIT_FAILURE;
 	}
 	assert(len >= 1 && len < sizeof(cache_dir));

@@ -98,7 +98,7 @@ int uri_ensure_absolute(const char *uri, const char *base,
 	return 1;
 }
 
-/* /0http/www.foo.org/some/path, one, two to
+/* /www.foo.org/some/path, one, two to
  * http://www.foo.org/some/path/one/two
  *
  * The two 'leaf' components are appended, if non-NULL.
@@ -107,28 +107,9 @@ int uri_ensure_absolute(const char *uri, const char *base,
 int build_uri(char *buffer, int len, const char *path,
 		     const char *leaf1, const char *leaf2)
 {
-	int n;
-	char *slash;
+	assert(path[0] == '/');
 
-	if (strncmp(path, "/0http/", 7) != 0) {
-		fprintf(stderr, "Unsupported scheme in %s\n", path);
-		return 0;
-	}
-
-	path += 2;
-
-	slash = strchr(path, '/');
-	assert(slash != NULL && slash != path);
-
-	n = slash - path;	/* Length of protocol (http=4) */
-	if (n > len)
-		goto too_big;
-	memcpy(buffer, path, n);
-	path += n;
-	buffer += n;
-	len -= n;
-
-	if (snprintf(buffer, len, ":/%s%s%s%s%s", path,
+	if (snprintf(buffer, len, "http:/%s%s%s%s%s", path,
 			leaf1 ? "/" : "", leaf1 ? leaf1 : "",
 			leaf2 ? "/" : "", leaf2 ? leaf2 : "") > len - 1)
 		goto too_big;

@@ -1,4 +1,4 @@
-#define URI "/uri"
+#define MNT_DIR "/uri/0http"
 #define ZERO_INST_INDEX ".0inst.xml"
 #define MAX_PATH_LEN 4096
 #define MAX_URI_LEN 4096

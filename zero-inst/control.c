@@ -247,7 +247,6 @@ static void client_send_reply(Client *client, const char *message)
 static void client_refresh(Client *client, const char *directory)
 {
 	char real[PATH_MAX];
-	char *slash;
 	Index *index;
 
 	if (!realpath(directory, real)) {
@@ -257,14 +256,8 @@ static void client_refresh(Client *client, const char *directory)
 		return;
 	}
 	
-	if (strncmp(real, "/uri/", 5) != 0) {
+	if (strncmp(real, MNT_DIR "/", sizeof(MNT_DIR)) != 0) {
 		client_send_reply(client, "Not under Zero Install's control");
-		return;
-	}
-
-	slash = strchr(real + 5, '/');
-	if (!slash) {
-		client_send_reply(client, "Can't refresh top-levels!");
 		return;
 	}
 
@@ -273,7 +266,7 @@ static void client_refresh(Client *client, const char *directory)
 		return;
 	}
 
-	task_set_string(client->task, real + 4);
+	task_set_string(client->task, real + 10);
 	if (!client->task->str) {
 		client_send_reply(client, "Out of memory");
 		return;
