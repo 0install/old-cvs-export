@@ -9,16 +9,6 @@ typedef struct _UserRequest UserRequest;
 
 int queue_request(const char *path, const char *leaf, uid_t uid, int fd);
 
-/* A Request begins in the READY state.
- *
- * It will then be quickly moved to FETCHING_INDEX. When the child process
- * completes, it looks at the index to work out which archive it needs and
- * moves to FETCHING_ARCHIVE while starting the download.
- * 
- * When that process completes, it finds the archive for the next file
- * request and fetches that, or removes the Request if there are no more.
- */
-
 typedef enum {READY, FETCHING_INDEX, FETCHING_ARCHIVE} State;
 
 struct _Request {

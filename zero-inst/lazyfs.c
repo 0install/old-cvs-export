@@ -28,6 +28,8 @@
 
 #define LAZYFS_MAX_LISTING_SIZE (100*1024)
 
+#include "config.h"
+
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/errno.h>
@@ -43,6 +45,8 @@
 #include <asm/uaccess.h>
 
 #include "lazyfs.h"
+
+const char platform[] = LAZYFS_PLATFORM;
 
 #if 1	/* Debugging */
 static atomic_t resource_counter = ATOMIC_INIT(0);
@@ -278,8 +282,10 @@ static void
 lazyfs_put_inode(struct inode *inode)
 {
 	if (S_ISLNK(inode->i_mode) && inode->u.generic_ip) {
-		kfree(inode->u.generic_ip);
-		dec("target");
+		if (inode->u.generic_ip != platform) {
+			kfree(inode->u.generic_ip);
+			dec("target");
+		}
 	}
 
 	if (inode->i_mapping != &inode->i_data) {
@@ -341,14 +347,20 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 		inode->i_fop = &lazyfs_file_operations;
 	else if (S_ISLNK(mode)) {
 		char *target;
-		target = kmalloc(link_target->len + 1, GFP_KERNEL);
-		if (!target) {
-			iput(inode);
-			return NULL;
+
+		if (link_target->len == strlen("@PLATFORM@") &&
+		    strcmp(link_target->name, "@PLATFORM@") == 0) {
+			target = (char *) platform;
+		} else {
+			target = kmalloc(link_target->len + 1, GFP_KERNEL);
+			if (!target) {
+				iput(inode);
+				return NULL;
+			}
+			inc("target");
+			memcpy(target, link_target->name, link_target->len);
+			target[link_target->len] = '\0';
 		}
-		inc("target");
-		memcpy(target, link_target->name, link_target->len);
-		target[link_target->len] = '\0';
 		inode->u.generic_ip = target;
 
 		inode->i_op = &lazyfs_link_operations;
