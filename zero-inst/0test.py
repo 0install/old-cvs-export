@@ -12,11 +12,11 @@ def unmount():
 			raise Exception("Can't unmount /uri/0install!")
 		lines = os.popen('dmesg').readlines()
 		lines.reverse()
-		#i = lines.index("lazyfs: Resource usage after put_super:\n")
-		for i in range(len(lines)):
-			if lines[i].startswith("'/' "):
-				i += 1
-				break
+		i = lines.index("lazyfs: Resource usage after put_super:\n")
+		#for i in range(len(lines)):
+		#	if lines[i].startswith("'/' "):
+		#		i += 1
+		#		break
 		lines.reverse()
 		print ">> dmesg output"
 		print ''.join(lines[-i:])
