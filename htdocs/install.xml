@@ -65,13 +65,13 @@ the source tarballs below instead.
 </div>
 -->
 
-<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.13.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.13.tar.gz.sig">GPG Sig</a> ]. Extract it, and
+<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.14.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.14.tar.gz.sig">GPG Sig</a> ]. Extract it, and
 move to the new directory (things you type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.13.tar.gz</b>
-$ <b>cd zero-install-0.1.13</b>
+$ <b>tar xzf zero-install-0.1.14.tar.gz</b>
+$ <b>cd zero-install-0.1.14</b>
 </pre>
 
 <p>
@@ -105,32 +105,20 @@ in the makefile.
 </div>
 
 <p>
-The build and install it (use su to get the root prompt, #):
+The build and install it (use su to get root privileges):
 </p>
 <pre>
 $ <b>make</b>
-$ <b>su</b>
-# <b>make install</b>
+$ <b>su -c 'make install'</b>
 </pre>
 
 <p>
 This will copy the new lazyfs module under /lib/modules/, and create the
 /uri/0install mount point and the /var/cache/zero-inst cache directory. It will
 also add an entry to /etc/fstab to allow mounting /uri/0install easily. If you
-were already running an older version, this step also unmounts /uri/0install
-and unloads the old module.
+were already running an older version, this step also remounts /uri/0install
+and loads the new module.
 </p>
-
-<p>
-Now mount /uri/0install. Since the helper is not yet running, you won't be able
-to access the directory yet. Don't worry about that. Then 'exit' from the 'su',
-as we don't need to be root anymore.
-</p>
-
-<pre>
-# <b>mount /uri/0install</b>
-# <b>exit</b>
-</pre>
 
 <p>
 Now, run the helper application (it will just wait, without doing anything).
@@ -149,8 +137,8 @@ The helper will print information about what it's doing when it's used.
 <h2>Testing the installation</h2>
 
 <p>
-With /uri mounted and the helper running, open another window, and try
-the following command:
+With the helper still running, open another window, and try the following
+command:
 </p>
 
 <pre>
@@ -174,19 +162,6 @@ Zero Install, so you need to have that installed by traditional methods.
 </p>
 
 <p>
-You can find some other programs to play with in the demo directory. Notice
-that running 'hello_glib' will automatically pull in the GLIB library. Running
-the command a second time will be just as fast as running an application
-installed normally.
-</p>
-
-<pre>
-$ <b>cd /uri/0install/zero-install.sourceforge.net/demo</b>
-$ <b>./hello_glib</b>
-Hello World from glib!
-</pre>
-
-<p>
 You can open the <a href="http://rox.sf.net/rox_filer.html">ROX-Filer</a>
 window shown on the main page using this command:
 </p>
@@ -194,6 +169,14 @@ window shown on the main page using this command:
 <pre>
 $ <b>rox /uri/0install/rox.sourceforge.net/apps</b>
 </pre>
+
+<div class='note' style='text-align: left'>
+<p>If you don't have ROX-Filer, try this instead:</p>
+<pre>
+$ <b>cd /uri/0install/rox.sourceforge.net/apps</b>
+$ <b>./Edit/AppRun</b>
+</pre>
+</div>
 
 <p>
 You can also find XFree86 4.3.1 in the `libs' directory. You can run either
