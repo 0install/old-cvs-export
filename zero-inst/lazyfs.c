@@ -38,6 +38,7 @@
 #include <linux/smp_lock.h>
 #include <linux/file.h>
 #include <linux/namespace.h>
+#include <linux/poll.h>
 
 #include <asm/uaccess.h>
 
@@ -1378,6 +1379,27 @@ lazyfs_helper_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
+/* Return whether any requests are pending, and add to wait-queue to get
+ * notified when there are some (but don't actually wait; do_select does
+ * that).
+ */
+static unsigned int
+lazyfs_helper_poll(struct file *file, poll_table *wait)
+{
+        unsigned int retval = 0;
+	struct super_block *sb = file->f_dentry->d_inode->i_sb;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+
+        poll_wait(file, &helper_wait, wait);
+
+	spin_lock(&fetching_lock);
+	if (!list_empty(&sbi->to_helper))
+		retval = POLLIN | POLLRDNORM;
+        spin_unlock(&fetching_lock);
+
+        return retval;
+}
+
 static ssize_t
 lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 {
@@ -1632,6 +1654,7 @@ static struct file_operations lazyfs_helper_operations = {
 	open:		lazyfs_helper_open,
 	read:		lazyfs_helper_read,
 	release:	lazyfs_helper_release,
+	poll:		lazyfs_helper_poll,
 };
 
 static struct file_operations lazyfs_handle_operations = {
@@ -1649,6 +1672,7 @@ static struct file_operations lazyfs_file_operations = {
 	read:		lazyfs_file_read,
 	mmap:		lazyfs_file_mmap,
 	release:	lazyfs_file_release,
+	/* TODO: poll:	lazyfs_file_poll, */
 };
 
 static struct file_operations lazyfs_dir_operations = {
