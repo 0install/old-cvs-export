@@ -58,47 +58,6 @@ void set_blocking(int fd, int blocking)
 		perror("fcntl() failed");
 }
 
-/* If uri is relative, convert to absolute path, using the given base URI.
- * 'http://foo.org/dir', 'leaf.html' -> 'http://foo.org/dir/leaf.html'
- * 'http://foo.org/dir', 'http://bar.org/leaf' -> 'http://bar.org/leaf'
- *
- * 0 on success.
- */
-int uri_ensure_absolute(const char *uri, const char *base,
-			char *result, int result_len)
-{
-	int base_len, uri_len;
-
-	if (strncmp(uri, "ftp://", 6) == 0 ||
-	    strncmp(uri, "http://", 7) == 0 ||
-	    strncmp(uri, "https://", 8) == 0) {
-		int len = strlen(uri) + 1;
-		if (len > result_len) {
-			fprintf(stderr, "URI too long\n");
-			return 0;
-		}
-		memcpy(result, uri, len);
-		return 1;
-	}
-
-	/* Relative path */
-	/* printf("Join '%s' + '%s'\n", base, uri); */
-
-	uri_len = strlen(uri);
-	base_len = strlen(base);
-
-	if (uri_len + base_len + 2 > result_len) {
-		fprintf(stderr, "URI too long\n");
-		return 0;
-	}
-
-	memcpy(result, base, base_len);
-	result[base_len] = '/';
-	memcpy(result + base_len + 1, uri, uri_len + 1);
-
-	return 1;
-}
-
 /* Ensure that 'path' is a directory, creating it if not.
  * If 'path' already exists as a non-directory, it is unlinked.
  * As a sanity check, 'path' must start with cache_dir.
@@ -466,6 +425,7 @@ char *build_string(const char *format, ...)
 			case 's':
 				len += strlen(str);
 				break;
+			case 'H':
 			case 'h':
 				slash = strchr(str, '/');
 				if (slash) {
@@ -519,6 +479,7 @@ char *build_string(const char *format, ...)
 			case 's':
 				to_copy = strlen(str);
 				break;
+			case 'H':
 			case 'h':
 				slash = strchr(str, '/');
 				if (slash) {
@@ -538,6 +499,11 @@ char *build_string(const char *format, ...)
 				assert(0);
 		}
 		memcpy(out, str, to_copy);
+		if (format[i] == 'H') {
+			const char *hash = memchr(str, '#', to_copy);
+			if (hash)
+				out[hash - str] = '/';
+		}
 		out += to_copy;
 	}
 	va_end(ap);

@@ -403,7 +403,7 @@ int main(int argc, char **argv)
 		printf("Zero Install started: using cache directory '%s'\n",
 				cache_dir);
 
-	if (0) {
+	if (1) {
 		printf("Literal: %s\n", build_string("Hello world"));
 		printf("Combine: %s\n", build_string("%s/%s", "one", "two"));
 		printf("Dir    : %s\n", build_string("%d/%s", "one/two",
@@ -416,7 +416,9 @@ int main(int argc, char **argv)
 		printf("Host   : %s\n", build_string("http://%h/foo",
 						"localhost.org/fred/bob"));
 		printf("Host2  : %s\n", build_string("http://%h/foo",
-						"localhost.org"));
+						"localhost.org#~foo"));
+		printf("Host3  : %s\n", build_string("http://%H/foo",
+						"localhost.org#~foo"));
 
 		//printf("Error  : %s\n", build_string("%d", "hello"));
 		//printf("Error  : %s\n", build_string("%f", "hello"));

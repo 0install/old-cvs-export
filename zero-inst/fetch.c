@@ -417,8 +417,10 @@ static Index *unpack_site_index(const char *site)
 			goto out;
 		}
 		
+#if 0
 		if (chmod(".", 0700))
 			perror("chmod");	/* Quiet GPG */
+#endif
 
 		free(meta);
 	}
@@ -508,7 +510,7 @@ static Task *fetch_site_index(const char *path, int use_cache)
 	
 	assert(!task);
 
-	uri = build_string("http://%h/.0inst-index.tgz", path);
+	uri = build_string("http://%H/.0inst-index.tgz", path);
 	if (!uri)
 		goto out;
 
@@ -605,7 +607,7 @@ static char *get_uri_for_archive(const char *file, xmlNode *archive)
 
 	/* Make URI absolute if needed */
 	if (!strstr(href, "://")) {
-		uri = build_string("http://%h/%s", file + 1, href);
+		uri = build_string("http://%H/%s", file + 1, href);
 	} else
 		uri = my_strdup(href);
 	xmlFree(href);
