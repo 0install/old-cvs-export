@@ -213,6 +213,12 @@ Release Date: 27 February 2003
 # <b>./XFree86 :1</b>
 </pre>
 
+<p>
+Lots more software, including Mozilla, Python, Acrobat reader, pkg-config,
+GTK, Java and NEdit, can be found in the directory
+<tt>/uri/0install/www-i1.informatik.rwth-aachen.de</tt>.
+</p>
+
 <h2>Further reading</h2>
 
 <p>Please see <a href="docs.html">the documentation</a> for more information.</p>
