@@ -145,7 +145,7 @@ project might have a <b>build</b> script containing:
 if scons -v > /dev/null 2>&amp;1; then
 	scons
 elif [ -d /uri/0install/scons.org ]; then
-	0run scons.org/scons-1 2004-11-10
+	0run "scons.org/scons-1 2004-11-10"
 else
 	echo "You need scons (or Zero Install) to build this program."
 	echo "You can get scons from http://www.scons.org"
