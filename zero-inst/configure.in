@@ -1,8 +1,15 @@
 AC_INIT(zero-install.c)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE(zero-install, 0.1.10)
 AM_CONFIG_HEADER(Linux/config.h)
+AC_PROG_MAKE_SET
 
 AC_PROG_CC
+
+dnl When doing 'make distcheck', use $prefix/lib for kernel module.
+AC_ARG_WITH(distcheck,,
+	[ROOT_PREFIX='$(prefix)'],
+	[ROOT_PREFIX=''])
+AC_SUBST(ROOT_PREFIX)
 
 dnl Check for directory with kernel source... (from ALSA)
 AC_MSG_CHECKING(for directory with kernel source)

@@ -5,24 +5,22 @@ AUTOMAKE_OPTIONS = foreign
 bin_PROGRAMS = 0show 0refresh
 sbin_PROGRAMS = zero-install
 
+SUBDIRS = Linux
+
+EXTRA_DIST = Linux/lazyfs.c Linux/lazyfs.h Linux/Makefile.in
+DISTCHECK_CONFIGURE_FLAGS = --with-user=zeroinst --with-distcheck
+
 zero_install_SOURCES = zero-install.c support.c fetch.c control.c index.c \
 		       zero-install.h support.h fetch.h control.h index.h \
 		       global.h
 
 zero_install_LDADD = -lexpat
 
-all-local:
-	make -C Linux
-
 install-exec-local:
-	make -C Linux install && \
- 	([ -d /uri ] || mkdir /uri) && \
+	([ -d /uri ] || mkdir /uri) && \
  	([ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst) && \
  	chown "${HELPER_USER}" /var/cache/zero-inst && \
  	grep -q "^lazyfs" /etc/fstab ||	echo "lazyfs          /uri            lazyfs  /var/cache/zero-inst            0 0" >> /etc/fstab
-
-clean-local:
-	make -C Linux clean
 
 CFLAGS = -O2 -Wall -Wstrict-prototypes -g
 

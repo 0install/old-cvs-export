@@ -6,8 +6,12 @@ else
 .SUFFIXES:
 
 KERNEL := @KERNELDIR@
-MODULEDIR := /lib/modules/`uname -r`/kernel/fs/lazyfs
 KERNEL_TYPE := @KERNEL_TYPE@
+prefix = @prefix@
+srcdir = @srcdir@
+VPATH = @srcdir@
+ROOT_PREFIX = @ROOT_PREFIX@
+MODULEDIR = $(ROOT_PREFIX)/lib/modules/`uname -r`/kernel/fs/lazyfs
 
 all: lazyfs.o
 
@@ -25,15 +29,23 @@ MODFLAGS := -DMODULE -D__KERNEL__
 install: lazyfs.o
 	mkdir -p ${MODULEDIR}
 	cp lazyfs.o ${MODULEDIR}/
-	depmod -a
+	[ -n "${ROOT_PREFIX}" ] || depmod -a
+
+uninstall:
+	rm ${MODULEDIR}/lazyfs.o
 
 .PHONY: module-Linux_2_4 module-Linux_2_5
 lazyfs.o: lazyfs.c
 	make module-${KERNEL_TYPE}
 
 module-Linux_2_4:
-	${CC} -c ${KERNELFLAGS} ${MODFLAGS} -o lazyfs.o lazyfs.c
+	${CC} -I. -I$(srcdir) -c ${KERNELFLAGS} ${MODFLAGS} -o lazyfs.o $(srcdir)/lazyfs.c
 
 module-Linux_2_5:
 	$(MAKE) -DLINUX_2_5_SERIES -C $(KERNEL) SUBDIRS=`pwd` modules
+
+distclean: clean
+
+distdir dvi check installcheck:
+
 endif
