@@ -17,22 +17,18 @@ without introducing additional security problems.
 <ul>
 <li>No downloaded software is ever run as root, or as any user except the one
 who asked to run it.</li>
-<li>The system is fully protected from software users 'install'.</li>
-<li>Users are fully protected from each other.</li>
-<li>Only the Zero Install software itself is a potential risk to system
-security when installing software for users. With traditional
-(non-zero-install) systems, every application, library and documentation
-package is a potential root compromise.</li>
-<li>Without Zero Install, users still have the ability to download programs to
-their home directory and run them there. Since your system already has to be
-secure against this, such attacks aren't considered security risks from Zero
-Install.</li>
+<li>Software installed through Zero Install poses no more risk to the system
+than that installed by users into their home directories.
+With traditional (non-zero-install) systems, every application, library and
+documentation package is given root-level access to the system.</li>
+<li>Users are at risk only from the software they run, not all software
+installed on the machine.</li>
 </ul>
 
 <h3>System security key points (implementation)</h3>
 <ul>
 <li>Zero Install contains a very small kernel module, which is the only
-(new) vector for a possible root-compromise.</li>
+new vector for a possible root-compromise.</li>
 <li>A small helper runs as a special user. If compromised, it would
 allow trojaning of software run via Zero Install, but not of the system
 itself.</li>
