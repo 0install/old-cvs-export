@@ -1280,7 +1280,13 @@ static int ensure_cached(struct dentry *dentry)
 static int
 lazyfs_dir_open(struct inode *inode, struct file *file)
 {
-	return ensure_cached(file->f_dentry);
+	int err;
+
+	err = ensure_cached(file->f_dentry);
+	if (err)
+		return err;
+
+	return dcache_dir_open(inode, file);
 }
 
 static void
@@ -1325,75 +1331,6 @@ lazyfs_statfs(struct super_block *sb, struct statfs *buf)
 	return 0;
 }
 
-static int
-lazyfs_readdir(struct file *file, void *dirent, filldir_t filldir)
-{
-	struct dentry *dir = file->f_dentry; /* (the virtual dir) */
-	struct list_head *head, *next;
-	int skip = file->f_pos;
-	int count = 0, err = 0;
-
-	if (skip)
-		skip--;
-	else {
-		err = filldir(dirent, ".", 1, 0, dir->d_inode->i_ino, DT_DIR);
-		if (err)
-			return count ? count : err;
-		file->f_pos++;
-		count++;
-	}
-
-	if (skip)
-		skip--;
-	else {
-		err = filldir(dirent, "..", 2, 1,
-				dir->d_parent->d_inode->i_ino, DT_DIR);
-		if (err)
-			return count ? count : err;
-		file->f_pos++;
-		count++;
-	}
-
-	/* Open should have made sure the directory is up-to-date, so
-	 * just read out directly from the dircache.
-	 */
-	spin_lock(&dcache_lock);
-	head = &file->f_dentry->d_subdirs;
-	next = head->next;
-
-	while (next != head) {
-		struct dentry *child = list_entry(next, struct dentry, d_child);
-		mode_t mode;
-		
-		next = next->next;
-
-		if (d_unhashed(child) || !child->d_inode)
-			continue;
-
-		if (skip) {
-			skip--;
-			continue;
-		}
-
-		mode = child->d_inode->i_mode;
-
-		file->f_pos++;
-		err = filldir(dirent, child->d_name.name,
-				      child->d_name.len,
-			      file->f_pos,
-			      child->d_inode->i_ino,
-			      S_ISDIR(mode) ? DT_DIR :
-			      S_ISLNK(mode) ? DT_LNK :
-			      S_ISREG(mode) ? DT_REG : DT_UNKNOWN);
-		if (err)
-			goto out;
-		count++;
-	}
-out:
-	spin_unlock(&dcache_lock);
-	return count ? count : err;
-}
-
 /* dentry is a negative dentry. We create a new directory with that name and
  * check to see if it's valid. When the helper does reply, we can delete the
  * directory then if it was a mistake. Other callers can see the directory
@@ -1411,6 +1348,9 @@ lookup_via_helper(struct super_block *sb, struct dentry *dentry)
 	if (existing && existing->d_inode) {
 		spin_unlock(&update_dir);
 		return existing;
+	} else if (existing) {
+		printk("lookup_via_helper: freeing\n");
+		dput(existing);
 	}
 
 	new = dget(new_dentry(sb, dentry->d_parent, dentry->d_name.name,
@@ -2024,9 +1964,12 @@ static struct file_operations lazyfs_file_operations = {
 };
 
 static struct file_operations lazyfs_dir_operations = {
+	open:		lazyfs_dir_open, /* -> dcache_dir_open */
+	release:	dcache_dir_close,
+	llseek:		dcache_dir_lseek,
 	read:		generic_read_dir,
-	readdir:	lazyfs_readdir,
-	open:		lazyfs_dir_open,
+	readdir:	dcache_readdir,
+	fsync:		dcache_dir_fsync,
 };
 
 static struct dentry_operations lazyfs_dentry_ops = {
