@@ -1,1 +1,2 @@
 #define LAZYFS_PLATFORM "unknown"
+#undef LINUX_2_5_SERIES

@@ -35,6 +35,16 @@ EOF
 fi
 AC_MSG_RESULT(OK)
 
+AC_MSG_CHECKING(for kernel series)
+if [[ -f "$KERNELDIR/include/linux/compat.h" ]]; then
+  AC_MSG_RESULT(Linux-2.5 or later)
+  LINUX_2_5_SERIES=yes
+  AC_DEFINE(LINUX_2_5_SERIES)
+else
+  AC_MSG_RESULT(Linux-2.4 series)
+fi
+AC_SUBST(LINUX_2_5_SERIES)
+
 AC_MSG_CHECKING(for platform type)
 ARCH=`uname -m`
 case $ARCH in

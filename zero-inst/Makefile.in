@@ -4,6 +4,7 @@ ifneq ($(KERNELRELEASE),)
 else
 KERNEL := @KERNELDIR@
 MODULEDIR := /lib/modules/`uname -r`/kernel/fs/lazyfs
+LINUX_2_5_SERIES := @LINUX_2_5_SERIES@
 
 TESTS := hello_glib
 CORE := /uri/http/zero-install.sourceforge.net/libs/core/1.0/Linux-i386
@@ -32,8 +33,7 @@ install:
 	[ -d /var/cache/zero-inst ] || mkdir /var/cache/zero-inst
 
 lazyfs.o: lazyfs.c
-	#$(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules	# 2.5.x
-	${CC} -c ${KERNELFLAGS} ${MODFLAGS} -o $@ $<	# 2.4.x
+	if [ -n "${LINUX_2_5_SERIES}" ]; then $(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules; else ${CC} -c ${KERNELFLAGS} ${MODFLAGS} -o $@ $<; fi
 
 zero-install: ${ZERO_OBJECTS}
 	${CC} -o $@ ${ZERO_OBJECTS} -lexpat
