@@ -173,6 +173,10 @@ Ran 23 tests in 3.424s
 OK
 </pre>
 
+<ul>
+  <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/641">sudo: command not found</a></li>
+</ul>
+
 <p>
 If any of the tests fail or (even more exciting!) your system hangs, please
 <a href="support.html">report it</a>! Reliable crashes in the unit tests
