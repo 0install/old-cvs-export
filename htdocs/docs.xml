@@ -340,6 +340,15 @@ and run make inside it. The program compiles using the header files for
 run, dynamically links against the binary in Zero Install too.
 </p>
 
+<h3>Cool URIs</h3>
+
+<p>
+Remember that the full pathname of your application or library is part of the
+public API of the software. Changing your directory layout is equivalent to
+changing the API. See <a href="http://www.w3.org/Provider/Style/URI.html">
+Cool URIs don't change</a> for more thoughts on stable URIs.
+</p>
+
 <h2>Documentation for Zero Install developers</h2>
 
 See the <a href="technical.html">Technical details</a> page for more
