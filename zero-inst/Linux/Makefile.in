@@ -33,6 +33,8 @@ install: lazyfs.o
 
 real-install:
 	depmod -a
+	echo Stopping existing daemon...
+	/etc/init.d/0install stop || echo '(not already running)'
 	[ ! -L /uri/0install/.lazyfs-cache ] || umount -l /uri/0install
 	lsmod | grep '^lazyfs' | awk '{print $$1}' | xargs rmmod || echo "*** Old LazyFS module is still in use. You should remove it later."
 
