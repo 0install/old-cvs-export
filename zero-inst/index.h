@@ -5,6 +5,7 @@ struct _Item {
 	char type;	/* Dir, File, Link, eXec, Archive */
 	char *leafname;
 	char *target;
+	char *md5;
 
 	off_t size;
 	time_t mtime;

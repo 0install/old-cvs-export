@@ -25,15 +25,25 @@ struct _Index {
 	int		skip;	/* >0 => wait for end tag */
 };
 
-static long get_attr(const XML_Char **atts, const char *name)
+static const XML_Char *get_attr(const XML_Char **atts, const char *name)
 {
 	while (*atts) {
 		if (strcmp(name, atts[0]) == 0)
-			return atol(atts[1]);
+			return atts[1];
 		atts += 2;
 	}
 
-	return -1;
+	return NULL;
+}
+
+static long get_long_attr(const XML_Char **atts, const char *name)
+{
+	const XML_Char *value;
+
+	value = get_attr(atts, name);
+	if (!value)
+		return -1;
+	return atol(value);
 }
 
 static void char_data(void *userData, const XML_Char *s, int len)
@@ -71,12 +81,14 @@ static void char_data(void *userData, const XML_Char *s, int len)
 	current->leafname = new;
 	memcpy(current->leafname + old_len, s, len);
 	current->leafname[old_len + len] = '\0';
-
-	/* printf("[ now '%s' ]\n", current->leafname); */
 }
 
 static void item_free(Item *item)
 {
+	if (item->md5)
+		free(item->md5);
+	if (item->target)
+		free(item->target);
 	if (item->leafname)
 		free(item->leafname);
 	free(item);
@@ -90,8 +102,8 @@ static void start_item(Index *index, const XML_Char *type,
 	long mtime = -1;
 
 	if (type[0] != 'a') {
-		size = get_attr(atts, "size");
-		mtime = get_attr(atts, "mtime");
+		size = get_long_attr(atts, "size");
+		mtime = get_long_attr(atts, "mtime");
 		if (size < 0 || mtime < 0) {
 			index->state = ERROR;
 			return;
@@ -105,6 +117,7 @@ static void start_item(Index *index, const XML_Char *type,
 	}
 	new->leafname = NULL;
 	new->target = NULL;
+	new->md5 = NULL;
 	new->mtime = mtime;
 	new->size = size;
 
@@ -114,14 +127,10 @@ static void start_item(Index *index, const XML_Char *type,
 		index->no_data = new;
 		index->state = ITEM;
 		if (new->type == 'l') {
-			const XML_Char **a = atts;
-			while (*a) {
-				if (strcmp("target", atts[0]) == 0) {
-					new->target = my_strdup(atts[1]);
-					break;
-				}
-				atts += 2;
-			}
+			const XML_Char *target;
+			target = get_attr(atts, "target");
+			if (target)
+				new->target = my_strdup(target);
 			/* (will check for not found / OOM later) */
 		}
 	} else if (type[0] == 'f' || type[0] == 'e') {
@@ -130,7 +139,12 @@ static void start_item(Index *index, const XML_Char *type,
 		index->groups->items = new;
 		index->state = GROUP_ITEM;
 	} else if (type[0] == 'a') {
+		const XML_Char *md5;
+
 		new->type = 'a';
+		md5 = get_attr(atts, "MD5sum");
+		if (md5)
+			new->md5 = my_strdup(md5);
 		new->next = index->groups->archives;
 		index->groups->archives = new;
 		index->state = ARCHIVE;
@@ -410,9 +424,10 @@ void index_dump(Index *index)
 				ctime(&item->mtime));
 		}
 		for (item = group->archives; item; item = item->next) {
-			fprintf(stderr, "\t\t%c : %s\n",
+			fprintf(stderr, "\t\t%c : %s (%s)\n",
 				item->type,
-				item->leafname ? item->leafname : "(null)");
+				item->leafname ? item->leafname : "(null)",
+				item->md5 ? item->md5 : "(no MD5)");
 		}
 	}
 
