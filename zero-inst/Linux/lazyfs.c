@@ -768,12 +768,6 @@ fetch:
 	return NULL;
 }
 
-static void recache_host_dentries(struct dentry *dentry)
-{
-	printk("recache_host_dentries(%s)\n", dentry->d_name.name);
-	/* XXX */
-}
-
 /* Try to open parent_host/dentry.name. If it works, and it has the correct
  * type, and (for directories) has a '...' file, return it (or the '...').
  *
@@ -796,9 +790,6 @@ static struct dentry *try_get_host_dentry(struct dentry *dentry)
 		if (!parent_host)
 			BUG();
 		inc(R_PARENT_HOST);
-
-		if (d_unhashed(parent_host))
-			recache_host_dentries(parent_host);
 
 		down(&parent_host->d_inode->i_sem);
 		host_dentry = lookup_hash(&name, parent_host);
