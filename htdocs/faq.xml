@@ -50,10 +50,15 @@ could provide software to do this easily).
 </p>
 
 <h3>This is just a network filesystem, isn't it?</h3>
-<p>Yes. It's currently using HTTP because pretty much everyone can put
-stuff on a webserver, whereas it's often hard to find someone who will
-host other types of server. The scheme can use other methods if
-required.</p>
+<p>Yes. It uses HTTP to fetch a small index archive, and can then use any
+other system (HTTP, FTP or various peer-to-peer and mirroring systems) to
+fetch the actual data (see the <a href="technical.html">technical details</a>
+page for more information).
+This means that providing software though Zero Install is easy, because pretty
+much everyone can put stuff on a webserver, whereas it's often hard to find
+someone who will host other types of server.
+</p>
+
 <p>The main difference between this and standard shares is the way the
 paths use the Internet DNS system. This allows us to link to resources
 by fixed paths, in the same way that I can put up a link to
@@ -68,8 +73,9 @@ do it. Like the web, you have links to the URIs, and you use the links
 normally.</p>
 <p>
 For example, having opened the ROX-Filer directory showing Memo in
-<a href="install.html">the walk-through</a>, you can drag Memo from the window
-onto your panel. Now you access it by clicking on it's panel icon; no URIs.
+<a href="install.html">the installation instructions</a>, you can drag Memo
+from the window onto your panel. Now you access it by clicking on it's panel
+icon; no URIs.
 </p><p>
 You could also put it on the pinboard, bookmark the directory, set
 a keyboard shortcut, or whatever. Web pages can provide the
