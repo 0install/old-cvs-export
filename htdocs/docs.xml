@@ -212,6 +212,10 @@ $ <b>/uri/0install/myhost.com/MyProg/foo</b>
 
 <p>And that's it!</p>
 
+<ul>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/361">I share my webserver with others, and can't put files in the root!</a></li>
+</ul>
+
 <h3>Suggested directory layout</h3>
 
 <p>
