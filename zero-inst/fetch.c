@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "child.h"
+#include "fetch.h"
 #include "zero-install.h"
 
 #define ZERO_NS "http://zero-install.sf.net"

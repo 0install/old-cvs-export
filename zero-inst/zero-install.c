@@ -50,7 +50,7 @@
 
 #include "support.h"
 #include "control.h"
-#include "child.h"
+#include "fetch.h"
 #include "zero-install.h"
 
 #define MAX_URI_LEN 4096

@@ -5,7 +5,7 @@ TESTS := hello_glib
 GLIB := /uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386
 PKG_CONFIG_PATH=${GLIB}/lib/pkgconfig
 
-ZERO_OBJECTS := zero-install.o support.o child.o control.o
+ZERO_OBJECTS := zero-install.o support.o fetch.o control.o
 
 all: lazyfs.o zero-install 0show #${TESTS}
 
