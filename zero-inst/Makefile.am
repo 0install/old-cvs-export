@@ -11,7 +11,7 @@ sbin_PROGRAMS = zero-install
 
 SUBDIRS = Linux
 
-EXTRA_DIST = Linux/lazyfs.c Linux/lazyfs.h Linux/compat20.h Linux/Makefile.in Technical 0test.py
+EXTRA_DIST = Linux/lazyfs.c Linux/lazyfs.h Linux/compat20.h Linux/Makefile.in Technical 0test.py test_cases.py
 DISTCHECK_CONFIGURE_FLAGS = --with-user=zeroinst --with-distcheck
 
 zero_install_SOURCES = zero-install.c support.c fetch.c control.c index.c \
@@ -35,6 +35,9 @@ install-real:
 	[ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst
 	chown "${HELPER_USER}" /var/cache/zero-inst
 	echo "lazyfs	/uri/0install	lazyfs	/var/cache/zero-inst	0 0" >> ${FSTAB}
+	echo "Mounting Zero Install filesystem"
+	[ ! -L /uri/0install/.lazyfs-cache ] || (echo "Already mounted!"; exit 1)
+	mount /uri/0install
 
 uninstall-local:
 	if [ -z "${ROOT_PREFIX}" ]; then \
