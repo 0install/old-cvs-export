@@ -47,8 +47,7 @@ and you don't need it installed to run it :-)
 <pre>
 $ strace -e file ./hello_glib|&amp;grep -v ENOENT
 execve("./hello_glib", ["./hello_glib"], [/* 23 vars */]) = 0
-open("/uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386/lib/libglib-2.0.so.0",
-O_RDONLY) = 3
+open("/uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386/lib/libglib-2.0.so.0", O_RDONLY) = 3
 fstat64(3, {st_mode=S_IFREG|0555, st_size=1335762, ...}) = 0
 open("/etc/ld.so.cache", O_RDONLY)      = 3
 fstat64(3, {st_mode=S_IFREG|0644, st_size=73251, ...}) = 0
