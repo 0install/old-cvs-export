@@ -248,8 +248,10 @@ static void client_send_reply(Client *client, const char *message)
 	new[client->send_len - 1] = '\0';
 }
 
-/* Client requests the cache for 'host' be refetched */
-static void client_refresh(Client *client, const char *host)
+/* Client requests the cache for 'host' be refetched.
+ * (force is 0 if we're rebuilding due to a changed override.xml)
+ */
+static void client_refresh(Client *client, const char *host, int force)
 {
 	Index *index;
 
@@ -264,15 +266,25 @@ static void client_refresh(Client *client, const char *host)
 	}
 
 	task_set_string(client->task, NULL);
-	client->task->str = my_malloc(strlen(host) + 2);
+	client->task->str = build_string("/%s", host);
 	if (!client->task->str) {
 		client_send_reply(client, "Out of memory");
 		return;
 	}
-	sprintf(client->task->str, "/%s", host);
 
-	index = get_index(client->task->str, &client->task->child_task, 1);
-	assert(!index);
+	index = get_index(client->task->str, &client->task->child_task, force);
+	if (index) {
+		/* Already cached, and we didn't force a refresh.
+		 * Rebuild site, as override.xml may have changed.
+		 */
+		if (build_ddds_for_site(index, host)) {
+			client_send_reply(client, "OK");
+		} else {
+			client_send_reply(client, "Error");
+		}
+		index_free(index);
+		return;
+	}
 
 	if (client->task->child_task)
 		control_notify_user(client->task->uid);
@@ -289,7 +301,9 @@ static void client_do_command(Client *client, const char *command)
 		client->monitor = 1;
 		client_push_update(client);
 	} else if (strncmp(command, "REFRESH ", 8) == 0) {
-		client_refresh(client, command + 8);
+		client_refresh(client, command + 8, 1);
+	} else if (strncmp(command, "REBUILD ", 8) == 0) {
+		client_refresh(client, command + 8, 0);
 	} else {
 		fprintf(stderr, "Unknown command '%s' from client %d\n",
 				command, client->socket);

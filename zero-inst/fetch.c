@@ -366,10 +366,14 @@ static void got_archive(Task *task, int success)
 }
 
 /* 1 on success */
-static int build_ddds_for_site(Index *index, const char *site)
+int build_ddds_for_site(Index *index, const char *site)
 {
 	char path[MAX_PATH_LEN];
 	char *dir;
+
+	assert(site);
+	assert(index);
+	assert(strchr(site, '/') == NULL);
 
 	dir = build_string("%s/%s", cache_dir, site);
 	if (!dir)

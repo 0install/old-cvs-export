@@ -109,7 +109,7 @@ static void usage(const char *prog, int status)
 	exit(status);
 }
 
-static void refresh(const char *site)
+static void refresh(const char *site, int force)
 {
 	int control;
 	struct sockaddr_un addr;
@@ -169,7 +169,7 @@ static void refresh(const char *site)
 		exit(EXIT_FAILURE);
 	}
 
-	send_command(control, "REFRESH ");
+	send_command(control, force ? "REFRESH " : "REBUILD ");
 
 	send_command(control, site);
 	send_command(control, "\n");
@@ -211,10 +211,13 @@ int main(int argc, char **argv)
 		slash = strchr(site, '/');
 		if (slash)
 			*slash = '\0';
-		refresh(site);
+		refresh(site, 1);
 	} else if (argc == 2) {
 		/* 0refresh site */
-		refresh(argv[1]);
+		refresh(argv[1], 1);
+	} else if (argc == 3 && strcmp(argv[1], "-l") == 0) {
+		/* 0refresh -l site */
+		refresh(argv[2], 0);
 	} else if (argc == 3) {
 		/* 0refresh site/path date */
 		time_t mtime = 0;
@@ -230,7 +233,7 @@ int main(int argc, char **argv)
 		slash = strchr(argv[1], '/');
 		if (slash)
 			*slash = '\0';
-		refresh(argv[1]);
+		refresh(argv[1], 1);
 		if (slash)
 			*slash = '/';
 

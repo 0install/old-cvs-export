@@ -8,6 +8,9 @@ Changes since 0.1.14:
 
 * GPG signatures are verified when updating a site index (needs auditing).
 
+* override.xml file can be used to add symlinks to the filesystem.
+  (the 0divert program uses this)
+
 Changes since 0.1.13:
 
 * 0refresh can be given a path and a date (like 0run), and only does
