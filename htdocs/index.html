@@ -63,6 +63,11 @@ author can do is provide Debian .deb packages on the site. But then the user
 still has to do the manual dependancy resolution above for everything not in
 Debian's system.
 </p><p>
+They are also fragile; if the user deletes managed files then
+the system may stop working. However, a user can remove any part of the
+Zero Install cache at any time, and it will simply be fetched again if it's
+needed later.
+</p><p>
 Also, a user installing from a .deb, .rpm, etc still has to enter the root
 password and run a script as root. This is inconvenient and a security risk.
 Zero Install allows users to run software without root privileges.
