@@ -15,6 +15,7 @@
 #include "fetch.h"
 #include "task.h"
 #include "zero-install.h"
+#include "gpg.h"
 
 #define TMP_PREFIX ".0inst-tmp-"
 
@@ -350,7 +351,7 @@ static void got_archive(Task *task, int success)
 	if (success) {
 		char *dir;
 
-		dir = build_filename("%d", task->str);
+		dir = build_string("%d", task->str);
 		if (dir) {
 			unpack_archive(task->str, dir, task->data);
 			free(dir);
@@ -370,7 +371,7 @@ static int build_ddds_for_site(Index *index, const char *site)
 	char path[MAX_PATH_LEN];
 	char *dir;
 
-	dir = build_filename("%s/%s", cache_dir, site);
+	dir = build_string("%s/%s", cache_dir, site);
 	if (!dir)
 		return 0;
 
@@ -402,7 +403,7 @@ static Index *unpack_site_index(const char *site)
 	{
 		char *meta;
 
-		meta = build_filename("%s/%s/" META, cache_dir, site);
+		meta = build_string("%s/%s/" META, cache_dir, site);
 		if (!meta)
 			goto out;
 
@@ -411,15 +412,25 @@ static Index *unpack_site_index(const char *site)
 			free(meta);
 			goto out;
 		}
+		
+		if (chmod(".", 0700))
+			perror("chmod");	/* Quiet GPG */
+
 		free(meta);
 	}
 
 	if (system("tar xzf index.tgz -O .0inst-index.xml >index.new")) {
-		fprintf(stderr, "Failed to unpack index\n");
+		fprintf(stderr, "Failed to extract index file\n");
 		goto out;
 	}
 
-	fprintf(stderr, "TODO: skipping GPG signature check\n");
+	if (system("tar xzf index.tgz keyring.pub index.xml.sig")) {
+		fprintf(stderr, "Failed to extract GPG signature/keyring!\n");
+		fprintf(stderr, "XXX I should refuse this, but need to "
+				"cope with old archives for a bit...\n");
+		//XXX: goto out;
+	} else if (gpg_trusted(site) != 1)
+		goto out;
 
 	index = parse_index("index.new");
 	if (!index_valid(index, site)) {
@@ -459,7 +470,7 @@ static void got_site_index(Task *task, int success)
 	else {
 		char *site = NULL;
 
-		site = build_filename("%h", task->str + cache_dir_len + 1);
+		site = build_string("%h", task->str + cache_dir_len + 1);
 		if (site) {
 			task_steal_index(task, unpack_site_index(site));
 			success = task->index != NULL;
@@ -478,11 +489,11 @@ static Task *fetch_site_index(const char *path, int use_cache)
 {
 	Task *task = NULL;
 	char *tgz = NULL, *uri = NULL;
-	char *meta_dir = NULL;
+	char *site_dir = NULL;
 
 	assert(path[0] != '/');
 
-	tgz = build_filename("%s/%h/" META "/index.tgz", cache_dir, path);
+	tgz = build_string("%s/%h/" META "/index.tgz", cache_dir, path);
 	if (!tgz)
 		goto out;
 
@@ -495,8 +506,12 @@ static Task *fetch_site_index(const char *path, int use_cache)
 	
 	assert(!task);
 
-	uri = build_filename("http://%h/.0inst-index.tgz", path);
+	uri = build_string("http://%h/.0inst-index.tgz", path);
 	if (!uri)
+		goto out;
+
+	site_dir = build_string("%s/%h", cache_dir, path);
+	if (!site_dir || !ensure_dir(site_dir))
 		goto out;
 
 	task = task_new(TASK_INDEX);
@@ -504,10 +519,6 @@ static Task *fetch_site_index(const char *path, int use_cache)
 		goto out;
 
 	task->step = got_site_index;
-
-	meta_dir = build_filename("%s/%h/" META, cache_dir, path);
-	if (!meta_dir || !ensure_dir(meta_dir))
-		goto out;
 
 	wget(task, uri, tgz, use_cache);
 	if (task->child_pid == -1) {
@@ -520,8 +531,8 @@ out:
 		free(tgz);
 	if (uri)
 		free(uri);
-	if (meta_dir)
-		free(meta_dir);
+	if (site_dir)
+		free(site_dir);
 	return task;
 }
 
@@ -546,7 +557,7 @@ Index *get_index(const char *path, Task **task, int force)
 	if (strcmp(path, "AppRun") == 0 || *path == '.')
 		return NULL;	/* Don't waste time looking for these */
 
-	index_path = build_filename("%s/%h/" META "/index.xml",
+	index_path = build_string("%s/%h/" META "/index.xml",
 			cache_dir, path);
 	if (!index_path)
 		return NULL;
@@ -586,7 +597,7 @@ static char *get_uri_for_archive(const char *file, xmlNode *archive)
 
 	/* Make URI absolute if needed */
 	if (!strstr(href, "://")) {
-		uri = build_filename("http://%h/%s", file + 1, href);
+		uri = build_string("http://%h/%s", file + 1, href);
 	} else
 		uri = my_strdup(href);
 	xmlFree(href);
@@ -607,7 +618,7 @@ static char *get_tmp_path_for_group(const char *file, xmlNode *group)
 	assert(strlen(md5) == 32);
 	assert(strchr(md5, '/') == NULL);
 
-	tgz = build_filename("%s%d/" TMP_PREFIX "%s", cache_dir, file, md5);
+	tgz = build_string("%s%d/" TMP_PREFIX "%s", cache_dir, file, md5);
 	xmlFree(md5);
 
 	return tgz;

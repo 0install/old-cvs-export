@@ -16,7 +16,7 @@ DISTCHECK_CONFIGURE_FLAGS = --with-user=zeroinst --with-distcheck
 
 zero_install_SOURCES = zero-install.c support.c fetch.c control.c index.c \
 		       zero-install.h support.h fetch.h control.h index.h \
-		       global.h task.c task.h
+		       global.h task.c task.h gpg.c gpg.h
 
 INCLUDES = `pkg-config --cflags libxml-2.0`
 zero_install_LDFLAGS = `pkg-config --libs libxml-2.0`

@@ -385,22 +385,22 @@ int main(int argc, char **argv)
 	printf("Zero Install started: using cache directory '%s'\n", cache_dir);
 
 	if (0) {
-		printf("Literal: %s\n", build_filename("Hello world"));
-		printf("Combine: %s\n", build_filename("%s/%s", "one", "two"));
-		printf("Dir    : %s\n", build_filename("%d/%s", "one/two",
+		printf("Literal: %s\n", build_string("Hello world"));
+		printf("Combine: %s\n", build_string("%s/%s", "one", "two"));
+		printf("Dir    : %s\n", build_string("%d/%s", "one/two",
 								"three"));
-		printf("Percent: %s\n", build_filename("%d/%%s", "one/two"));
-		printf("Dot    : %s\n", build_filename("%d/%r.tgz", "one/two",
+		printf("Percent: %s\n", build_string("%d/%%s", "one/two"));
+		printf("Dot    : %s\n", build_string("%d/%r.tgz", "one/two",
 							"index.xml"));
-		printf("Cache  : %s\n", build_filename("http://%c/foo",
+		printf("Cache  : %s\n", build_string("http://%c/foo",
 						"/var/cache/zero-inst/bob"));
-		printf("Host   : %s\n", build_filename("http://%h/foo",
+		printf("Host   : %s\n", build_string("http://%h/foo",
 						"localhost.org/fred/bob"));
-		printf("Host2  : %s\n", build_filename("http://%h/foo",
+		printf("Host2  : %s\n", build_string("http://%h/foo",
 						"localhost.org"));
 
-		//printf("Error  : %s\n", build_filename("%d", "hello"));
-		//printf("Error  : %s\n", build_filename("%f", "hello"));
+		//printf("Error  : %s\n", build_string("%d", "hello"));
+		//printf("Error  : %s\n", build_string("%f", "hello"));
 	}
 
 	/* Ensure root is uptodate */

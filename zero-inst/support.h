@@ -7,4 +7,4 @@ int uri_ensure_absolute(const char *uri, const char *base,
 int ensure_dir(const char *path);
 void close_on_exec(int fd, int close);
 int check_md5(const char *path, const char *md5);
-char *build_filename(const char *format, ...);
+char *build_string(const char *format, ...);

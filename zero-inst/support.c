@@ -405,7 +405,7 @@ int check_md5(const char *path, const char *md5)
 		got = read(fd, buffer, sizeof(buffer));
 		if (got < 0)
 			perror("read");
-		if (got == 0)
+		if (got <= 0)
 			break;
 		MD5Update(&ctx, buffer, got);
 	}
@@ -431,7 +431,7 @@ int check_md5(const char *path, const char *md5)
  * Returns a newly allocated string, or NULL on failure (error reported).
  * free() the result.
  */
-char *build_filename(const char *format, ...)
+char *build_string(const char *format, ...)
 {
 	va_list	ap;
 	int i;
