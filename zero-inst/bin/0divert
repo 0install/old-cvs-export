@@ -109,27 +109,27 @@ def save_links(site, links):
 	if not links:
 		if os.path.exists(path):
 			os.unlink(path)
-		return
-	if not os.path.exists(meta_dir):
-		os.makedirs(meta_dir)
-	doc = minidom.Document()
-	root = doc.createElement('diversions')
-	doc.appendChild(root)
+	else:
+		if not os.path.exists(meta_dir):
+			os.makedirs(meta_dir)
+		doc = minidom.Document()
+		root = doc.createElement('diversions')
+		doc.appendChild(root)
 
-	for link in links:
-		node = doc.createElement('link')
-		target, size, mtime = links[link]
-		node.setAttribute('mtime', mtime)
-		node.setAttribute('src', link)
-		node.setAttribute('target', target)
-		node.setAttribute('size', size)
-		root.appendChild(node)
-	
-	stream = file(path + '.new', 'w')
-	doc.writexml(stream)
-	stream.write('\n')
-	stream.close()
-	os.rename(path + '.new', path)
+		for link in links:
+			node = doc.createElement('link')
+			target, size, mtime = links[link]
+			node.setAttribute('mtime', mtime)
+			node.setAttribute('src', link)
+			node.setAttribute('target', target)
+			node.setAttribute('size', size)
+			root.appendChild(node)
+		
+		stream = file(path + '.new', 'w')
+		doc.writexml(stream)
+		stream.write('\n')
+		stream.close()
+		os.rename(path + '.new', path)
 	if os.spawnlp(os.P_WAIT, '0refresh', '0refresh', '-l', site):
 		print >>sys.stderr, "0refresh failed"
 
