@@ -30,6 +30,7 @@
 #include <linux/namei.h>
 #include <linux/mount.h>
 #include <linux/vfs.h>
+#error 2.5 support is completely untested - only compile it you want to help debug it
 
 #else
 	/* 2.4 kernel */
