@@ -311,6 +311,9 @@ if os.path.exists(index_tgz):
 	if os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzf', index_tgz,
 			'-C', target, '.0inst-index.xml']):
 		print "WARNING: old index archive corrupted!"
+	if os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzf', index_tgz,
+			'-C', target, 'mirrors.xml']):
+		print "No existing mirrors file (old build?)"
 
 if os.path.exists(index_xml):
 	old_doc = dom.minidom.parse(index_xml)
