@@ -69,15 +69,15 @@ Add<br/><tt>deb http://www-i1.informatik.rwth-aachen.de/~joachimk debian/</tt>
 </div>
 -->
 
-<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.16.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.16.tar.gz.sig">GPG Sig</a> ]
+<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.17.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.17.tar.gz.sig">GPG Sig</a> ]
 (note that the links lead to a list of mirrors).
  Extract it, and move to the new directory (things you
 type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.16.tar.gz</b>
-$ <b>cd zero-install-0.1.16</b>
+$ <b>tar xzf zero-install-0.1.17.tar.gz</b>
+$ <b>cd zero-install-0.1.17</b>
 </pre>
 
 <p>
@@ -203,11 +203,17 @@ Release Date: 27 February 2003
 -->
 
 <p>
+Some example applications can be found in
+<tt>/uri/0install/zero-install.sourceforge.net/demo</tt>.
+</p>
+
+<p>
 Lots more software, including Mozilla, Python, Acrobat reader, pkg-config,
 GTK, Java and NEdit, can be found in the directory
-<tt>/uri/0install/www-i1.informatik.rwth-aachen.de</tt>. Some example
-applications can be found in
-<tt>/uri/0install/zero-install.sourceforge.net/demo</tt>.
+<tt>/uri/0install/www-i1.informatik.rwth-aachen.de</tt>.
+<strong>Note 27-Oct-2003:</strong> this site needs to run the 0build command
+to bring its index format up-to-date. Until then, zero-install will reject it
+because it is not digitally signed.
 </p>
 
 <h2>Further reading</h2>
