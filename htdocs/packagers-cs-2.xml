@@ -83,7 +83,7 @@ $ 0build ../export scons.org
 </pre>
 
 <p>
-After creating a new GPG key for the site (as before), <b>0build</b> populates
+After creating a new GPG key for the site (as <a href="packagers-cs-1.html#gpg">before</a>), <b>0build</b> populates
 the <b>export</b> directory. Again, we create a <b>0push</b> script to rsync the
 archives to the remote web server, and run that:
 </p>

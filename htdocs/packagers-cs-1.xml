@@ -83,7 +83,7 @@ $ cd roxos.sunsite.dk/site
 $ 0build ../export roxos.sunsite.dk
 </pre>
 
-<p>
+<p id='gpg'>
 You'll now be prompted to create a GPG key for the site. When you make updates
 to the site, you'll sign it with your key. When people refresh the site,
 Zero Install will check that the key is the same as the first time they
