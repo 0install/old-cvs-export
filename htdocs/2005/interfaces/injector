@@ -2,7 +2,7 @@
 Hash: SHA1
 
 <?xml version="1.0" ?>
-<interface last-modified="1111082397" uri="http://0install.net/2005/interfaces/injector" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch'>
+<interface last-modified="1111613018" uri="http://0install.net/2005/interfaces/injector" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch'>
   <name>Injector</name>
   <summary>Chooses software components to run programs</summary>
   <description>
@@ -31,14 +31,18 @@ buttons). Thus, the injector must choose implementations of each dependancy
     <archive size='21808' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.4.tar.gz' extract='injector-0.4'/>
   </implementation>
 
-  <implementation id="sha1=ff6ad61795e04d2350c9a39ca357aea7a15ba107" stability="testing" version="0.5">
+  <implementation id="sha1=ff6ad61795e04d2350c9a39ca357aea7a15ba107" stability="stable" version="0.5">
     <archive size='22219' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.5.tar.gz' extract='injector-0.5'/>
+  </implementation>
+
+  <implementation id="sha1=3b8be4692a9d1b0a8751b02e2e1e093e9fabeff2" stability="testing" version="0.6">
+    <archive size='22059' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.6.tar.gz' extract='injector-0.6'/>
   </implementation>
 </interface>
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCPD3prgeCgFmlPMERAj/0AKC7OgeMxXq+5J7wt+wEno4FiBUJ9QCg1GBS
-2rGcjcVxqOEAioF/1Y0/cLA=
-=9GHO
+iD8DBQFCQd5krgeCgFmlPMERAiYWAKDf28Ezcwqn2j0zwIP4N90dW1TiJwCfeOmw
++20mgp5IQzA2nKvqW5ZvGoI=
+=vmej
 -----END PGP SIGNATURE-----
