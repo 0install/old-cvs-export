@@ -120,13 +120,19 @@ static void init_resources(void)
 static void show_resources(void)
 {
 	int i;
+	int any_non_zero = 0;
 
 	printk("Lazyfs current resource usage:\n");
 
-	for (i = 0; i < N_RESOURCES; i++)
-		printk("  %s: %d\n",
-				resource_names[i],
-				atomic_read(&resources[i]));
+	for (i = 0; i < N_RESOURCES; i++) {
+		int j = atomic_read(&resources[i]);
+		if (j) {
+			printk("  %s: %d\n", resource_names[i], j);
+			any_non_zero = 1;
+		}
+	}
+	if (!any_non_zero)
+		printk("No resources still in use.\n");
 }
 
 static inline void inc(int type)
