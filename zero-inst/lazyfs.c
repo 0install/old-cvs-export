@@ -822,7 +822,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 	return 0;
 
 bad_list:
-	printk("lazyfs: '%s/...' file is invalid\n", dir->d_name.name);
+	printk("lazyfs: '...' file is invalid!\n");
 
 	return -EIO;
 }
@@ -1040,17 +1040,19 @@ lazyfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 
 	while (next != head) {
 		struct dentry *child = list_entry(next, struct dentry, d_child);
-		mode_t mode = child->d_inode->i_mode;
-
+		mode_t mode;
+		
 		next = next->next;
 
-		if (d_unhashed(child)||!child->d_inode)
+		if (d_unhashed(child) || !child->d_inode)
 			continue;
 
 		if (skip) {
 			skip--;
 			continue;
 		}
+
+		mode = child->d_inode->i_mode;
 
 		file->f_pos++;
 		err = filldir(dirent, child->d_name.name,
