@@ -402,7 +402,7 @@ destroy_request(struct lazy_user_request *request)
 
 /* Symlinks store their target in the inode. Free that here. */
 static void
-lazyfs_put_inode(struct inode *inode)
+lazyfs_clear_inode(struct inode *inode)
 {
 	if (S_ISLNK(inode->i_mode) && inode->u.generic_ip) {
 		if (inode->u.generic_ip != platform) {
@@ -2144,7 +2144,7 @@ lazyfs_unmapped_readpage(struct file *file, struct page *page)
 static struct super_operations lazyfs_ops = {
 	statfs:		lazyfs_statfs,
 	put_super:	lazyfs_put_super,
-	put_inode:	lazyfs_put_inode,
+	clear_inode:	lazyfs_clear_inode,
 };
 
 static struct inode_operations lazyfs_dir_inode_operations = {

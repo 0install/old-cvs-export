@@ -605,6 +605,22 @@ class Test2WithHelper(WithHelper):
 	
 	test20FMapping = cstest('FMapping')
 
+	def clientFstat(self):
+		fd1 = os.open(fs + '/hello', os.O_RDONLY)
+		s = os.fstat(fd1)
+		self.assertEquals(5, s.st_size)
+		self.assertEquals(3, s.st_mtime)
+		self.assertEquals(3, s.st_ctime)
+		self.assertEquals(0, s.st_gid)
+		self.assertEquals(0, s.st_uid)
+		self.assertEquals(1, s.st_nlink)
+		self.assertEquals(0100644, s.st_mode)
+	
+	def serverFstat(self):
+		self.send_dir('/', ['f 5 3 hello'])
+	
+	test21Fstat = cstest('Fstat')
+
 # Run the tests
 sys.argv.append('-v')
 unittest.main()

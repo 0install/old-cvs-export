@@ -1,4 +1,6 @@
-(this is the 0.1.23-smp-fix release)
+Changes since 0.1.23-smp:
+
+* Bugfix: Symlink targets were corrupted by a double free when using SELinux.
 
 Changes since 0.1.23:
 
