@@ -144,7 +144,7 @@ menu, and you'll get an error complaining that Gimp isn't installed.
 </p>
 
 <p class='zero'>
-Everything you need is always available in Zero Install. It may simple take
+Everything you need is always available in Zero Install. It may simply take
 a little longer to run if it's not yet in the cache.
 </p>
 
@@ -154,14 +154,18 @@ Since every package is installed as root, every package must be carefully
 checked by a trusted Debian developer. This means that a great deal of
 software is not available. Though Debian prides itself on having a huge
 range of packages, it has only a tiny fraction of the software available.
-Ordinary software authors cannot just put their software on the web and be
-part of the Debian repositary.
+While Debian has core tasks such as word processing and web browsing covered,
+there are many more specialised programs that Debian will never have the
+resources to package. Ordinary software authors cannot just put their software
+on the web and be part of the Debian repositary.
 </p>
 
 <p class='zero'>
 Anyone can make software available via Zero Install. Trust is for individual
-users to decide, not the admin, since their choices only affect them.
-Of course, the same warnings that apply to opening email attachments must
+users to decide, not the admin, since their choices only affect them. Sites
+such as <a href="http://freshmeat.net">freshmeat.net</a> provide better
+ranking and rating information to help users decide which software is
+best. Of course, the same warnings that apply to opening email attachments must
 be given when running untrusted software.
 </p>
 
