@@ -199,6 +199,10 @@ $ <b>0refresh</b>
 $ <b>./apps/ZeroProgress/AppRun</b>
 </pre>
 
+<div class='note'>There's a slight bug in the current version the
+zero-install program which means that the box may not close when the
+download finishes. The CVS version has it fixed.</div>
+
 <p>
 You can also find XFree86 4.3.1 in the `libs' directory. You can run either
 the client applications (eg, xterm) with your current X server, or run the
