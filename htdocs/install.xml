@@ -17,6 +17,11 @@ part).
 </p>
 
 <div class='note'>
+Note that you need D-BUS version 0.12 or 0.13. The just-released 0.20
+is not yet supported.
+</div>
+
+<div class='note'>
 <h3>Security and stability note</h3>
 <p>
 This software is still under development and has not yet been carefully
@@ -144,6 +149,11 @@ The build and install it (use su to get root privileges):
 $ <b>make</b>
 $ <b>su -c 'make install'</b>
 </pre>
+
+<div class='note'>
+Note that you need D-BUS version 0.12 or 0.13. The just-released 0.20
+is not yet supported.
+</div>
 
 <p>
 This will copy the new lazyfs module under /lib/modules/, and create the
