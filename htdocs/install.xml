@@ -91,7 +91,10 @@ Download the kernel module for your operating system:
 </ul>
 
 <p>
-<strong>For Linux 2.6.2 and up you MUST use lazyfs 0.1.21 or later!</strong>
+<strong>SMP kernels:</strong> The current release will deadlock on kernels
+compiled with SMP support, due to a locking error. This is fixed in CVS, and a
+new release will appear once SourceForge's file release system starts working
+again. Until then, please <a href="https://sourceforge.net/tracker/index.php?func=detail&amp;aid=965741&amp;group_id=76468&amp;atid=547191">apply the patch manually</a>.
 </p>
 
 <p>
