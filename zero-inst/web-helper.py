@@ -27,13 +27,11 @@ class ArchiveFinder(ContentHandler):
 	
 	def endElement(self, element):
 		if element in ('group', 'directory'):
-			print "Leaving group", self.found, self.current_archive
 			if self.target in self.contents:
 				raise Done
 			self.current_archive = None
 			self.contents = {}
 		if element in ('exec', 'file', 'dir', 'link'):
-			print "Got", self.data
 			self.contents[self.data] = element
 		if element == 'archive':
 			self.current_archive = self.data
@@ -66,7 +64,9 @@ class ListingHandler(ContentHandler):
 def write_dir(host, resource):
 	resource = '/' + resource
 	dir = os.path.join(cache, 'http', host) + resource
-	uri = 'http://%s%s/%s' % (host, resource, info_xml)
+	uri = 'http://%s%s' % (host, resource)
+	if not uri.endswith('/'): uri += '/'
+	uri += info_xml
 	print "Fetch", uri
 	index = urllib2.urlopen(uri).read()
 
@@ -82,7 +82,6 @@ def write_dir(host, resource):
 
 def write_ddd(dir, contents):
 	tmp_path = os.path.join(dir, '....')
-	print "Write", tmp_path
 	file(tmp_path, 'w').write(contents)
 	os.rename(tmp_path, tmp_path[:-1])
 
@@ -99,11 +98,8 @@ def extract_archive(stream):
 	tgz = os.path.join(tmp_dir, 'archive.tgz')
 	shutil.copyfileobj(stream, file(tgz, 'w'))
 	stream.close()
-	print "Extract to ", tmp_dir
 	os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzvf', tgz, '-C', tmp_dir, '--'])
 
-	print "Done"
-				  
 	return tmp_dir
 
 def check_res(path, host, resource):
@@ -128,8 +124,6 @@ def check_res(path, host, resource):
 		print "Got archive", uri, "in", tmp_dir
 		dir = os.path.join(cache, 'http', host, os.path.dirname(resource))
 		for item in handler.contents:
-			print "Pulling out", item
-			print os.path.join(tmp_dir, item)
 			os.rename(os.path.join(tmp_dir, item),
 				  os.path.join(dir, item))
 	else:
