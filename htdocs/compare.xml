@@ -225,6 +225,14 @@ the design can still be bettered.
 </p>
 
 <p>
+There is another tool, auto-apt, which tries to install Debian packages
+when files they contain are accessed. However, this does not solve the
+problems of security (installation still happens as root), scalability
+(only trusted packages can be used) or speed (if fact it's slower, as it must
+build an additional database).
+</p>
+
+<p>
 I should also point out that APT does some things not covered by Zero Install:
 it handles configuration, and automatically starts services. That is, when you
 install Apache, APT will ask some questions to get it ready and then actually
