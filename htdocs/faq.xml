@@ -231,4 +231,21 @@ install step, only the running step. So, you can 'install' any number of
 conflicting packages, but you can still only run one mail system at once.
 </p>
 
+<h3>Why did you write a new kernel module? What's wrong with CODA, UserVFS, etc?</h3>
+
+<p>
+Fully user-space filesystems are really, really slow. Fine for accessing a
+remote FTP site, but you wouldn't want to run all your applications that way.
+Every file read involves a context switch to another process and back!
+</p>
+
+<p>
+CODA is better (and was used for prototyping), but it's still slower than
+lazyfs (double context switch on every open/close) and buggy. Also, if
+the user-space helper crashes, all your applications stop working and you
+probably have to reboot. If the user-space helper in Zero Install crashes,
+you just can't download any new stuff until you restart it, but everything
+else continues to work.
+</p>
+
 </html>
