@@ -69,7 +69,6 @@ int verbose = 0; /* (debug) */
  */
 #define INDEX_CHECK_TIME (60 * 60)
 
-char *wget_log = NULL;
 char cache_dir[MAX_PATH_LEN];
 int cache_dir_len;	/* strlen(cache_dir) */
 
@@ -78,6 +77,10 @@ static const char *prog; /* argv[0] */
 static int finished = 0;
 
 static int to_wakeup_pipe = -1;	/* Write here to get noticed */
+
+#ifdef S_SPLINT_S
+#define SA_ONESHOT 0x80000000
+#endif
 
 static int open_helper(void)
 {
@@ -131,27 +134,28 @@ err:
 		error("handle_root_request: Unable to write ... file: %m");
 out:
 	if (request_fd != -1)
-		close(request_fd);
-	chdir("/");
+		my_close(request_fd);
+	if (chdir("/"))
+		abort();
 }
 
-static void kernel_got_archive(Task *task, const char *err)
+static void kernel_got_archive(/*@dependent@*/ Task *task, /*@null@*/ const char *err)
 {
 	if (err)
 		control_notify_error(task, err);
-	close(task->fd);
+	my_close(task->fd);
  	task_destroy(task, err);
 }
 
 /* We have the index to find the item for this task. Start fetching the
  * item. Free the index and close the request when done.
  */
-static void kernel_got_index(Task *task)
+static void kernel_got_index(/*@dependent@*/ Task *task)
 {
 	Element *item;
 	const char *slash;
 
-	assert(task->index);
+	assert(task->index != NULL);
 
 	slash = strchr(task->str + 1, '/');
 
@@ -162,7 +166,7 @@ static void kernel_got_index(Task *task)
 	if (!item) {
 		/* TODO: rebuild index files? */
 		error("%s not found in index!", task->str);
-		close(task->fd);
+		my_close(task->fd);
 		task_destroy(task, "Item not found in index!");
 		return;
 	}
@@ -186,17 +190,17 @@ static void kernel_got_index(Task *task)
 		}
 	}
 
-	close(task->fd);
+	my_close(task->fd);
 	task_destroy(task, NULL);
 }
 
 void kernel_cancel_task(Task *task)
 {
-	close(task->fd);
+	my_close(task->fd);
 	task_destroy(task, NULL);
 }
 
-static void kernel_task_step(Task *task, const char *err)
+static void kernel_task_step(/*@dependent@*/ Task *task, /*@null@*/ const char *err)
 {
 	if (!err)
 		task_steal_index(task, get_index(task->str, NULL, 0));
@@ -205,7 +209,7 @@ static void kernel_task_step(Task *task, const char *err)
 		kernel_got_index(task);
 	else {
 		control_notify_error(task, err ? err : "Failed to get index");
-		close(task->fd);
+		my_close(task->fd);
 		task_destroy(task, NULL);
 	}
 }
@@ -220,18 +224,18 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	}
 
 	if (fetch_check_auto_reject(path, uid)) {
-		close(request_fd);
+		my_close(request_fd);
 		return;
 	}
 
 	task = task_new(TASK_KERNEL);
 	if (!task) {
-		close(request_fd);
+		my_close(request_fd);
 		return;
 	}
 	task_set_string(task, path);
 	if (!task->str) {
-		close(request_fd);
+		my_close(request_fd);
 		task_destroy(task, "Out of memory");
 		return;
 	}
@@ -249,7 +253,7 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 
 	if (!task->index) {
 		/* Error -- give up */
-		close(request_fd);
+		my_close(request_fd);
 		task_destroy(task, "Failed to start fetching index");
 		return;
 	}
@@ -260,15 +264,15 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 /* This is called as a signal handler; simply ensures that
  * child_died_callback() will get called later.
  */
-static void child_died(int signum)
+static void child_died(/*@unused@*/ int signum)
 {
-	write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
+	(void) write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
 }
 
-static void sigint(int signum)
+static void sigint(/*@unused@*/ int signum)
 {
 	finished = 1;
-	write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
+	(void) write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
 }
 
 static void read_from_helper(int helper)
@@ -294,7 +298,7 @@ static void read_from_helper(int helper)
 		exit(EXIT_FAILURE);
 	}
 
-	request_fd = strtol(buffer, &end, 10);
+	request_fd = (int) strtol(buffer, &end, 10);
 	if (strncmp(end, " uid=", 5) != 0 || !end[5]) {
 		error("Internal error: bad request FD '%s'", buffer);
 		exit(EXIT_FAILURE);
@@ -313,7 +317,7 @@ static void read_from_helper(int helper)
 		/* No longer exists... not an error 
 		 * (example: someone doing 'pwd' in an unlinked directory)
 		 */
-		close(request_fd);
+		my_close(request_fd);
 		return;
 	}
 
@@ -372,6 +376,7 @@ static void create_pid_file(pid_t child)
 		goto err;
 
 	free(pid_file);
+	pid_file = NULL;	/* Quiet splint */
 	return;
 err:
 	if (pid_file)
@@ -387,7 +392,7 @@ err:
 		error("It appears that " prog " isn't installed ('" prog " " test "' " \
 			"returned an error exit status)"); }
 
-int main(int argc, char **argv)
+int main(/*@unused@*/ int argc, char **argv)
 {
 	int wakeup_pipe[2];
 	struct sigaction act;
@@ -430,7 +435,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	umask(0022);
+	(void) umask(0022);
 	
 	prog = argv[0];
 
@@ -446,32 +451,28 @@ int main(int argc, char **argv)
 	assert(cache_dir_len >= 1 && cache_dir_len < sizeof(cache_dir));
 	cache_dir[cache_dir_len] = '\0';
 
-	wget_log = build_string("%s/.0inst-wget.log", cache_dir);
-	if (!wget_log)
-		return EXIT_FAILURE;
-	syslog(LOG_INFO, "Started: using cache directory '%s'", cache_dir);
-	syslog(LOG_INFO, "Network errors are logged to '%s'", wget_log);
+	fetch_init();
 
-	if (0) {
-		printf("Literal: %s\n", build_string("Hello world"));
-		printf("Combine: %s\n", build_string("%s/%s", "one", "two"));
-		printf("Dir    : %s\n", build_string("%d/%s", "one/two",
-								"three"));
-		printf("Percent: %s\n", build_string("%d/%%s", "one/two"));
-		printf("Dot    : %s\n", build_string("%d/%r.tgz", "one/two",
-							"index.xml"));
-		printf("Cache  : %s\n", build_string("http://%c/foo",
-						"/var/cache/zero-inst/bob"));
-		printf("Host   : %s\n", build_string("http://%h/foo",
-						"localhost.org/fred/bob"));
-		printf("Host2  : %s\n", build_string("http://%h/foo",
-						"localhost.org#~foo"));
-		printf("Host3  : %s\n", build_string("http://%H/foo",
-						"localhost.org#~foo"));
+#if 0
+	printf("Literal: %s\n", build_string("Hello world"));
+	printf("Combine: %s\n", build_string("%s/%s", "one", "two"));
+	printf("Dir    : %s\n", build_string("%d/%s", "one/two",
+							"three"));
+	printf("Percent: %s\n", build_string("%d/%%s", "one/two"));
+	printf("Dot    : %s\n", build_string("%d/%r.tgz", "one/two",
+						"index.xml"));
+	printf("Cache  : %s\n", build_string("http://%c/foo",
+					"/var/cache/zero-inst/bob"));
+	printf("Host   : %s\n", build_string("http://%h/foo",
+					"localhost.org/fred/bob"));
+	printf("Host2  : %s\n", build_string("http://%h/foo",
+					"localhost.org#~foo"));
+	printf("Host3  : %s\n", build_string("http://%H/foo",
+					"localhost.org#~foo"));
 
-		//printf("Error  : %s\n", build_string("%d", "hello"));
-		//printf("Error  : %s\n", build_string("%f", "hello"));
-	}
+	//printf("Error  : %s\n", build_string("%d", "hello"));
+	//printf("Error  : %s\n", build_string("%f", "hello"));
+#endif
 
 	/* Ensure root is uptodate */
 	handle_root_request(-1);
@@ -493,15 +494,17 @@ int main(int argc, char **argv)
 
 	/* Let child processes die */
 	act.sa_handler = child_died;
-	sigemptyset(&act.sa_mask);
+	(void) sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_NOCLDSTOP;
-	sigaction(SIGCHLD, &act, NULL);
+	if (sigaction(SIGCHLD, &act, NULL))
+		abort();
 
 	/* Catch SIGINT and exit nicely */
 	act.sa_handler = sigint;
-	sigemptyset(&act.sa_mask);
+	(void) sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_ONESHOT;
-	sigaction(SIGINT, &act, NULL);
+	if (sigaction(SIGINT, &act, NULL))
+		abort();
 
 	create_control_socket();
 
@@ -520,7 +523,8 @@ int main(int argc, char **argv)
 			error("fork: %m");
 			exit(EXIT_FAILURE);
 		} else if (child) {
-			waitpid(child, NULL, 0);
+			if (waitpid(child, NULL, 0) != child)
+				abort();
 			_exit(0);
 		}
 		if (setsid() == -1)
@@ -536,10 +540,13 @@ int main(int argc, char **argv)
 		if (chdir("/"))
 			error("chdir: %m");
 		null = open("/dev/null", O_RDWR);
-		dup2(null, 0);
-		dup2(null, 1);
-		dup2(null, 2);
-		close(null);
+		if (null) {
+			(void) dup2(null, 0);
+			(void) dup2(null, 1);
+			(void) dup2(null, 2);
+			my_close(null);
+		} else
+			error("open /dev/null: %m");
 		copy_stderr = 0;
 	} else
 		create_pid_file(getpid());
@@ -582,9 +589,9 @@ int main(int argc, char **argv)
 		error("unlink pid file: %m");
 	free(pid_file);
 
-	close(helper);
+	my_close(helper);
 
 	closelog();
 
-	return EXIT_SUCCESS;
+	exit(EXIT_SUCCESS);
 }

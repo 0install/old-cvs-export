@@ -318,7 +318,7 @@ static int index_merge_overrides(Index *index)
 /* Load 'pathname' as an XML index file. Returns NULL if document is invalid
  * in any way. Ref-count on return is 1.
  */
-Index *parse_index(const char *pathname, int validate, const char *site)
+IndexP parse_index(const char *pathname, int validate, const char *site)
 {
 	Element *doc;
 	Index *index;

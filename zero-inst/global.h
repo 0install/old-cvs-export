@@ -1,5 +1,4 @@
-#define DBUS_API_SUBJECT_TO_CHANGE
-#include <dbus/dbus.h>
+#include "mydbus.h"
 
 #include <stdio.h>
 
@@ -9,8 +8,9 @@
  * on other tasks.
  */
 typedef struct _Task Task;
-typedef struct _Index Index;
 typedef struct _Element Element;
+typedef struct _Index Index;
+typedef /*@refcounted@*/ Index *IndexP;
 
 extern int copy_stderr;
 extern int verbose;

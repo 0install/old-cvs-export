@@ -1,4 +1,4 @@
-extern Task *all_tasks;
+/*@owned@*/ extern Task *all_tasks;
 
 typedef enum {
 	TASK_KERNEL,	/* Handles a request from the kernel */
@@ -7,12 +7,12 @@ typedef enum {
 	TASK_ARCHIVE,	/* Fetches an archive */
 } TaskType;
 
-Task *task_new(TaskType type);
-void task_destroy(Task *task, const char *error);
+/*@dependent@*/ Task *task_new(TaskType type);
+void task_destroy(/*@dependent@*/ Task *task, /*@null@*/ const char *error);
 void task_process_done(pid_t pid, int success);
 void task_set_string(Task *task, const char *str);
 void task_set_index(Task *task, Index *index);
-void task_steal_index(Task *task, Index *index);
+void task_steal_index(Task *task, /*@killref@*/ /*@null@*/ IndexP index);
 void task_set_message(Task *task, DBusConnection *connection,
 			DBusMessage *message);
 
@@ -20,13 +20,16 @@ struct _Task {
 	TaskType type;
 	int n;
 
-	Task	*child_task;	/* A task that must finish first, or NULL */
-	pid_t	child_pid;	/* A process that must finish first, or -1 */
+	/* A task that must finish first */
+	/*@dependent@*/ /*@null@*/ Task	*child_task;
+
+	/* A process that must finish first, or -1 */
+	pid_t	child_pid;
 
 	/* A callback to call when something happens.
 	 * err == NULL on success.
 	 */
-	void (*step)(Task *task, const char *err);
+	void (*step)(/*@dependent@*/ Task *task, /*@null@*/ const char *err);
 
 	/* Various bits of extra data, dependant on 'type' */
 	DBusConnection *connection;
@@ -41,5 +44,5 @@ struct _Task {
 
 	int notify_on_end;
 
-	Task	*next;		/* In all_tasks */
+	/*@owned@*/ /*@null@*/ Task	*next;		/* In all_tasks */
 };

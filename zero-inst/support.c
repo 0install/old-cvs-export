@@ -513,3 +513,14 @@ char *build_string(const char *format, ...)
 
 	return new;
 }
+
+/* Close fd, if not -1. On error, aborts the program. */
+void my_close(int fd)
+{
+	if (fd == -1)
+		return;
+	if (close(fd) == 0)
+		return;
+	error("Close of FD %d failed: %m", fd);
+	exit(EXIT_FAILURE);
+}

@@ -32,6 +32,7 @@ static char *last_reject_request = NULL;
 static uid_t last_reject_user = 0;
 static time_t last_reject_time = 0;
 
+static char *wget_log = NULL;
 
 static void build_ddd_from_index(Element *dir_node, char *dir);
 
@@ -60,7 +61,7 @@ static int chdir_meta(const char *site)
 /* Return the index for site. If index does not exist, or signature does
  * not match (index out-of-date), returns NULL.
  */
-static Index *load_index(const char *site)
+static IndexP load_index(const char *site)
 {
 	Index *index = NULL;
 	struct stat info;
@@ -748,7 +749,7 @@ static int valid_site_name(const char *site)
  * the task in 'task'. If task is NULL, never starts a task.
  * On error, both will be NULL.
  */
-Index *get_index(const char *path, Task **task, int force)
+IndexP get_index(const char *path, Task **task, int force)
 {
 	assert(!task || !*task);
 
@@ -934,4 +935,13 @@ static void test_valid_site_name(void)
 void fetch_run_tests(void)
 {
 	test_valid_site_name();
+}
+
+void fetch_init(void)
+{
+	wget_log = build_string("%s/.0inst-wget.log", cache_dir);
+	if (!wget_log)
+		exit(EXIT_FAILURE);
+	syslog(LOG_INFO, "Started: using cache directory '%s'", cache_dir);
+	syslog(LOG_INFO, "Network errors are logged to '%s'", wget_log);
 }

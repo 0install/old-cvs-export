@@ -69,7 +69,7 @@ Task *task_new(TaskType type)
 /* Removes 'task' from all_tasks and calls the 'next' method on every task
  * that depends on this one. Finally, task is freed.
  */
-void task_destroy(Task *task, const char *error)
+void task_destroy(Task *task, /*@null@*/ const char *error)
 {
 	Task *t;
 
