@@ -38,7 +38,10 @@ unacceptable. It is both inconvenient and a security risk.
 <p class='zero'>
 Zero Install allows any user to run software without needing the root
 password.
-There seems to be a belief amoung some people that APT must be more secure
+</p>
+
+<p>
+There seems to be a belief among some people that APT must be more secure
 than Zero Install because it requires a password (and passwords are about
 security, right?). The reason you enter a password when installing software
 with APT is to <i>bypass</i> the security system, so that the software can
