@@ -119,6 +119,21 @@ create portable binaries, it is therefore necessary to use a little program at
 can be used as a wrapper for gcc.
 </p>
 
+<h3>Avoiding pangoxft troubles</h3>
+
+<p>
+When you build a GTK application on a system where pangoxft is installed,
+you'll get a free dependancy on pangoxft thanks to pkg-config. This will
+stop your program working on systems without the library. The solution is
+simple: edit the output from pkg-config to remove this library. Linux (and
+most other modern systems) will deal with loading pangoxft automatically on
+systems which have it.
+</p>
+
+<pre>
+LDFLAGS = `pkg-config --libs gtk+-2.0 | sed 's/-lpangoxft-[^ ]*//'`
+</pre>
+
 <h3>Depending on other things in Zero Install</h3>
 
 <p>
