@@ -59,7 +59,7 @@ class Download:
 		import time
 		try:
 			print "Child downloading", self.url
-			time.sleep(1)
+			#time.sleep(1)
 			if not os.path.isfile(self.url):
 				print >>sys.stderr, "File '%s' does not " \
 					"exist!" % self.url
@@ -131,7 +131,7 @@ def begin_download(interface, force):
 		else:
 			return None	# Already downloading
 	
-	print "Creating new Download(%s)" % interface.uri
+	#print "Creating new Download(%s)" % interface.uri
 	# Create new download
 	dl = Download(interface)
 	downloads[interface.uri] = dl

@@ -1,27 +1,39 @@
+import time
+from logging import debug, info
+
 from model import *
 import basedir
 from namespaces import *
 import ConfigParser
 import reader
-from logging import debug, info
 import download
+import zerostore
 
 #from logging import getLogger, DEBUG
 #getLogger().setLevel(DEBUG)
 
 _interfaces = {}	# URI -> Interface
 
+def pretty_time(t):
+	return time.strftime('%Y-%m-%d %H:%M:%S UTC', t)
+
 class Policy(object):
 	__slots__ = ['root', 'implementation', 'watchers',
-		     'help_with_testing', 'network_use', 'updates']
+		     'help_with_testing', 'network_use',
+		     'freshness', 'store']
 
 	def __init__(self, root):
 		assert isinstance(root, (str, unicode))
 		self.root = root
+		user_store = os.path.expanduser('~/.cache/0install.net/implementations')
+		if not os.path.isdir(user_store):
+			os.makedirs(user_store)
+		self.store = zerostore.Store(user_store)
 		self.implementation = {}		# Interface -> Implementation
 		self.watchers = []
 		self.help_with_testing = False
 		self.network_use = network_full
+		self.freshness = 60 * 60 * 24 * 7	# Seconds since last update
 		self.updates = []
 
 		path = basedir.load_first_config(config_site, config_prog, 'global')
@@ -31,6 +43,7 @@ class Policy(object):
 			self.help_with_testing = config.getboolean('global',
 							'help_with_testing')
 			self.network_use = config.get('global', 'network_use')
+			self.freshness = int(config.get('global', 'freshness'))
 			assert self.network_use in network_levels
 
 	def save_config(self):
@@ -39,6 +52,7 @@ class Policy(object):
 
 		config.set('global', 'help_with_testing', self.help_with_testing)
 		config.set('global', 'network_use', self.network_use)
+		config.set('global', 'freshness', self.freshness)
 
 		path = basedir.save_config_path(config_site, config_prog)
 		path = os.path.join(path, 'global')
@@ -47,7 +61,6 @@ class Policy(object):
 	
 	def recalculate(self):
 		self.implementation = {}
-		self.updates = []
 		def process(iface):
 			impl = self.get_best_implementation(iface)
 			if impl:
@@ -82,7 +95,7 @@ class Policy(object):
 		if r: return r
 
 		if self.network_use != network_full:
-			r = cmp(a.get_cached(), b.get_cached())
+			r = cmp(self.get_cached(a), self.get_cached(b))
 			if r: return r
 
 		# Stability
@@ -101,7 +114,7 @@ class Policy(object):
 		if r: return r
 
 		if self.network_use != network_full:
-			r = cmp(a.get_cached(), b.get_cached())
+			r = cmp(self.get_cached(a), self.get_cached(b))
 			if r: return r
 
 		return cmp(a.path, b.path)
@@ -114,13 +127,13 @@ class Policy(object):
 	def is_unusable(self, impl):
 		if impl.get_stability() <= buggy:
 			return True
-		if self.network_use == network_offline and not impl.get_cached():
+		if self.network_use == network_offline and not self.get_cached(impl):
 			return True
 		return False
 	
 	def get_interface(self, uri):
 		"""Get the interface for uri. If it's in the cache, read that.
-		If it's not in the cache or network use is full, start downloading
+		If it's not in the cache or policy says so, start downloading
 		the latest version."""
 		if type(uri) == str:
 			uri = unicode(uri)
@@ -131,7 +144,12 @@ class Policy(object):
 			_interfaces[uri] = Interface(uri)
 			self.init_interface(_interfaces[uri])
 
-		if self.network_use == network_full and not _interfaces[uri].uptodate:
+		staleness = time.time() - (_interfaces[uri].last_checked or 0)
+		#print "Staleness for '%s' is %d" % (_interfaces[uri].name, staleness)
+
+		if self.network_use != network_offline and \
+		   self.freshness > 0 and staleness > self.freshness:
+		   	#print "Updating..."
 			self.begin_iface_download(_interfaces[uri])
 
 		return _interfaces[uri]
@@ -165,6 +183,15 @@ class Policy(object):
 		debug("Updating '%s' from network" % (interface.name or interface.uri))
 		assert interface.uri.startswith('/')
 
+		self.import_new_interface(interface, new_xml)
+
+		import writer, time
+		interface.last_checked = long(time.time())
+		writer.save_interface(interface)
+
+		self.recalculate()
+	
+	def import_new_interface(self, interface, new_xml):
 		upstream_dir = basedir.save_config_path(config_site, config_prog, 'interfaces')
 		cached = os.path.join(upstream_dir, escape(interface.uri))
 
@@ -172,21 +199,43 @@ class Policy(object):
 			old_xml = file(cached).read()
 			if old_xml == new_xml:
 				debug("No change")
+				return
 			else:
 				self.confirm_diff(old_xml, new_xml, interface.uri)
 
 		stream = file(cached + '.new', 'w')
 		stream.write(new_xml)
 		stream.close()
-		reader.check_readable(interface.uri, cached + '.new')
+		new_mtime = reader.check_readable(interface.uri, cached + '.new')
+		assert new_mtime
+		if interface.last_modified:
+			if new_mtime < interface.last_modified:
+				raise SafeException("New interface's modification time is before old "
+						    "version!"
+						    "\nOld time: " + pretty_time(interface.last_modified) +
+						    "\nNew time: " + pretty_time(new_mtime) + 
+						    "\nRefusing update (leaving new copy as " +
+						    cached + ".new)")
+			if new_mtime == interface.last_modified:
+				raise SafeException("Interface has changed, but modification time "
+						    "hasn't! Refusing update.")
 		os.rename(cached + '.new', cached)
 		debug("Saved as " + cached)
-		
-		interface.uptodate = True
-		reader.update_from_cache(interface)
-		self.recalculate()
 
+		reader.update_from_cache(interface)
+
+	def get_implementation_path(self, impl):
+		assert isinstance(impl, Implementation)
+		if impl.id.startswith('/'):
+			return impl.id
+		path = self.store.lookup(impl.id)
+		if path:
+			return path
+		raise Exception("Item '%s' not found in cache '%s' (digest is '%s')" % (impl, self.store.dir, impl.id))
+		
 	def get_implementation(self, interface):
+		assert isinstance(interface, Interface)
+
 		if not interface.name:
 			raise SafeException("We don't have enough information to "
 					    "run this program yet. "
@@ -221,7 +270,7 @@ class Policy(object):
 		iface_xml = data.read()
 		data.close()
 		if not self.update_interface_if_trusted(download.interface, sigs, iface_xml):
-			self.confirm_trust_keys(download.interface, sigs)
+			self.confirm_trust_keys(download.interface, sigs, iface_xml)
 
 	def update_interface_if_trusted(self, interface, sigs, xml):
 		for s in sigs:
@@ -230,7 +279,7 @@ class Policy(object):
 				return True
 		return False
 	
-	def confirm_trust_keys(self, interface, sigs):
+	def confirm_trust_keys(self, interface, sigs, iface_xml):
 		"""We don't trust any of the signatures yet. Ask the user.
 		When done, call update_interface_if_trusted()."""
 		import gpg
@@ -255,7 +304,7 @@ class Policy(object):
 			print "Trusting", key.fingerprint
 			trust_db.trust_key(key.fingerprint)
 
-		if not self.update_interface_if_trusted(interface, sigs, xml):
+		if not self.update_interface_if_trusted(interface, sigs, iface_xml):
 			raise Exception('Bug: still not trusted!!')
 
 	def confirm_diff(self, old, new, uri):
@@ -265,3 +314,19 @@ class Policy(object):
 		print "Updates:"
 		for line in diff:
 			print line
+
+	def get_cached(self, impl):
+		# XXX _cached
+		if impl._cached is None:
+			impl._cached = False
+			if impl.id.startswith('/'):
+				impl._cached = os.path.exists(impl.id)
+			else:
+				try:
+					path = self.get_implementation_path(impl)
+					assert path
+					impl._cached = True
+				except:
+					pass # OK
+		return impl._cached
+	

@@ -1,13 +1,14 @@
 from xml.dom import Node, minidom
 import sys
 import shutil
+import time
 from logging import debug
 
 import basedir
 from namespaces import *
 from model import *
 
-class InvalidInterface(Exception):
+class InvalidInterface(SafeException):
 	def __init__(self, message, ex = None):
 		if ex:
 			message += "\n\n(exact error: %s)" % ex
@@ -18,9 +19,9 @@ def get_singleton_text(parent, ns, localName, user):
 	if not names:
 		if user:
 			return None
-		raise Exception('No <%s> element in <%s>' % (localName, parent.localName))
+		raise InvalidInterface('No <%s> element in <%s>' % (localName, parent.localName))
 	if len(names) > 1:
-		raise Exception('Multiple <%s> elements in <%s>' % (localName, parent.localName))
+		raise InvalidInterface('Multiple <%s> elements in <%s>' % (localName, parent.localName))
 	text = ''
 	for x in names[0].childNodes:
 		if x.nodeType == Node.TEXT_NODE:
@@ -28,21 +29,15 @@ def get_singleton_text(parent, ns, localName, user):
 	return text.strip()
 
 class Attrs(object):
-	__slots__ = ['version', 'arch', 'path', 'stability']
-	def __init__(self, stability, version = None, arch = None, path = None):
+	__slots__ = ['version', 'arch', 'stability']
+	def __init__(self, stability, version = None, arch = None):
 		self.version = version
 		self.arch = arch
-		self.path = path
 		self.stability = stability
 	
 	def merge(self, item):
-		new = Attrs(self.stability, self.version, self.arch, self.path)
+		new = Attrs(self.stability, self.version, self.arch)
 
-		if item.hasAttribute('path'):
-			if self.path:
-				new.path = os.path.join(self.path, item.getAttribute('path'))
-			else:
-				new.path = item.getAttribute('path')
 		for x in ('arch', 'stability', 'version'):
 			if item.hasAttribute(x):
 				setattr(new, x, item.getAttribute(x))
@@ -76,8 +71,24 @@ def update_user_overrides(interface):
 		update(interface, user, user_overrides = True)
 
 def check_readable(interface_uri, source):
+	"""Returns the modified time in 'source'. If syntax is incorrect,
+	throws an exception."""
 	tmp = Interface(interface_uri)
-	update(tmp, source)
+	try:
+		update(tmp, source)
+	except InvalidInterface, ex:
+		raise InvalidInterface("Error loading interface:\n"
+					"Interface URI: %s\n"
+					"Local file: %s\n%s" %
+					(interface_uri, source, ex))
+	return tmp.last_modified
+
+def parse_time(t):
+	try:
+		return long(t)
+	except Exception, ex:
+		raise InvalidInterface("Date '%s' not in correct format (should be integer number "
+					"of seconds since Unix epoch)\n%s" % (t, ex))
 
 def update(interface, source, user_overrides = False):
 	assert isinstance(interface, Interface)
@@ -96,14 +107,21 @@ def update(interface, source, user_overrides = False):
 	if not user_overrides:
 		canonical_name = root.getAttribute('uri')
 		if not canonical_name:
-			raise Exception("<interface> uri attribute missing in " + source)
+			raise InvalidInterface("<interface> uri attribute missing in " + source)
 		if canonical_name != interface.uri:
 			print >>sys.stderr, \
 				"WARNING: <interface> uri attribute is '%s', but accessed as '%s'" % \
 					(canonical_name, interface.uri)
+		time_str = root.getAttribute('last-modified')
+		if not time_str:
+			raise InvalidInterface("Missing last-modified attribute on root element.")
+		interface.last_modified = parse_time(time_str)
 
 	if user_overrides:
-		stability_policy = root.getAttribute('stability_policy')
+		last_checked = root.getAttribute('last-checked')
+		if last_checked:
+			interface.last_checked = int(last_checked)
+		stability_policy = root.getAttribute('stability-policy')
 		if stability_policy:
 			interface.set_stability_policy(stability_levels[str(stability_policy)])
 
@@ -123,10 +141,21 @@ def update(interface, source, user_overrides = False):
 			if item.localName == 'group':
 				process_group(item, item_attrs, depends)
 			elif item.localName == 'implementation':
-				impl = interface.get_impl(item_attrs.path)
+				sha1 = item.getAttribute('sha1')
+				if sha1:
+					try:
+						long(sha1, 16)
+					except Exception, ex:
+						raise InvalidInterface('Bad SHA1 attribute: %s' % ex)
+					impl = interface.get_impl('sha1=' + sha1)
+				else:
+					path = item.getAttribute('path')
+					if not path.startswith('/'):
+						raise InvalidInterface('Need absolute path, not ' + path)
+					impl = interface.get_impl(path)
 
 				if user_overrides:
-					user_stability = item.getAttribute('user_stability')
+					user_stability = item.getAttribute('user-stability')
 					if user_stability:
 						impl.user_stability = stability_levels[str(user_stability)]
 				else:
@@ -139,9 +168,9 @@ def update(interface, source, user_overrides = False):
 					try:
 						stability = stability_levels[str(item_attrs.stability)]
 					except KeyError:
-						raise Exception('Stability "%s" invalid' % item_attrs.stability)
+						raise InvalidInterface('Stability "%s" invalid' % item_attrs.stability)
 					if stability >= preferred:
-						raise Exception("Upstream can't set stability to preferred!")
+						raise InvalidInterface("Upstream can't set stability to preferred!")
 					impl.upstream_stability = stability
 				impl.dependencies.update(depends)
 
