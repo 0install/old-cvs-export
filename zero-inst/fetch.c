@@ -447,7 +447,6 @@ static Task *fetch_site_index(const char *path, int use_cache)
 	tgz = build_filename("%r.tgz", path);
 	if (!tgz)
 		goto out;
-	printf("[ archive for '%s' is '%s' ]\n", path, tgz);
 
 	for (task = all_tasks; task; task = task->next) {
 		if (task->type == TASK_INDEX && strcmp(task->str, tgz) == 0) {
@@ -489,11 +488,7 @@ out:
  */
 Index *get_index(const char *path, Task **task, int force)
 {
-	char index_path[MAX_PATH_LEN];
-	int stem_len;
-	char *slash;
-	int cache_len;
-	int needed;
+	char *index_path;
 	struct stat info;
 
 	assert(!task || !*task);
@@ -502,28 +497,15 @@ Index *get_index(const char *path, Task **task, int force)
 		force = 0;
 
 	assert(path[0] == '/');
+	path++;
 	
-	if (strcmp(path + 1, "AppRun") == 0 || path[1] == '.')
+	if (strcmp(path, "AppRun") == 0 || *path == '.')
 		return NULL;	/* Don't waste time looking for these */
 
-	slash = strchr(path + 1, '/');
-
-	if (slash)
-		stem_len = slash - path;
-	else
-		stem_len = strlen(path);
-
-	cache_len = strlen(cache_dir);
-
-	needed = cache_len + stem_len + 1 + sizeof(ZERO_INSTALL_INDEX);
-	if (needed >= sizeof(index_path))
+	index_path = build_filename("%s/%h/" ZERO_INSTALL_INDEX,
+			cache_dir, path);
+	if (!index_path)
 		return NULL;
-
-	memcpy(index_path, cache_dir, cache_len);
-	memcpy(index_path + cache_len, path, stem_len);
-	strcpy(index_path + cache_len + stem_len, "/" ZERO_INSTALL_INDEX);
-
-	assert(strlen(index_path) + 1 == needed);
 
 	if (verbose)
 		printf("Index for '%s' is '%s'\n", path, index_path);
@@ -533,12 +515,15 @@ Index *get_index(const char *path, Task **task, int force)
 		Index *index;
 		
 		index = parse_index(index_path);
-		if (index)
+		if (index) {
+			free(index_path);
 			return index;
+		}
 	}
 
 	if (task)
 		*task = fetch_site_index(index_path, !force);
+	free(index_path);
 
 	return NULL;
 }
