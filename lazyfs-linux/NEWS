@@ -1,3 +1,5 @@
+Changes since 0.1.21:
+
 * Fixed some bugs the unittests found:
   - Listing "/" didn't send a request to the helper.
   - Opening a deleted file triggered a BUG assertion.
