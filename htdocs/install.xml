@@ -8,13 +8,13 @@ Although the system makes installing other software very easy, the Zero
 Install system itself still requires some work to install. You'll also
 need to have <a href="http://freshmeat.net/depends/download-all/39759/">a few
 other things</a> installed first (expat to parse the XML index files, wget to
-download archives, tar and gzip to extract them, and GPG to check they are
-correctly signed). Most systems will have these installed already, although you
-may be missing the header files for expat (expat-dev).
-You will also need to have the
-<a href="http://www.freedesktop.org/Software/dbus">DBUS library</a> installed
-(you don't need the bus daemon running, however, you just need the library
-to be installed). </p>
+download archives, tar and gzip to extract them, GPG to check they are
+correctly signed, and D-BUS to report progress to graphical utilities). Most
+systems will have these installed already, although you may be missing the
+header files for expat (expat-dev). Note that, while you need libdbus
+installed, you don't need any DBUS daemons running (we only use the library
+part).
+</p>
 
 <div class='note'>
 <h3>Security and stability note</h3>
