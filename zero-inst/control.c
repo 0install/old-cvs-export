@@ -380,6 +380,7 @@ static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 {
 	const char *site;
 	Task *task = NULL;
+	unsigned long uid;
 	Index *index;
 
 	if (!dbus_message_get_args(message, error,
@@ -395,6 +396,9 @@ static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 	if (!task)
 		goto oom;
 	task->step = send_result;
+	if (!dbus_connection_get_unix_user(connection, &uid))
+		assert(0);
+	task->uid = uid;
 	task_set_message(task, connection, message);
 
 	task->str = build_string("/%s", site);
@@ -416,9 +420,9 @@ static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 		goto done;
 	}
 
-	if (task->child_task)
-		printf("fetching\n");//control_notify_user(client->task->uid);
-	else {
+	if (task->child_task) {
+		control_notify_start(task);
+	} else {
 		dbus_set_error_const(error, "Error",
 				"Failed to start fetching index");
 		goto done;
