@@ -9,6 +9,7 @@
     <item base='packagers-cs-1' label='Case Study #1'/>
     <item base='packagers-cs-2' label='Case Study #2'/>
   </item>
+  <item base="injector" label="Injector"/>
   <item base="security" label="Security"/>
   <item base="support" label="Support"/>
   <item base="technical" label="Technical"/>
