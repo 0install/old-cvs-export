@@ -6,9 +6,41 @@
 <h3>Design and implementation details</h3>
 
 <p>
-You can find detailed design details in the
+The diagram below shows the components of a Zero Install system. The shaded
+parts are only needed when fetching software from the Internet; once software
+has been fetched, it can still be used without them.
+</p>
+
+<p style='text-align:center'>
+<img src="ZeroInstall.png" width="523" height="411" alt="Architecture diagram"/>
+</p>
+
+<p>
+Applications access resources under the <tt>/uri/0install</tt> directory
+using the normal POSIX filesystem interface (open, read, close, etc). The
+kernel passes these requests to the LazyFS module, which serves them directly
+from the disk cache, if possible.
+</p>
+
+<p>
+When accessing a resource not in the cache, LazyFS sends a message to the
+zero-install program, which fetches it over the Internet and places it in
+the cache. Once the software is cached, the application which tried to
+access it is woken up, and continues normally.
+</p>
+
+<p>
+LazyFS and the simple protocol used to communicate with zero-install are
+documented in the
 <a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/*checkout*/zero-install/zero-inst/Technical?rev=HEAD&amp;content-type=text/plain">Technical</a> file
 in CVS.
+</p>
+
+<p>
+The user can also communicate with the zero-install program directly. This
+is done by programs such as 0refresh (to request the cache be updated) and
+ZeroProgress (to tell the user what is currently being fetched). These messages
+are in the DBUS format (but no DBUS daemon is used; only the protocol).
 </p>
 
 <h3>Tasks list</h3>
@@ -59,6 +91,7 @@ example library, which changes the soname to an absolute path.
 Version 0.1.6 of zero-install also handles downloading using .tgz files
 a directory at a time (so is much faster than before).
 </p>
+
 <p>
 In fact, it's cleverer than that; you can decide how to group the files
 within a directory between archives. The 0build script (which scans a
