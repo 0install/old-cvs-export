@@ -178,9 +178,8 @@ Oct  5 16:00:16 everest zero-install: Started: using cache directory '/var/cache
 
 <div class='note'>
 On some systems, running 0install tries to log you in as the zero install
-user instead of running the helper. Try using sudo or 'su -c' in the 0install
-script file. Let us know if you find a solution (that works even if the user's
-shell is /bin/false)!
+user instead of running the helper. Try using 'su -p -c' in the 0install
+script file instead of '-s'. Let us know if that helps!
 </div>
 
 <h2>Testing the installation</h2>
