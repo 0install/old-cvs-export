@@ -1,3 +1,19 @@
+Changes since 0.1.7:
+
+* New 0refresh program to update the cache.
+
+* Helper can read commands from clients (0refresh, 0show).
+
+* New /uri/.lazyfs-cache/ symlink, so cache location isn't hard-coded anymore.
+
+* A symlink with the 'magic' target '@PLATFORM@' gets the current platform
+  type as its target.
+
+* Kernel modules compile with optimisations (Dan Egnor).
+
+* Fix typo in locking (prevented compiling on SMP machines).
+
+
 Changes since 0.1.6:
 
 * 0build script now creates the output in a different directory, and gives
