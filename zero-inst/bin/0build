@@ -7,7 +7,7 @@ import os, sys
 import stat
 import md5
 
-ignored_names = ('CVS', '.svn', '.', '..')
+ignored_names = ('CVS', '.svn', '.', '..', '.0inst-0build')
 meta_names = ('.DirIcon', 'AppInfo.xml')
 archive_dir_leaf = '.0inst-archives'
 index_leaf = '.0inst-index.tgz'
@@ -283,16 +283,15 @@ site.setAttributeNS(None, 'path', '/uri/0install/%s' % host)
 root = Dir('.', root = True)
 
 #print root
-index_path = os.path.join(target, index_leaf)
+index_tgz = os.path.join(target, index_leaf)
+index_xml = os.path.join(target, '.0inst-index.xml')
 old_doc = None
-if os.path.exists(index_path):
-	os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzf', index_path,
+if os.path.exists(index_tgz):
+	os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzf', index_tgz,
 			'-C', target, '.0inst-index.xml'])
 
-old_path = os.path.join(target, '.0inst-index.xml')
-if os.path.exists(old_path):
-	print "Converting from old index format"
-	old_doc = dom.minidom.parse(old_path)
+if os.path.exists(index_xml):
+	old_doc = dom.minidom.parse(index_xml)
 
 old_tgz = [a for a in os.listdir(archive_dir) if a.endswith('.tgz')]
 
@@ -301,12 +300,11 @@ if old_doc:
 	find_archives(old_archives, old_doc.documentElement)
 
 root.add_xml(site)
-doc.writexml(file(index_path + '.new', 'w'), addindent='  ', newl='\n')
-os.rename(index_path + '.new', index_path)
+doc.writexml(file(index_xml, 'w'), addindent='  ', newl='\n')
 
-assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_path,
+assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz,
 			'-C', target, '.0inst-index.xml']) == 0
-os.unlink(os.path.join(target, '.0inst-index.xml'))
+os.unlink(index_xml)
 
 for x in old_tgz:
 	path = os.path.join(archive_dir, x)
