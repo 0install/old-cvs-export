@@ -201,6 +201,13 @@ out:
 	return DBUS_HANDLER_RESULT_REMOVE_MESSAGE;
 }
 
+static dbus_bool_t allow_anyone_to_connect(DBusConnection *connection,
+                                           unsigned long   uid,
+                                           void           *data)
+{
+	return 1;
+}
+
 static void new_dbus_client(DBusServer *server,
 			    DBusConnection *new_connection,
 			    void *data)
@@ -214,6 +221,9 @@ static void new_dbus_client(DBusServer *server,
 				add_watch, remove_watch, NULL,
 				NULL, NULL))
 		return;
+
+	dbus_connection_set_unix_user_function(new_connection,
+			allow_anyone_to_connect, NULL, NULL);
 
 	dbus_connection_set_dispatch_status_function(new_connection,
 					dispatch_status_function, NULL, NULL);
