@@ -36,7 +36,7 @@ $ gpg --recv-key --keyserver www.keyserver.net 59A53CC1
 </li>
 </ul>
 
-<div class='note'>The current release (0.5) is an experimental prototype. It may
+<div class='note'>The current release (0.6) is an experimental release. It may
 contain a few bugs.</div>
 
 <p>
@@ -51,7 +51,7 @@ href="http://sourceforge.net/project/showfiles.php?group_id=76468&amp;package_id
 download page</a>, or using wget:
 </p>
 <pre>
-$ <b>wget http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.5.tar.gz.gpg</b>
+$ <b>wget http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.6.tar.gz.gpg</b>
 </pre>
 
 <p>
@@ -60,8 +60,8 @@ you will need later!
 </p>
 
 <pre>
-$ <b>gpg injector-0.5.tar.gz.gpg</b>
-gpg: Signature made Sat 19 Mar 2005 14:43:10 GMT using DSA key ID 59A53CC1
+$ <b>gpg injector-0.6.tar.gz.gpg</b>
+gpg: Signature made Wed 23 Mar 2005 21:32:59 GMT using DSA key ID 59A53CC1
 gpg: Good signature from "Thomas Leonard &lt;tal197@users.sourceforge.net&gt;"
 </pre>
 
@@ -70,8 +70,8 @@ Extract the archive, become root, install the injector, and exit from root:
 </p>
 
 <pre>
-$ <b>tar xzf injector-0.5.tar.gz</b>
-$ <b>cd injector-0.5</b>
+$ <b>tar xzf injector-0.6.tar.gz</b>
+$ <b>cd injector-0.6</b>
 $ <b>su</b>
 [ enter root password ]
 # <b>python setup.py install</b>
@@ -80,26 +80,17 @@ $ <b>su</b>
 
 <p>
 You now have a new command: <b>0launch</b>, which takes the URL of a program and runs it.
-If you use the <b>--gui</b> option, then it runs a graphical interface which lets you choose
-which version to run.
-</p>
-
-<p>
-Note: The injector package you downloaded doesn't actually include the GUI. Instead,
-<b>0launch --gui ...</b> is just a short-hand for <b>0launch
-http://0install.net/2005/interfaces/injector-gui ...</b>, which downloads and runs
-the GUI for you.
 </p>
 
 <h3>Running Edit with the injector</h3>
 
 <p>
-Run 0launch in GUI-mode, giving it the URL for the program you want to run, as shown below.
+Run 0launch, giving it the URL for the program you want to run, as shown below.
 You will be prompted to confirm that you trust my GPG key.
 </p>
 
 <pre>
-$ <b>0launch --gui http://rox.sourceforge.net/2005/interfaces/Edit</b>
+$ <b>0launch http://rox.sourceforge.net/2005/interfaces/Edit</b>
 Currently downloading:
 - http://0install.net/2005/interfaces/injector-gui
 
@@ -118,8 +109,10 @@ You should confirm that this is the fingerprint of my key and answer <b>Y</b>.
 the fingerprint.</div>
 
 <p>
-You might wonder why this confirmation is non-graphical. The reason is that we are currently fetching
-<b>0launch-gui</b>; it is this program, and not Edit, which has triggered the confirmation check. Having
+You might wonder why this confirmation is non-graphical. The reason is that the GUI interface is actually
+a separate program and not included in the archive you downloaded above. <b>0launch</b> sees that you don't
+yet have the GUI and starts by downloading it for you.
+It was the attempt to fetch <b>0launch-gui</b> (and not <b>Edit</b>) which triggered the confirmation check. Having
 answered <b>Y</b> and pressed Return, the required components of the injector are downloaded and unpacked:
 </p>
 
@@ -174,6 +167,18 @@ versions (this time showing the progress in a window, now the GUI is being used)
 </p>
 
 <p>
+By default, the GUI confirmation box is only shown if the injector needs to download something.
+If you run the command again once <b>Edit</b> has been cached, Edit will run immediately. To get back to
+the dialog box, use the <b>--gui</b> option:
+</p>
+
+<pre>
+$ <b>0launch --gui http://rox.sourceforge.net/2005/interfaces/Edit</b>
+</pre>
+
+<h2>Policy settings</h2>
+
+<p>
 You can affect which versions are chosen by changing your policy. Three aspects
 of your policy are shown in the main window: <b>Network use</b>, <b>Freshness</b>
 and <b>Help test new versions</b>. Click on <b>Help test new versions</b>, and
@@ -200,7 +205,7 @@ but any changes made to the policy are not reversed.
 </p>
 
 
-<h2>Choosing different versions</h2>
+<h3>Choosing different versions</h3>
 
 <p>
 The interface URI (<b>http://rox.sourceforge.net/2005/interfaces/Edit</b>) is
@@ -222,7 +227,7 @@ a plain-text GPG-signed file. The injector stores the downloaded interface files
 locally (in <b>~/.cache/0install.net/interfaces</b>).
 </p>
 
-<h2>Stability</h2>
+<h3>Stability</h3>
 
 <p>
 The interface file also gives a stability rating for each implementation. The following
