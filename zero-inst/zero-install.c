@@ -186,7 +186,10 @@ static void kernel_got_index(Task *task)
 	slash = strchr(task->str + 1, '/');
 	slash = strchr(slash + 1, '/');
 
-	item = index_lookup(task->index, slash);
+	if (slash)
+		item = index_lookup(task->index, slash);
+	else
+		item = index_get_root(task->index);
 	if (!item) {
 		/* TODO: rebuild index files? */
 		printf("%s not found in index!\n", task->str);

@@ -342,11 +342,9 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 	inode = new_inode(sb);
 	if (!inode)
 		return NULL;
-	if (inode->i_sb != sb) {
-		printk("lazyfs_new_inode: superblock at wrong offset!\n");
-		iput(inode);
-		return NULL;
-	}
+	if (inode->i_sb != sb)
+		BUG();
+
 	inode->u.generic_ip = NULL;
 
 	inode->i_mode = mode | 0444;	/* Always give read */
@@ -498,6 +496,16 @@ lazyfs_fill_super(struct super_block *sb, void *data, int silent)
 {
 	struct lazy_sb_info *sbi = NULL;
 	struct qstr link_target;
+
+	if (sb->s_count != S_BIAS) {
+		printk("lazyfs_fill_super: wrong count "
+			"(got %x, expecting %x)\n"
+			"Probably, this module was compiled with different \n"
+			"kernel headers or config, or a different compiler\n"
+			"version. Refusing to start.\n",
+			sb->s_count, S_BIAS);
+		return -EINVAL;
+	}
 
 	sb->s_flags |= MS_RDONLY | MS_NODEV | MS_NOSUID;
 

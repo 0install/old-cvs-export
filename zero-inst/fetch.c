@@ -30,7 +30,7 @@ void fetch_create_directory(const char *path, xmlNode *node)
 	
 	assert(node->name[0] == 'd');
 
-	if (snprintf(cache_path, sizeof(cache_path), "%s%s/", cache_dir,
+	if (snprintf(cache_path, sizeof(cache_path), "%s%s", cache_dir,
 	    path) > sizeof(cache_path) - 1) {
 		fprintf(stderr, "Path too long\n");
 		return;
@@ -290,6 +290,7 @@ static void unpack_archive(const char *archive_dir, xmlNode *archive)
 static void wget(Task *task, const char *uri, const char *path, int use_cache)
 {
 	const char *argv[] = {"wget", "-q", "-O", NULL, uri,
+			"--tries=3",
 			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
 
