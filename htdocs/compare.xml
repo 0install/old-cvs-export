@@ -7,7 +7,7 @@
 I'm going to talk here about the many problems with Debian's APT system.
 I want to make it clear that I'm directing my criticism at APT not because it's
 worse than other packaging systems, but because it's one of the best. Therefore,
-these arguments will apply to other systems (RPM, urpmi, tarballs, etc).
+these arguments will also apply to other systems (RPM, urpmi, tarballs, etc).
 </p>
 
 <p>
