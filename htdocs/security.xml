@@ -22,6 +22,10 @@ who asked to run it.</li>
 <li>Only the Zero Install software itself is a potential risk to system
 security. With traditional (non-zero-install) systems, every application,
 library and documentation package is a potential root compromise.</li>
+<li>Without Zero Install, users still have the ability to download programs to
+their home directory and run them there. Since your system already has to be
+secure against this, such attacks aren't considered security risks from Zero
+Install.</li>
 </ul>
 
 <h3>System security key points (implementation)</h3>
@@ -33,9 +37,6 @@ allow trojaning of software run via Zero Install, but not of the system
 itself.</li>
 <li>Zero Install does not listen for incoming connections (any attack
 must be initiated by a local user, intentionally or otherwise).</li>
-<li>Bugs in Linux itself, trusted root processes, etc can allow users to damage
-the system, with or without Zero Install (I thought this was obvious, but some
-people complained I didn't mention it).</li>
 </ul>
 
 <h3>User security key points</h3>
