@@ -101,7 +101,7 @@ static void pull_up_files(Group *group)
 			perror("rename");
 			return;
 		}
-		printf("\t(extracted '%s')\n", item->leafname);
+		/* printf("\t(extracted '%s')\n", item->leafname); */
 	}
 }
 
