@@ -72,6 +72,7 @@ software.</li>
 systems.</li>
 <li>Software can be removed from the cache to free space without affecting
 the behaviour of the system (it will be recached on demand).</li>
+<li>You can still run a program you cached last week, without using the net again.</li>
 </ul>
 </div>
 
@@ -149,6 +150,14 @@ make a shell alias or use any other normal method of making something easier to
 get to.
 </p>
 
+<p class='q'>What about package conflicts?</p>
+<p>
+When installing RPMs from different sources, they may conflict because they both try to
+install different files in the same place. This can't happen in Zero Install, because
+of the URI naming scheme (just like visiting one web page won't stop another one from
+loading later, even if they have the same title).
+</p>
+
 <p class='q'>Slow down... can we go through this step-by-step?</p>
 
 <p>
@@ -194,11 +203,15 @@ the network at all.</li>
 </p>
 
 <h3>Articles about Zero Install</h3>
+<p>Here are some discussions about Zero Install I've found on the web (google, emails, etc). Let me
+know if you find any more!</p>
 <ul>
-<li><a href="http://freshmeat.net/articles/view/1049/">Zero Install and the Web of Software</a> (freshmeat editorial and comments)</li>
+<li><a href="http://freshmeat.net/articles/view/1049/">Zero Install and the Web of Software</a> (my freshmeat editorial and comments)</li>
 <li><a href="http://osnews.com/comment.php?news_id=5394">Zero Install and the Web of Software</a> (OSnews article and comments)</li>
 <li><a href="http://slashdot.org/~Sanity/journal/47655">Package Management in the untimate operating system</a></li>
 <li><a href="http://ed.puddingbowl.org/archives/001198.html">Ed Heil's Weblog</a></li>
+<li><a href="http://www.varlinux.org/vl/html/modules/newbb/viewtopic.php?topic_id=201&amp;forum=8">Blue Sky Platform discussion</a></li>
+<li><a href="http://forums.gentoo.org/viewtopic.php?t=114652">Gentoo forums discussion</a></li>
 </ul>
 
 

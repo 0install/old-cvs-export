@@ -230,12 +230,12 @@ trust-worthy in the past is from the same people as before.
 <p>
 Distributions or other groups can provide extra security by distributing
 sites' public keys themselves. The RedHat installer might pre-install the file
-<tt>/var/cache/zero-inst/gimp.org/.0inst-key.pub</tt>, even if they didn't
-supply the Gimp itself. Other groups can provide a similar service; since
-they system will only work if both the key provider and the software provider
-use the same key, the worst that malicious key providers can do is to prevent
-genuine software from installing (but can't install malicious software
-themselves).
+<tt>/var/cache/zero-inst/gimp.org/.0inst-meta/trusted_key</tt>, even
+if they didn't supply the Gimp itself. Other groups can provide a similar
+service; since the system will only work if both the key provider and the
+software provider use the same key, the worst that malicious key providers can
+do is to prevent genuine software from installing (but can't install malicious
+software themselves).
 </p>
 
 <p>
@@ -258,17 +258,17 @@ Install for running software in safety.
 <p>
 First, there are tools such as <a
 href="http://subterfugue.org/">Subterfugue</a>, which can intercept all system
-calls made by a process and block or change destructive ones. For example, a
-user could run a program but only allow it to write to their ~/Testing
-directory.
+calls made by a process and block or change destructive ones. For example, Mary
+could run a program but only allow it to write to her <tt>~/Testing</tt>
+directory. (note that proper security requires more restrictions than just this)
 </p>
 
 <p>
 Secondly, <a href="http://user-mode-linux.sf.net">User Mode Linux</a> allows
 any user to run a whole Linux system within Linux. Normally, this rather
 restricts the amount of software available, but with Zero Install they can
-mount /uri within the virtual machine as a hostfs type mount of the real
-machine's /uri directly, thus sharing all downloads between both the real
+mount <tt>/uri</tt> within the virtual machine as a hostfs type mount of the real
+machine's <tt>/uri</tt> directly, thus sharing all downloads between both the real
 and virtual machines. Any changes made will only affect the virtual machine.
 </p>
 
@@ -368,9 +368,9 @@ untrusted programs they find lying around in safety. However, there is the
 problem of preferences. OpenOffice should be able to save user preferences
 and a list of recently edited documents without having to ask the user
 for permission. Zero Install makes this easy; when the user runs
-`.../openoffice.org/writer' in the filer, the filer could automatically grant it
-write permission on `~/.config/openoffice.org', without any risk that it
-could mess up another application's preferences.
+<tt>/uri/0install/openoffice.org/writer</tt> in the filer, the filer could
+automatically grant it write permission on <tt>~/.config/openoffice.org</tt>,
+without any risk that it could mess up another application's preferences.
 </p>
 
 <h2>Conclusions</h2>
