@@ -325,11 +325,18 @@ if not new_key:
 pub_key = os.path.join(target, '.0inst-key.pub')
 file(pub_key, 'w').write(new_key)
 
-assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz,
-			'-C', target, '.0inst-index.xml', '.0inst-key.pub']) == 0
+
+sig = os.popen("gpg --detach-sign -o - --default-key '%s' '%s'" % (key, index_xml)).read()
+assert sig
+sig_path = os.path.join(target, '.0inst-index.xml.sig')
+file(sig_path, 'w').write(sig)
+
+assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz, '-C', target,
+	'.0inst-index.xml', '.0inst-key.pub', '.0inst-index.xml.sig']) == 0
 
 os.unlink(index_xml)
 os.unlink(pub_key)
+os.unlink(sig_path)
 
 for x in old_tgz:
 	path = os.path.join(archive_dir, x)
