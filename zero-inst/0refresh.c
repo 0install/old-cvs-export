@@ -151,7 +151,6 @@ static void refresh(const char *site, int force)
 		exit(EXIT_FAILURE);
 	}
 
-	printf("OK\n");
 	dbus_message_unref(reply);
 	dbus_connection_disconnect(connection);
 	dbus_connection_unref(connection);
@@ -242,5 +241,6 @@ int main(int argc, char **argv)
 	} else
 		usage(argv[0], EXIT_FAILURE);
 
+	printf("OK\n");
 	return EXIT_SUCCESS;
 }

@@ -1,3 +1,6 @@
+* Fix 0refresh so it doesn't print OK before displaying error messages
+  (Wayne Scott).
+
 * Disconnect before unreffing connection (anonymous PPC porter; reported by
   Adam S Many and Algardas Pelakauskas).
 
