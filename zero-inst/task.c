@@ -40,6 +40,9 @@ Task *task_new(TaskType type)
 
 	task->n = ++n;
 
+	task->connection = NULL;
+	task->message = NULL;
+
 	task->step = NULL;
 	task->data = NULL;
 	task->str = NULL;
@@ -100,6 +103,7 @@ void task_destroy(Task *task, int success)
 	}
 
 	task_set_string(task, NULL);
+	task_set_message(task, NULL, NULL);
 	task_set_index(task, NULL);
 	free(task);
 }
@@ -153,4 +157,25 @@ void task_steal_index(Task *task, Index *index)
 		assert(index->ref > 0);
 
 	task->index = index;
+}
+
+void task_set_message(Task *task, DBusConnection *connection,
+			DBusMessage *message)
+{
+	if (connection) {
+		assert(message);
+		dbus_connection_ref(connection);
+		dbus_message_ref(message);
+	} else
+		assert(!message);
+
+	if (task->connection) {
+		assert(task->message);
+		dbus_connection_unref(task->connection);
+		dbus_message_unref(task->message);
+	} else
+		assert(!task->message);
+
+	task->connection = connection;
+	task->message = message;
 }

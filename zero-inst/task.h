@@ -13,6 +13,8 @@ void task_process_done(pid_t pid, int success);
 void task_set_string(Task *task, const char *str);
 void task_set_index(Task *task, Index *index);
 void task_steal_index(Task *task, Index *index);
+void task_set_message(Task *task, DBusConnection *connection,
+			DBusMessage *message);
 
 struct _Task {
 	TaskType type;
@@ -25,6 +27,9 @@ struct _Task {
 	void (*step)(Task *task, int success);
 
 	/* Various bits of extra data, dependant on 'type' */
+	DBusConnection *connection;
+	DBusMessage *message;
+
 	void *data;
 	uid_t uid;
 	int fd;

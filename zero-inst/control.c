@@ -9,9 +9,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#define DBUS_API_SUBJECT_TO_CHANGE
-#include <dbus/dbus.h>
-
 #include "global.h"
 #include "control.h"
 #include "support.h"
@@ -49,6 +46,9 @@ static DBusMessageHandler *handler = NULL;
 static DBusServer *server = NULL;
 
 static DBusWatch *current_watch = NULL;	/* tmp */
+
+static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
+			 DBusError *error, int force);
 
 #define SERVER_SOCKET "unix:path=/uri/0install/.lazyfs-cache/.control"
 
@@ -117,9 +117,12 @@ static DBusHandlerResult message_handler(DBusMessageHandler *handler,
 	DBusConnection *connection, DBusMessage *message, void *user_data)
 {
 	DBusMessage *reply = NULL;
+	DBusError error;
 	const char *name = dbus_message_get_name(message);
 
 	printf("[ message '%s' ]\n", name);
+
+	dbus_error_init(&error);
 
 	if (strcmp(name, "org.freedesktop.Local.Disconnect") == 0)
 		dbus_connection_unref(connection);
@@ -131,12 +134,36 @@ static DBusHandlerResult message_handler(DBusMessageHandler *handler,
 				DBUS_TYPE_STRING, "Hi",
 				DBUS_TYPE_INVALID))
 			goto err;
-		if (!dbus_connection_send(connection, reply, NULL))
+	} else if (strcmp(name, "net.sourceforge.zero-install.Refresh") == 0) {
+		dbus_refresh(connection, message, &error, 1);
+		if (dbus_error_is_set(&error))
 			goto err;
+	} else {
+		reply = dbus_message_new_error_reply(message, name,
+					"Unknown message name");
 	}
+
+	if (reply && !dbus_connection_send(connection, reply, NULL))
+		goto err;
 
 	goto out;
 err:
+	if (reply) {
+		dbus_message_unref(reply);
+		reply = NULL;
+	}
+
+	if (dbus_error_is_set(&error)) {
+		reply = dbus_message_new_error_reply(message, name,
+							error.message);
+		dbus_error_free(&error);
+		if (!reply)
+			goto oom;
+		if (!dbus_connection_send(connection, reply, NULL))
+			goto oom;
+		goto out;
+	}
+oom:
 	error("Out of memory; disconnecting client");
 	dbus_connection_disconnect(connection);
 out:
@@ -448,6 +475,104 @@ static void client_send_reply(Client *client, const char *message)
 	
 	memcpy(new + old_len, message, message_len - 1);
 	new[client->send_len - 1] = '\0';
+}
+
+/* Just sends an OK reply to task's message */
+static void send_ok(Task *task)
+{
+	DBusMessage *reply;
+
+	reply = dbus_message_new_reply(task->message);
+	if (!reply || !dbus_message_append_args(reply,
+				DBUS_TYPE_BOOLEAN, 1,
+				DBUS_TYPE_INVALID))
+		error("Out of memory");
+
+	if (!dbus_connection_send(task->connection, reply, NULL))
+		error("Out of memory");
+
+	if (reply)
+		dbus_message_unref(reply);
+}
+
+static void send_result(Task *task, int success)
+{
+	if (success)
+		send_ok(task);
+	else {
+		DBusMessage *reply;
+		reply = dbus_message_new_error_reply(task->message,
+				dbus_message_get_name(task->message),
+				"Failed");
+		if (!reply || !dbus_connection_send(task->connection,
+						reply, NULL))
+			error("Out of memory");
+		if (reply)
+			dbus_message_unref(reply);
+	}	
+
+	task_destroy(task, success);
+}
+
+/* Message requests the cache for 'host' be refetched.
+ * (force is 0 if we're rebuilding due to a changed override.xml)
+ * Returns error, or NULL on success.
+ */
+static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
+			 DBusError *error, int force)
+{
+	const char *site;
+	Task *task = NULL;
+	Index *index;
+
+	if (!dbus_message_get_args(message, error,
+				DBUS_TYPE_STRING, &site, DBUS_TYPE_INVALID))
+		return;
+
+	if (strchr(site, '/') || site[0] == '.' || !*site) {
+		dbus_set_error_const(error, "Error", "Bad hostname");
+		return;
+	}
+
+	task = task_new(TASK_CLIENT);
+	if (!task)
+		goto oom;
+	task->step = send_result;
+	task_set_message(task, connection, message);
+
+	task->str = build_string("/%s", site);
+	if (!task->str)
+		goto oom;
+
+	index = get_index(task->str, &task->child_task, force);
+	if (index) {
+		/* Already cached, and we didn't force a refresh.
+		 * Rebuild site, as override.xml may have changed.
+		 */
+		if (build_ddds_for_site(index, site)) {
+			send_ok(task);
+		} else {
+			dbus_set_error_const(error, "Error",
+				"Failed to rebuild '...' index files");
+		}
+		index_free(index);
+		goto done;
+	}
+
+	if (task->child_task)
+		printf("fetching\n");//control_notify_user(client->task->uid);
+	else {
+		dbus_set_error_const(error, "Error",
+				"Failed to start fetching index");
+		goto done;
+	}
+
+	return;
+oom:
+	dbus_set_error_const(error, "Error", "Out of memory");
+done:
+	if (task)
+		task_destroy(task, 0);
 }
 
 /* Client requests the cache for 'host' be refetched.
