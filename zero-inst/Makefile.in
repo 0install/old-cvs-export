@@ -2,7 +2,8 @@ KERNEL := @KERNELDIR@
 MODULEDIR := /lib/modules/`uname -r`/kernel/fs/lazyfs
 
 TESTS := hello_glib
-GLIB := /uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386/
+GLIB := /uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386
+PKG_CONFIG_PATH=${GLIB}/lib/pkgconfig
 
 all: lazyfs.o ${TESTS}
 
@@ -30,7 +31,7 @@ lazyfs.o: lazyfs.c
 # Test program using glib
 
 hello_glib.o: hello_glib.c
-	${CC} -c -Wall `pkg-config --cflags glib-2.0`  $@ $<
+	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} ${CC} -c -Wall `pkg-config --cflags glib-2.0` -o $@ $<
 
 hello_glib: hello_glib.o
-	gcc -Wl,--rpath=${GLIB}/lib `pkg-config --libs glib-2.0` -o $@ $<
+	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} gcc -Wl,--rpath=${GLIB}/lib `pkg-config --libs glib-2.0` -o $@ $<
