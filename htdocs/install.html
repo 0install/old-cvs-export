@@ -143,6 +143,20 @@ example, you can open the <a href="http://rox.sf.net/rox_filer.php3">ROX-Filer</
 $ <b>rox /uri/http/zero-install.sf.net/demo</b>
 </pre>
 
+<p>
+If you want /uri to be mounted automatically at boot-time, add this line
+to the end of your /etc/fstab file:
+</p>
+
+<pre>
+lazyfs  /uri  lazyfs  /var/cache/zero-inst  0 0
+</pre>
+
+<p>
+You will then be able to use anything that's already cached. You still have
+to start the helper application before you can fetch new stuff.
+</p>
+
 <p>Back to the <a href="index.html">main page</a>.</p>
 
 <p style='float: right;'>
