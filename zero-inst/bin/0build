@@ -11,6 +11,7 @@ ignored_names = ('CVS', '.svn', '.', '..', '.0inst-0build')
 meta_names = ('.DirIcon', 'AppInfo.xml')
 archive_dir_leaf = '.0inst-archives'
 index_leaf = '.0inst-index.tgz'
+index_leaf_bz = '.0inst-index.tar.bz2'
 saved_build = '.0inst-0build'
 
 target = None
@@ -28,13 +29,15 @@ elif len(sys.argv) == 3:
 if not (target and host):
 	print >>sys.stderr, "Usage: 0build <targetdir> <your.host>\n\n" \
 		"The <targetdir>/%s directory will be created/updated,\n" \
-		"along with the index file <targetdir>/%s\n\n" \
-		"This file should be fetchable as: http://<your.host>/%s.\n\n" \
+		"along with the index files <targetdir>/%s and\n" \
+		"<targetdir>/%s.\n\n" \
+		"These files should be fetchable as, eg:\n" \
+		"\thttp://<your.host>/%s.\n\n" \
 		"Then the file ./<somefile> will be accessable as\n" \
 		"/uri/0install/<your.host>/<somefile>\n\n" \
 		"Eg: 0build /var/www/ your.host\n\n" \
 		"The values are saved; in future, just run '0build'" % \
-		(archive_dir_leaf, index_leaf, index_leaf)
+		(archive_dir_leaf, index_leaf, index_leaf_bz, index_leaf)
 	raise SystemExit(1)
 
 assert "'" not in host
@@ -310,6 +313,7 @@ root = Dir('.', root = True)
 
 #print root
 index_tgz = os.path.join(target, index_leaf)
+index_bgz = os.path.join(target, index_leaf_bz)
 index_xml = os.path.join(target, '.0inst-index.xml')
 old_doc = None
 if os.path.exists(index_tgz):
@@ -378,8 +382,13 @@ def make_mirrors():
 	doc.writexml(file(mirrors_path, 'w'), addindent = ' ', newl = '\n')
 make_mirrors()
 
-assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz, '-C', target,
-	'.0inst-index.xml', 'keyring.pub', 'mirrors.xml', 'index.xml.sig']) == 0
+if os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz, '-C', target,
+	'.0inst-index.xml', 'keyring.pub', 'mirrors.xml', 'index.xml.sig']):
+	raise Exception('tar failed')
+
+if os.spawnvp(os.P_WAIT, 'tar', ['tar', 'cjf', index_bgz, '-C', target,
+	'keyring.pub', 'mirrors.xml', 'index.xml.sig']):
+	raise Exception('tar failed')
 
 os.unlink(index_xml)
 os.unlink(pub_key)
