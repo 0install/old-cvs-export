@@ -286,8 +286,8 @@ You'll now be prompted to create a GPG key for the site. When you make updates
 to the site, you'll sign it with your key. When people refresh the site,
 Zero Install will check that the key is the same as the first time they
 accessed the site. You <i>must</i> create a key with exactly the name and
-email address 0build displays. GPG may prompt for some other values; you may
-accept the defaults offered. In this case, the values are:
+email address 0build displays. GPG will also prompt for some other values; you
+may accept the defaults offered. In this case, the important values are:
 </p>
 
 <pre>
