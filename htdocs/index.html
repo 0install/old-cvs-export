@@ -72,53 +72,19 @@ See the <a href="compare.html">comparison with other systems</a> document
 for a more detailed list of the advantages of Zero Install.
 </p>
 
-<p class='q'>I have more questions!</p>
-
-<p>Try <a href="faq.html">the FAQ</a>.</p>
-
-<h2>Setting up the zero-installation system</h2>
+<p class='q'>Can I try it out?</p>
 
 <p>
 Although the system makes installing other software very easy, the Zero
-Install system itself still requires some work to install.
+Install system itself still requires some work to install. Please read this:
 </p>
+<ul>
+<li> <a href="install.html">Step-by-step installation walkthough</a>.</li>
+</ul>
 
-<div>Please DO NOT install this software on important machines. It is under
-heavy developement and has not yet been well tested.</div>
+<p class='q'>I have more questions!</p>
 
-<p>
-That said, I'm running it on my machine without any problems so far.
-</p>
-
-<p>The Zero Install system requires a small Linux kernel module to provide
-the /uri directory. Like all kernel modules, you <strong>must</strong>
-compile this using the actual kernel headers for the kernel you're actually
-running. In practise, this means that you should have compiled your own
-kernel (eg, from <a href="http://kernel.org">kernel.org</a>) and be running
-it. Using a stock distribution kernel is a bad idea. You may get a kernel
-crash, and will probably have to reboot (this affects all kernel modules,
-not just the zero-install one).
-</p>
-
-
-<p>
-There are plenty of guides on the net if you don't feel confident about
-compiling your own kernel. For example, 
-<a href="http://www.osnews.com/story.php?news_id=2949">The Very Verbose Guide to Updating and Compiling Your Debian Kernel</a> and
-<a href="http://www.osnews.com/story.php?news_id=443">Compiling the Linux Kernel</a>.
-</p>
-
-<p>OK, now <a href="todo">download Zero Install</a>. Extract it, and do the
-usual configure, make, install thing (things you type are shown with $
-at the start):
-</p>
-
-<pre>
-$ tar xzf zero-inst-0.1.5.tgz
-$ cd zero-inst-0.1.5
-$ ./configure
-
-</pre>
+<p>Try <a href="faq.html">the FAQ</a>.</p>
 
 <p style='float: right;'>
 <a href="http://sourceforge.net/projects/zero-install">
