@@ -1,3 +1,6 @@
+* Subsites are now supported. Give the host as, eg, "my.domain#~user" to
+  0build. This will fetch the index from http://my.domain/~user/...
+
 Changes since 0.1.19:
 
 * Give files user write permission by default (doesn't do anything, since fs is

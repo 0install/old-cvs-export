@@ -17,14 +17,23 @@
 
 static int ok_for_site(const char *email, const char *site)
 {
+	int domain_len;
+	char *hash;
+
+	hash = strchr(site, '#');
+	if (hash)
+		domain_len = hash - site;
+	else
+		domain_len = strlen(site);
+	
 	if (strncmp(email, "<0install@", sizeof("<0install@") - 1) != 0)
 		return 0;
 	email += sizeof("<0install@") - 1;
 
-	if (strncmp(email, site, strlen(site)) != 0)
+	if (strncmp(email, site, domain_len) != 0)
 		return 0;
 
-	email += strlen(site);
+	email += domain_len;
 
 	return email[0] == '>' && email[1] == '\n';
 }
