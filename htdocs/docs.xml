@@ -182,7 +182,7 @@ Linux ix86 type systems).
 
 <p>
 You should also use symlinks to indicate interesting versions (such as the
-current stable release). Thus, a python scripts might start with:
+current stable release). Thus, a python script might start with:
 </p>
 
 <pre>
