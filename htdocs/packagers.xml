@@ -208,7 +208,7 @@ a very easy program to start with because:
 <ul>
 <li>It's written in Python, and so is platform independent.</li>
 <li>It doesn't have any hard-coded paths (doesn't expect to be in /usr, etc).</li>
-<li>It uses ROX-Lib and pygtk, which are already in Zero Install.</li>
+<li>It uses ROX-Lib, which is already in Zero Install.</li>
 </ul>
 
 <p>
