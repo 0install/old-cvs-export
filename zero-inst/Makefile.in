@@ -1,3 +1,7 @@
+ifneq ($(KERNELRELEASE),)
+	# We're building for Linux 2.5 from kconfig
+	obj-m	:= lazyfs.o
+else
 KERNEL := @KERNELDIR@
 MODULEDIR := /lib/modules/`uname -r`/kernel/fs/lazyfs
 
@@ -28,7 +32,8 @@ install:
 	[ -d /var/cache/zero-inst ] || mkdir /var/cache/zero-inst
 
 lazyfs.o: lazyfs.c
-	${CC} -c ${KERNELFLAGS} ${MODFLAGS} -o $@ $<
+	#$(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules	# 2.5.x
+	${CC} -c ${KERNELFLAGS} ${MODFLAGS} -o $@ $<	# 2.4.x
 
 zero-install: ${ZERO_OBJECTS}
 	${CC} -o $@ ${ZERO_OBJECTS} -lexpat
@@ -40,3 +45,4 @@ hello_glib.o: hello_glib.c
 
 hello_glib: hello_glib.o
 	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} gcc `${CORE}/bin/pkg-config --libs glib-2.0` -o $@ $<
+endif

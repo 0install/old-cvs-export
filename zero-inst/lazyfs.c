@@ -12,11 +12,6 @@
  */
 
 
-	/* WARNING: This code is quite new. It may contain bugs, so don't
-	 * run it on anything too important. Please audit and/or stress
-	 * test it and report any bugs!
-	 */
-
 /* See the 'Technical' file for details. */
 
 #include <linux/autoconf.h>
@@ -39,8 +34,8 @@
 #include <linux/init.h>
 #include <linux/smp_lock.h>
 #include <linux/file.h>
-#include <linux/namespace.h>
 #include <linux/poll.h>
+#include <linux/list.h>
 
 #include <asm/uaccess.h>
 
@@ -633,9 +628,16 @@ static struct dentry *try_get_host_dentry(struct dentry *dentry,
 	host_mode = host_dentry->d_inode->i_mode;
 
 	if (S_ISREG(mode)) {
-		if (S_ISREG(host_mode))
-			return host_dentry;	/* File, OK */
-		goto fetch;
+		if (!S_ISREG(host_mode))
+			goto fetch;
+		if (host_dentry->d_inode->i_mtime != dentry->d_inode->i_mtime ||
+		    host_dentry->d_inode->i_size != dentry->d_inode->i_size) {
+			/* User space helper shouldn't really let this happen */
+			printk("Cache out-of-date for '%s'... refetching\n",
+					dentry->d_name.name);
+			goto fetch;
+		}
+		return host_dentry;	/* File, OK */
 	} else if (S_ISDIR(mode)) {
 		struct dentry *list_dentry;
 
