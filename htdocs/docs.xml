@@ -256,6 +256,16 @@ other way around) so that 'platform/latest-2.2' can be a different version
 for each platform (eg, if the ARM port is a few versions behind the x86 one).
 </p>
 
+<h3>Avoiding glibc version troubles</h3>
+
+<p>
+Glibc tries to prevent programs compiled using one version of the library
+from running on other versions, even when the interface is compatible. To
+create portable binaries, it is therefore necessary to use a little program at
+<a href="http://autopackage.org">autopackage.org</a> (apbuild CVS module) which
+can be used as a wrapper for gcc.
+</p>
+
 <h3>Depending on other things in Zero Install</h3>
 
 <p>
