@@ -111,7 +111,7 @@ def do_dir(dir):
 	files = []	# Regular files and executables not in meta
 
 	for item in os.listdir(dir):
-		if item == 'CVS':
+		if item in ('CVS', '.svn'):
 			continue
 		if item.startswith('.0inst'):
 			continue

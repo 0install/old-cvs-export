@@ -25,6 +25,7 @@ struct _Client {
 	int terminate;
 
 	int need_update;
+	int update_flagged;
 
 	int send_offset;
 	char *to_send;
@@ -184,6 +185,7 @@ void read_from_control(int control)
 	client->command[0] = '\0';
 	client->next = clients;
 	client->terminate = 0;
+	client->update_flagged = 0;
 	clients = client;
 
 	if (setsockopt(fd, SOL_SOCKET, SO_PASSCRED, &one, sizeof(one))) {
@@ -445,7 +447,19 @@ void control_notify_user(uid_t uid)
 
 	for (client = clients; client; client = client->next) {
 		if (client->have_uid && client->uid == uid)
+			client->update_flagged = 1;
+	}
+}
+
+/* Do all updates for clients flagged with control_notify_user() */
+void control_push_updates(void)
+{
+	Client *client;
+	for (client = clients; client; client = client->next) {
+		if (client->update_flagged) {
+			client->update_flagged = 0;
 			client_push_update(client);
+		}
 	}
 }
 

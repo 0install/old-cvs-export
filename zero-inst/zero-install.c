@@ -346,20 +346,19 @@ err:
 	}
 }
 
-/* Note: ensure that control_notify_user() is called after this */
 static void request_done_head(Request *request)
 {
-	uid_t uid;
 	int i;
 
 	assert(request->n_users > 0);
 
 	printf("\t(finished '%s')\n", request->users[0].leaf);
 
+	control_notify_user(request->users[0].uid);
+
 	if (request->users[0].fd != -1)
 		close(request->users[0].fd);
 	free(request->users[0].leaf);
-	uid = request->users[0].uid;
 
 	request->n_users--;
 	for (i = 0; i < request->n_users; i++)
@@ -694,7 +693,6 @@ static void request_next_step(Request *request)
 		/* Couldn't start request... skip to next */
 		printf("\t(skipping)\n");
 		request_done_head(request);
-		control_notify_user(uid);
 	}
 
 	/* Either we have begun a new request, or there is nothing left to do */
@@ -937,6 +935,8 @@ int main(int argc, char **argv)
 	while (!finished) {
 		fd_set rfds, wfds;
 		int n = max_fd + 1;
+
+		control_push_updates();
 
 		FD_ZERO(&rfds);
 		FD_ZERO(&wfds);
