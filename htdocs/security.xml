@@ -25,7 +25,7 @@ who asked to run it.</li>
 <ul>
 <li>Zero Install contains a very small kernel module, which is the only
 (new) vector for a possible root-compromise.</li>
-<li>A smaller helper runs as a separate user. If compromised, it would
+<li>A small helper runs as a special user. If compromised, it would
 allow trojaning of software run via Zero Install, but not of the system
 itself.</li>
 <li>Zero Install does not listen for incoming connections (any attack
