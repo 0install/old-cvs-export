@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include <errno.h>
 
+#define DBUS_API_SUBJECT_TO_CHANGE
+#include <dbus/dbus.h>
+
 #include "global.h"
 #include "control.h"
 #include "support.h"
@@ -39,13 +42,172 @@ struct _Client {
 };
 
 static Client *clients = NULL;
+static DBusWatch *dbus_watches = NULL;
+static DBusConnection *dispatches = NULL;
+static dbus_int32_t next_dispatch = -1;
+static DBusMessageHandler *handler = NULL;
+static DBusServer *server = NULL;
+
+static DBusWatch *current_watch = NULL;	/* tmp */
+
+#define SERVER_SOCKET "unix:path=/uri/0install/.lazyfs-cache/.control"
+
+static void remove_watch(DBusWatch *watch, void *data)
+{
+	DBusWatch *w;
+
+	if (current_watch == watch) {
+		current_watch = dbus_watch_get_data(current_watch);
+	}
+
+	if (watch == dbus_watches) {
+		dbus_watches = dbus_watch_get_data(dbus_watches);
+		dbus_watch_set_data(watch, NULL, NULL);
+		return;
+	}
+	for (w = dbus_watches; w;) {
+		DBusWatch *next = dbus_watch_get_data(w);
+
+		if (next == watch) {
+			next = dbus_watch_get_data(next);
+			dbus_watch_set_data(w, next, NULL);
+			dbus_watch_set_data(watch, NULL, NULL);
+			return;
+		}
+
+		w = next;
+	}
+	assert(0);
+}
+
+static dbus_bool_t add_watch(DBusWatch *watch, void *data)
+{
+	dbus_watch_set_data(watch, dbus_watches, NULL);
+	dbus_watches = watch;
+	return 1;
+}
+
+static void dispatch_status_function(DBusConnection *connection,
+                          DBusDispatchStatus new_status, void *data)
+{
+	DBusConnection *next;
+
+	if (new_status == DBUS_DISPATCH_COMPLETE)
+		return;
+
+	if (!dispatches) {
+		dbus_connection_set_data(connection, next_dispatch, NULL, NULL);
+		dispatches = connection;
+		dbus_connection_ref(connection);
+		return;
+	}
+
+	for (next = dispatches; next;
+		next = dbus_connection_get_data(next, next_dispatch)) {
+		if (next == connection)
+			return;
+	}
+
+	dbus_connection_set_data(connection, next_dispatch, dispatches, NULL);
+	dispatches = connection;
+	dbus_connection_ref(connection);
+}
+
+static DBusHandlerResult message_handler(DBusMessageHandler *handler,
+	DBusConnection *connection, DBusMessage *message, void *user_data)
+{
+	DBusMessage *reply = NULL;
+	const char *name = dbus_message_get_name(message);
+
+	printf("[ message '%s' ]\n", name);
+
+	if (strcmp(name, "org.freedesktop.Local.Disconnect") == 0)
+		dbus_connection_unref(connection);
+	else if (strcmp(name, "org.freedesktop.DBus.Hello") == 0) {
+		reply = dbus_message_new_reply(message);
+		if (!reply)
+			goto err;
+		if (!dbus_message_append_args(reply,
+				DBUS_TYPE_STRING, "Hi",
+				DBUS_TYPE_INVALID))
+			goto err;
+		if (!dbus_connection_send(connection, reply, NULL))
+			goto err;
+	}
+
+	goto out;
+err:
+	error("Out of memory; disconnecting client");
+	dbus_connection_disconnect(connection);
+out:
+	if (reply)
+		dbus_message_unref(reply);
+	return DBUS_HANDLER_RESULT_REMOVE_MESSAGE;
+}
+
+static void new_dbus_client(DBusServer *server,
+			    DBusConnection *new_connection,
+			    void *data)
+{
+	/* NB: DBUS 0.12 bug: mem-leak if we don't ref the connection
+	 * (for errors)
+	 */
+
+	printf("[ new client ]\n");
+	if (!dbus_connection_set_watch_functions(new_connection,
+				add_watch, remove_watch, NULL,
+				NULL, NULL))
+		return;
+
+	dbus_connection_set_dispatch_status_function(new_connection,
+					dispatch_status_function, NULL, NULL);
+
+
+	if (!dbus_connection_add_filter(new_connection, handler)) {
+		error("new_dbus_client: Out of memory");
+		return;
+	}
+	
+	dbus_connection_ref(new_connection);
+}
 
 int create_control_socket(void)
 {
 	int control;
 	struct sockaddr_un addr;
 	struct sigaction act;
-	
+	DBusError error;
+	const char *ext_only[] = {"EXTERNAL", NULL};
+
+	if (!dbus_connection_allocate_data_slot(&next_dispatch)) {
+		error("dbus_connection_allocate_data_slot(): OOM");
+		exit(EXIT_FAILURE);
+	}
+
+	handler = dbus_message_handler_new(message_handler, NULL, NULL);
+	if (!handler) {
+		error("Out of memory for dbus_message_handler_new");
+		exit(EXIT_FAILURE);
+	}
+
+	dbus_error_init(&error);
+	server = dbus_server_listen(SERVER_SOCKET, &error);
+	if (!server) {
+		error("Can't create DBUS server socket (%s): %s",
+				SERVER_SOCKET, error.message);
+		dbus_error_free(&error);
+		exit(EXIT_FAILURE);
+	}
+	dbus_server_set_auth_mechanisms(server, ext_only);
+	dbus_server_set_new_connection_function(server, new_dbus_client,
+						NULL, NULL);
+	if (!dbus_server_set_watch_functions(server,
+				add_watch, remove_watch, NULL,
+				NULL, NULL)) {
+		error("Out of memory");
+		exit(EXIT_FAILURE);
+	}
+
 	addr.sun_family = AF_UNIX;
 	if (snprintf(addr.sun_path, sizeof(addr.sun_path),
 		     "%s/control", cache_dir) >= sizeof(addr.sun_path)) {
@@ -190,9 +352,39 @@ void read_from_control(int control)
 	}
 }
 
+static void dispatch_pending(void)
+{
+	DBusConnection *next = dispatches;
+
+	dispatches = NULL;
+
+	while (next) {
+		DBusDispatchStatus status;
+		DBusConnection *this = next;
+
+		status = dbus_connection_dispatch(this);
+		if (status == DBUS_DISPATCH_DATA_REMAINS)
+			continue;
+
+		next = dbus_connection_get_data(this, next_dispatch);
+
+		if (status != DBUS_DISPATCH_COMPLETE) {
+			dbus_connection_disconnect(this);
+			printf("[ error ]\n");
+			/* XXX: unref too? */
+		}
+
+		dbus_connection_unref(this);
+	}
+}
+
 int control_add_select(int n, fd_set *rfds, fd_set *wfds)
 {
 	Client *next;
+	DBusWatch *watch = dbus_watches;
+
+	while (dispatches)
+		dispatch_pending();
 
 	for (next = clients; next; next = next->next) {
 		FD_SET(next->socket, rfds);
@@ -200,6 +392,22 @@ int control_add_select(int n, fd_set *rfds, fd_set *wfds)
 			n = next->socket + 1;
 		if (next->to_send)
 			FD_SET(next->socket, wfds);
+	}
+
+	while (watch) {
+		if (dbus_watch_get_enabled(watch)) {
+			int fd = dbus_watch_get_fd(watch);
+			unsigned int flags = dbus_watch_get_flags(watch);
+
+			if (fd >= n)
+				n = fd + 1;
+			if (flags & DBUS_WATCH_READABLE)
+				FD_SET(fd, rfds);
+			if (flags & DBUS_WATCH_WRITABLE)
+				FD_SET(fd, wfds);
+		}
+			
+		watch = dbus_watch_get_data(watch);
 	}
 	
 	return n;
@@ -460,6 +668,30 @@ void control_check_select(fd_set *rfds, fd_set *wfds)
 			prev = client;
 		client = next;
 	}
+
+	current_watch = dbus_watches;
+	while (current_watch) {
+		DBusWatch *this = current_watch;
+
+		/* current_watch may get moved forward by remove_watch */
+		current_watch = dbus_watch_get_data(this);
+
+		if (dbus_watch_get_enabled(this)) {
+			int fd = dbus_watch_get_fd(this);
+			unsigned int flags = 0;
+
+			if (FD_ISSET(fd, rfds))
+				flags |= DBUS_WATCH_READABLE;
+			if (FD_ISSET(fd, wfds))
+				flags |= DBUS_WATCH_WRITABLE;
+
+			if (flags && !dbus_watch_handle(this, flags)) {
+				/* XXX: OOM */
+				printf("[ OOM ]\n");
+			}
+		}
+	}
+	current_watch = NULL;
 }
 
 void control_notify_user(uid_t uid)
@@ -493,4 +725,9 @@ void control_drop_clients(void)
 
 		client_free(old);
 	}
+
+	dbus_connection_free_data_slot(&next_dispatch);
+	dbus_message_handler_unref(handler);
+	dbus_server_disconnect(server);
+	dbus_server_unref(server);
 }

@@ -353,6 +353,7 @@ static void create_pid_file(pid_t child)
 	if (fclose(file))
 		goto err;
 
+	free(pid_file);
 	return;
 err:
 	if (pid_file)
@@ -488,7 +489,8 @@ int main(int argc, char **argv)
 		dup2(null, 1);
 		dup2(null, 2);
 		close(null);
-	}
+	} else
+		create_pid_file(getpid());
 
 	while (!finished) {
 		fd_set rfds, wfds;
