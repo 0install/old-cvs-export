@@ -14,80 +14,17 @@
 #include "zero-install.h"
 #include "xml.h"
 
-static const char DTD[] = "<?xml version='1.0'?>	\
-<grammar xmlns:z='" ZERO_NS "' xmlns='http://relaxng.org/ns/structure/1.0'> \
- <start>								\
-  <element name='z:site-index'>				\
-   <attribute name='path'/>				\
-   <element name='z:dir'>				\
-    <ref name='dir'/>				\
-   </element>					\
-  </element>					\
- </start>					\
- 						\
- <define name='dir'>				\
-  <attribute name='size'/>				\
-  <attribute name='mtime'/>				\
-  <zeroOrMore> \
-   <choice> \
-    <element name='z:dir'>				\
-     <ref name='dir'/>					\
-     <attribute name='name'/>				\
-    </element>						\
-    <element name='z:link'>				\
-     <ref name='item'/>					\
-     <attribute name='target'/>				\
-    </element>						\
-    <ref name='group'/>					\
-   </choice>						\
-   </zeroOrMore> 					\
- </define>						\
- <define name='item'>					\
-   <attribute name='size'/>				\
-   <attribute name='mtime'/>				\
-   <attribute name='name'/>				\
- </define>				\
- <define name='group'>			\
-  <element name='z:group'>		\
-   <attribute name='MD5sum'/>		\
-   <attribute name='size'/>		\
-   <zeroOrMore>				\
-    <choice>				\
-     <element name='z:file'><ref name='item'/></element> \
-     <element name='z:exec'><ref name='item'/></element> \
-    </choice>				\
-   </zeroOrMore>		\
-   <oneOrMore>			\
-    <element name='z:archive'>		\
-     <attribute name='href'/>		\
-    </element>				\
-   </oneOrMore>		\
-  </element>		\
- </define>		\
-</grammar>";
-
 static int dir_valid(Element *dir);
-
-static void count(Element *item, void *data)
-{
-	int *i = data;
-
-	if (item->name[0] == 'a')
-		return;
-	assert(item->name[0] == 'f' || item->name[0] == 'e' ||
-	       item->name[0] == 'd' || item->name[0] == 'l');
-
-	(*i)++;
-}
 
 static void get_names(Element *item, void *data)
 {
 	const char ***name = data;
 
-	if (item->name[0] == 'a')
+	if (strcmp(item->name, "archive") == 0)
 		return;
 
-	(*name)[0] = xml_get_attr(item, "name");
+	**name = xml_get_attr(item, "name");
+	assert(**name);	/* (checked in count) */
 	(*name)++;
 }
 
@@ -109,25 +46,123 @@ static int compar(const void *a, const void *b)
 	return strcmp(aa, bb);
 }
 
+static int item_valid(Element *node)
+{
+	const char *name = xml_get_attr(node, "name");
+
+	if (!name || !xml_get_attr(node, "mtime") ||
+	    !xml_get_attr(node, "size")) {
+		error("Missing attribute for item");
+		return 0;
+	}
+
+	if (*name && strchr(name, '/') == NULL)
+		return 1;
+
+	error("Bad leafname");
+	return 0;
+}
+
+static int count_group(Element *group)
+{
+	int n_items = 0;
+	int n_archives = 0;
+	Element *node;
+
+	if (!xml_get_attr(group, "MD5sum") ||
+	    !xml_get_attr(group, "size")) {
+		error("Missing <group> attribute");
+		return -1;
+	}
+
+	for (node = group->lastChild; node; node = node->previousSibling) {
+		if (strcmp(node->name, "file") == 0 ||
+		    strcmp(node->name, "exec") == 0) {
+			if (!item_valid(node))
+				return -1;
+			n_items++;
+		} else if (strcmp(node->name, "archive") == 0) {
+			if (!xml_get_attr(node, "href")) {
+				error("Missing href attribute");
+				return -1;
+			}
+			n_archives++;
+		} else {
+			error("Unknown element in <group>");
+			return -1;
+		}
+	}
+
+	if (n_archives < 1 || n_items < 1) {
+		error("Empty group");
+		return -1;
+	}
+
+	return n_items;
+}
+
+/* Recursively validate a <dir> element */
 static int dir_valid(Element *dir)
 {
 	int i, n = 0;
 	int ok = 1;
-	const char **names, **name;
+	char **names, **name;
+	Element *node;
 
-	assert(dir->name[0] == 'd');
+	assert(strcmp(dir->name, "dir") == 0);
 
-	index_foreach(dir, count, &n);
+	if (xml_get_attr(dir, "size") == NULL ||
+	    xml_get_attr(dir, "mtime") == NULL) {
+		perror("Missing attribute\n");
+		return 0;
+	}
+
+	/* Check the structure and count the number of items */
+	for (node = dir->lastChild; node; node = node->previousSibling) {
+		if (strcmp(node->name, "group") == 0) {
+			int n_group;
+			n_group = count_group(node);
+			if (n_group < 1) {
+				error("Invalid <group>");
+				return 0;
+			}
+			n += n_group;
+		} else if (strcmp(node->name, "dir") == 0) {
+			if (!item_valid(node))
+				return 0;
+			if (!dir_valid(node))
+				return 0;
+			n++;
+		} else if (strcmp(node->name, "link") == 0) {
+			if (!item_valid(node) ||
+			    !xml_get_attr(node, "target"))
+				return 0;
+			n++;
+		} else {
+			error("Unknown element in <dir>");
+			return 0;
+		}
+	}
 
 	if (n == 0)
 		return 1;
+	if (n < 0)
+		return 0;
 
-	name = names = my_malloc(sizeof(char *) * n);
+	name = names = my_malloc(sizeof(char *) * (n + 1));
+	names[n - 1] = NULL;
+	names[n] = NULL;
 	index_foreach(dir, get_names, &name);
+	/* Check we counted right */
+	assert(names[n] == NULL && names[n - 1] != NULL);
 
 	qsort(names, n, sizeof(char *), compar);
 
 	for (i = 0; i < n; i++) {
+		if (!names[i]) {
+			ok = 0;
+			break;
+		}
 		if (names[i][0] == '\0' ||
 		    strchr(names[i], '/') ||
 		    strncmp(names[i], ".0inst-", 7) == 0 ||
@@ -153,41 +188,44 @@ static int dir_valid(Element *dir)
 }
 
 /* Check index is valid (doesn't do GPG checks; do that first).
- * 0 on error (already reported).
+ * 0 on error.
  */
 static int index_valid(Index *index)
 {
-	//Element *node;
-	//char *path;
+	Element *node;
+	const char *path;
 
-	return 1;	// XXX
-
-	if (!index) {
+	if (!index || !index->doc) {
 		error("Bad index (missing/bad XML?)");
 		return 0;
 	}
 	
-#if 0
-	assert(schema);
-
-	if (xmlRelaxNGValidateDoc(schema, index->doc)) {
-		error("Index file does not validate -- aborting");
+	node = index->doc;
+	if (strcmp(node->name, "site-index") != 0) {
+		error("Root should be <site-index>");
 		return 0;
 	}
 
-	node = xmlDocGetRootElement(index->doc);
-	path = xmlGetNsProp(node, "path", NULL);
-	assert(path);
+	path = xml_get_attr(node, "path");
+	if (!path) {
+		error("No path attribute.");
+		return 0;
+	}
 	if (strncmp(path, MNT_DIR "/", sizeof(MNT_DIR)) != 0) {
-		error("WARNING: Path attribute must start with '%s'",
-			MNT_DIR);
+		error("Path attribute must start with '%s'", MNT_DIR);
+		return 0;
 	}
 
-	if (!dir_valid(index_get_root(index)))
+	node = node->lastChild;
+	if (!node || node->previousSibling || strcmp(node->name, "dir") != 0) {
+		error("<site-index> must contain only a <dir>");
+		return 0;
+	}
+
+	if (!dir_valid(node))
 		return 0;
 
 	return 1;
-#endif
 }
 
 static void index_link(Index *index, Element *node)
@@ -299,6 +337,7 @@ Index *parse_index(const char *pathname, int validate, const char *site)
 	index->ref = 1;
 
 	if (validate && !index_valid(index)) {
+		error("Index for '%s' does not validate!", site);
 		index_free(index);
 		return NULL;
 	}
@@ -314,6 +353,7 @@ Index *parse_index(const char *pathname, int validate, const char *site)
 /* Decrement ref count */
 void index_free(Index *index)
 {
+	assert(index);
 	assert(index->ref > 0);
 
 	index->ref--;

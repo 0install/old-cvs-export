@@ -367,15 +367,15 @@ int main(int argc, char **argv)
 	int helper;
 	int max_fd;
 	char *pid_file;
+	
+	openlog("zero-install", 0, LOG_DAEMON);
 
 	if (0) {
-		Index *index = parse_index("index.xml", 0, "foo");
+		Index *index = parse_index("/var/cache/zero-inst/localhost/.0inst-meta/index.new", 1, "foo");
 		printf("%p\n", index);
 		index_free(index);
 		exit(0);
 	}
-	
-	openlog("zero-install", 0, LOG_DAEMON);
 
 	if (argv[1] && strcmp(argv[1], "--debug") == 0)
 		verbose = 1;
