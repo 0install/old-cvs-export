@@ -96,6 +96,7 @@ struct lazy_sb_info {
 	struct vfsmount *host_mnt;
 
 	struct dentry *helper_dentry;	/* The .lazyfs-helper dentry */
+	struct dentry *cache_dentry;	/* The .lazyfs-cache dentry */
 
 	/* When a helper connects, we set helper_mnt.
 	 * This is protected by fetching_lock.
@@ -462,6 +463,7 @@ static struct super_block *
 lazyfs_read_super(struct super_block *sb, void *data, int silent)
 {
 	struct lazy_sb_info *sbi = NULL;
+	struct qstr link_target;
 
 	sb->s_flags |= MS_RDONLY | MS_NODEV | MS_NOSUID;
 
@@ -471,6 +473,7 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sb->u.generic_sbp = sbi;
 	sbi->host_dentry = NULL;
 	sbi->host_mnt = NULL;
+	sbi->cache_dentry = NULL;
 	inc("sbi");
 
 	if (host_from_mount_data(sbi, (const char *) data))
@@ -481,11 +484,22 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sb->s_magic = LAZYFS_MAGIC;
 	sb->s_op = &lazyfs_ops;
 
+	/* Create / */
 	sb->s_root = new_dentry(sb, NULL, "/", S_IFDIR, 0,
 			sbi->host_dentry->d_inode->i_mtime, NULL);
 	if (!sb->s_root)
 		goto err;
 
+	/* Create /.lazyfs-cache */
+	link_target.name = (char *) data;
+	link_target.len = strlen(link_target.name);
+	sbi->cache_dentry = new_dentry(sb, sb->s_root, ".lazyfs-cache",
+			S_IFLNK, 0, CURRENT_TIME, &link_target);
+	if (!sbi->cache_dentry)
+		goto err;
+	inc("root cache_dentry");
+
+	/* Create /.lazyfs-helper */
 	sbi->helper_dentry = new_dentry(sb, sb->s_root, ".lazyfs-helper",
 			S_IFREG, 0, CURRENT_TIME, NULL);
 	if (!sbi->helper_dentry)
@@ -493,12 +507,17 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sbi->helper_dentry->d_inode->i_fop = &lazyfs_helper_operations;
 	sbi->helper_dentry->d_inode->i_uid = sbi->host_dentry->d_inode->i_uid;
 	sbi->helper_dentry->d_inode->i_mode = S_IFREG | 0400;
+
 	sbi->helper_mnt = NULL;
 	INIT_LIST_HEAD(&sbi->to_helper);
 	INIT_LIST_HEAD(&sbi->requests_in_progress);
 
 	return sb;
 err:
+	if (sbi->cache_dentry) {
+		dput(sbi->cache_dentry);
+		dec("root cache_dentry");
+	}
 	if (sbi->host_dentry) {
 		dput(sbi->host_dentry);
 		dec("root host_dentry");
@@ -756,7 +775,7 @@ static inline void mark_children_may_delete(struct dentry *dentry)
 		if (d_unhashed(child) || !child->d_inode)
 			continue;
 
-		if (child != sbi->helper_dentry)
+		if (child != sbi->helper_dentry && child != sbi->cache_dentry)
 			info->may_delete = 1;
 	}
 
@@ -1131,6 +1150,8 @@ lazyfs_put_super(struct super_block *sb)
 		if (sbi->helper_mnt)
 			BUG();
 		
+		dput(sbi->cache_dentry);
+		dec("root cache_dentry");
 		dput(sbi->helper_dentry);
 		dput(sbi->host_dentry);
 		dec("root host_dentry");
@@ -1277,10 +1298,13 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 	struct dentry *new;
 	int err;
 
-	if (dir == dir->i_sb->s_root->d_inode &&
-		strcmp(dentry->d_name.name, ".lazyfs-helper") == 0) {
+	if (dir == dir->i_sb->s_root->d_inode) {
 		struct lazy_sb_info *sbi = dir->i_sb->u.generic_sbp;
-		return dget(sbi->helper_dentry);
+
+		if (strcmp(dentry->d_name.name, ".lazyfs-helper") == 0)
+			return dget(sbi->helper_dentry);
+		else if (strcmp(dentry->d_name.name, ".lazyfs-cache") == 0)
+			return dget(sbi->cache_dentry);
 	}
 
 	err = ensure_cached(dentry->d_parent);
@@ -1698,7 +1722,7 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 		return err;
 
 	/* Make sure the mapping for our inode points to the host file's */
-	spin_lock(mapping_lock);
+	spin_lock(&mapping_lock);
 
 	((int) inode->u.generic_ip)++;
 	finfo->n_mappings++;
@@ -1709,7 +1733,7 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 		inode->i_mapping = host_inode->i_mapping;
 	}
 
-	spin_unlock(mapping_lock);
+	spin_unlock(&mapping_lock);
 
 	return 0;
 }
@@ -1795,7 +1819,7 @@ lazyfs_file_release(struct inode *inode, struct file *file)
 	if (finfo->n_mappings) {
 		//printk("File was mmapped %d times\n", finfo->n_mappings);
 
-		spin_lock(mapping_lock);
+		spin_lock(&mapping_lock);
 
 		((int) inode->u.generic_ip) -= finfo->n_mappings;
 
@@ -1805,7 +1829,7 @@ lazyfs_file_release(struct inode *inode, struct file *file)
 			dec("mapping");
 		}
 
-		spin_unlock(mapping_lock);
+		spin_unlock(&mapping_lock);
 	}
 
 	fput(host_file);
