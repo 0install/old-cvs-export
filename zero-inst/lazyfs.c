@@ -90,8 +90,7 @@ static DECLARE_WAIT_QUEUE_HEAD(lazy_wait);
 static DECLARE_WAIT_QUEUE_HEAD(helper_wait);
 
 /* Extra information attached to the super block */
-struct lazy_sb_info
-{
+struct lazy_sb_info {
 	/* The root of the cache, passed in as a mount option */
 	struct dentry *host_dentry;
 	struct vfsmount *host_mnt;
@@ -117,8 +116,7 @@ struct lazy_sb_info
 };
 
 /* Extra information attached to each dentry */
-struct lazy_de_info
-{
+struct lazy_de_info {
 	struct dentry *dentry;	/* dentry->d_fsdata->dentry == dentry */
 	int may_delete;		/* Used during mark-and-sweep */
 
@@ -145,6 +143,13 @@ struct lazy_de_info
 	 * Protected by fetching_lock.
 	 */
 	struct list_head request_list;
+};
+
+/* Extra information attached to each open file */
+struct lazy_file_info {
+	struct file *host_file;	/* NULL if not yet ready */
+	int n_mappings;		/* Number of times mmap increased inode's
+				   mmap count */
 };
 
 /* Any change to the helper_list queues requires this lock */
@@ -271,6 +276,10 @@ lazyfs_put_inode(struct inode *inode)
 	if (S_ISLNK(inode->i_mode) && inode->u.generic_ip) {
 		kfree(inode->u.generic_ip);
 		dec("target");
+	}
+
+	if (inode->i_mapping != &inode->i_data) {
+		printk("Warning: Freeding inode with mapping!\n");
 	}
 }
 
@@ -1578,9 +1587,8 @@ out:
 
 /*			File operations				*/
 
-/* Try to fill in file->private_data with the host file.
- * If block is 0, this may just start a fetch and return
- * -EAGAIN.
+/* Try to fill in file->private_data->host_file with the host file.
+ * If block is 0, this may just start a fetch and return -EAGAIN.
  */
 static int
 get_host_file(struct file *file, int block)
@@ -1590,8 +1598,12 @@ get_host_file(struct file *file, int block)
 	struct lazy_sb_info *sbi = sb->u.generic_sbp;
 	struct dentry *host_dentry;
 	struct file *host_file;
+	struct lazy_file_info *finfo = file->private_data;
 
-	if (file->private_data)
+	if (!finfo)
+		BUG();
+
+	if (finfo->host_file)
 	{
 		printk("get_host_file: already set!\n");
 		return -EIO;
@@ -1613,7 +1625,7 @@ get_host_file(struct file *file, int block)
 	if (IS_ERR(host_file))
 		return PTR_ERR(host_file);
 
-	file->private_data = host_file;
+	finfo->host_file = host_file;
 	inc("file->host_file");
 
 	return 0;
@@ -1622,16 +1634,17 @@ get_host_file(struct file *file, int block)
 static ssize_t
 lazyfs_file_read(struct file *file, char *buffer, size_t count, loff_t *off)
 {
+	struct lazy_file_info *finfo = file->private_data;
 	struct file *host_file;
 	
-	if (!file->private_data)
+	if (!finfo->host_file)
 	{
 		int err;
 		err = get_host_file(file, 1);
 		if (err)
 			return err;
 	}
-	host_file = file->private_data;
+	host_file = finfo->host_file;
 	if (!host_file)
 		BUG();
 
@@ -1644,17 +1657,18 @@ lazyfs_file_read(struct file *file, char *buffer, size_t count, loff_t *off)
 static int
 lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 {
+	struct lazy_file_info *finfo = file->private_data;
 	struct file *host_file;
 	struct inode *inode, *host_inode;
 	int err;
 
-	if (!file->private_data)
+	if (!finfo->host_file)
 	{
 		err = get_host_file(file, 1);
 		if (err)
 			return err;
 	}
-	host_file = file->private_data;
+	host_file = finfo->host_file;
 	if (!host_file)
 		BUG();
 
@@ -1667,7 +1681,8 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 	if (inode->i_mapping != &inode->i_data &&
 	    inode->i_mapping != host_inode->i_mapping) {
 		/* We already forwarded the host mapping, but it's changed.
-		 * Can this happen? Coda seems to think so...
+		 * This should only happen if the host file has been removed
+		 * and replaced with another one.
 		 */
 		return -EBUSY;
 	}
@@ -1680,8 +1695,13 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 		return err;
 
 	/* Make sure the mapping for our inode points to the host file's */
-	if (inode->i_mapping == &inode->i_data)
+	((int) inode->u.generic_ip)++;
+	finfo->n_mappings++;
+	if (inode->i_mapping == &inode->i_data) {
+		igrab(host_inode);
+		inc("mapping");
 		inode->i_mapping = host_inode->i_mapping;
+	}
 
 	return 0;
 }
@@ -1729,9 +1749,17 @@ lazyfs_link_readlink(struct dentry *dentry, char *buf, int bufsize)
 static int
 lazyfs_file_open(struct inode *inode, struct file *file)
 {
+	struct lazy_file_info *finfo;
 	int err;
 
-	file->private_data = NULL;
+	finfo = kmalloc(sizeof(struct lazy_file_info), GFP_KERNEL);
+	if (!finfo)
+		return -ENOMEM;
+
+	finfo->host_file = NULL;
+	finfo->n_mappings = 0;
+	file->private_data = finfo;
+	
 	err = get_host_file(file, 0);
 	if (err == -EAGAIN)
 		err = 0;	/* We'll pick it up in the read */
@@ -1741,13 +1769,36 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 static int
 lazyfs_file_release(struct inode *inode, struct file *file)
 {
-	if (file->private_data) {
-		fput((struct file *) file->private_data);
-		dec("file->host_file");
-	}
-	else
-		printk("Note: no host file (never read?)\n");
+	struct lazy_file_info *finfo = file->private_data;
+	struct file *host_file;
+	
+	if (!finfo)
+		BUG();
 
+	host_file = finfo->host_file;
+
+	if (!host_file) {
+		printk("Note: no host file (never read?)\n");
+		goto out;
+	}
+
+	if (finfo->n_mappings) {
+		printk("File was mmapped %d times\n", finfo->n_mappings);
+
+		((int) inode->u.generic_ip) -= finfo->n_mappings;
+
+		if (((int) inode->u.generic_ip) == 0) {
+			printk("Last mapping gone!\n");
+			inode->i_mapping = &inode->i_data;
+			dec("mapping");
+		}
+	}
+
+	fput(host_file);
+	dec("file->host_file");
+
+out:
+	kfree(finfo);
 	return 0;
 }
 
