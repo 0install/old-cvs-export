@@ -83,10 +83,10 @@ need a helper application. If no helper is registered, we return EIO
 (I/O error).
 
 There can only be one registered helper at a time. It registers by opening
-the /uri/.lazyfs-helper file and reading requests from it. When a process
+the /uri/.lazyfs-helper pipe and reading requests from it. When a process
 opens a file or directory which has a missing host inode, it is put to
 sleep and a request sent to the helper in the form of a file handle.
-The file is given the same owner as the cache directory, so there is no
+The pipe is given the same owner as the cache directory, so there is no
 need for the helper to run as root.
 
 The request is a number (ASCII) followed by "uid=%d\n". You have to read the
@@ -104,7 +104,7 @@ the helper can provide information to each user about what requests are
 currently in progress for that user, and allows requests to be cancelled on
 a per-user basis.
 
-If the helper closes the /uri/.lazyfs-helper file then all pending requests
+If the helper closes the /uri/.lazyfs-helper pipe then all pending requests
 (those not yet delivered to the helper) return EIO errors. The helper can be
 safely restarted without having to remount the filesystem.
 
