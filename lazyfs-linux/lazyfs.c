@@ -1573,7 +1573,8 @@ lazyfs_handle_release(struct inode *inode, struct file *file)
 {
 	struct lazy_user_request *request = file->private_data;
 
-	//printk("Helper finished handling '%s'\n", request->dentry->d_name.name);
+	//printk("Helper finished handling '%s'\n",
+	//			request->dentry->d_name.name);
 
 	down(&fetching_lock);
 	destroy_request(request);
@@ -1582,24 +1583,6 @@ lazyfs_handle_release(struct inode *inode, struct file *file)
 	dec(R_REQUEST);
 
 	wake_up_interruptible(&lazy_wait);
-
-	/* TODO: If this was a speculative lookup, remove the
-	 * directory. Currently, we make sure the creator is blocking,
-	 * so it can free it, but we'd need to move the remove here to
-	 * make the operation non-blocking.
-	 */
-#if 0
-	if (ensure_cached(existing))
-	{
-		/* Guess it wasn't a directory after all... */
-		down(&update_dir);
-		remove_dentry(existing);
-		up(&update_dir);
-
-		dput(existing);
-		existing = NULL;
-	}
-#endif
 
 	return 0;
 }
@@ -1765,7 +1748,6 @@ lazyfs_helper_release(struct inode *inode, struct file *file)
 				     struct lazy_user_request, helper_list);
 
 		destroy_request(request);
-		/* TODO: delete temp directories (lookup) */
 	}
 
 	//show_refs(sb->s_root, 0);

@@ -9,6 +9,7 @@ import mmap
 test_dir = os.path.expanduser('~/lazyfs-test')	# Where to put test files
 version = '0.1.23'				# Version of lazyfs to test
 verbose = False					# Give extra debug information
+platform = 'Linux-ix86'
 
 if len(sys.argv) > 1 and sys.argv[1] == '--read-hello':
 	fd = os.open('hello', os.O_RDONLY)
@@ -111,21 +112,6 @@ class WithHelper(LazyFS):
 		self.c = None
 		LazyFS.tearDown(self)
 
-# The actual tests
-
-class Test1WithoutHelper(LazyFS):
-	def test1CacheLink(self):
-		assert os.path.islink(fs + '/.lazyfs-cache')
-		assert os.readlink(fs + '/.lazyfs-cache') == cache
-	
-	def test2UnconnectedEmpty(self):
-		try:
-			file(fs + '/f')
-			assert 0
-		except IOError:
-			pass
-
-class Test2WithHelper(WithHelper):
 	def read_rq(self):
 		if verbose:
 			print "Server: reading request..."
@@ -151,6 +137,64 @@ class Test2WithHelper(WithHelper):
 		ls.sort()
 		self.assertEquals(ls, real)
 
+	def put_dir(self, dir, contents):
+		"""contents is None for a dynamic directory"""
+		f = file(cache + dir + '/....', 'w')
+		if contents is None:
+			f.write('LazyFS Dynamic\n')
+		elif contents:
+			f.write('LazyFS\n' + '\0'.join(contents) + '\0')
+		else:
+			f.write('LazyFS\n')
+		f.close()
+		os.rename(cache + dir + '/....', cache + dir + '/...')
+	
+	def put_file(self, rq, contents, mtime):
+		f = file(cache + rq, 'w')
+		f.write(contents)
+		f.close()
+		os.utime(cache + rq, (mtime, mtime))
+
+	def send_dir(self, dir, contents = None):
+		assert dir.startswith('/')
+		fd, path = self.next()
+		self.assertEquals(dir, path)
+		self.put_dir(dir, contents)
+		os.close(fd)
+	
+	def send_file(self, rq, contents, mtime):
+		assert rq.startswith('/')
+		if verbose:
+			print "Expecting", rq
+		fd, path = self.next()
+		self.assertEquals(rq, path)
+		self.put_file(rq, contents, mtime)
+		os.close(fd)
+
+	def send_reject(self, rq):
+		assert rq.startswith('/')
+		fd, path = self.next()
+		self.assertEquals(rq, path)
+		if verbose:
+			print "Rejecting", rq
+		os.close(fd)
+
+
+# The actual tests
+
+class Test1WithoutHelper(LazyFS):
+	def test1CacheLink(self):
+		assert os.path.islink(fs + '/.lazyfs-cache')
+		assert os.readlink(fs + '/.lazyfs-cache') == cache
+	
+	def test2UnconnectedEmpty(self):
+		try:
+			file(fs + '/f')
+			assert 0
+		except IOError:
+			pass
+
+class Test2WithHelper(WithHelper):
 	def clientNothing(self): pass
 	def serverNothing(self): pass
 	test01Nothing = cstest('Nothing')
@@ -202,48 +246,6 @@ class Test2WithHelper(WithHelper):
 		os.close(fd)
 	
 	test05GetDir = cstest('GetDir')
-
-	def put_dir(self, dir, contents):
-		"""contents is None for a dynamic directory"""
-		f = file(cache + dir + '/....', 'w')
-		if contents is None:
-			f.write('LazyFS Dynamic\n')
-		elif contents:
-			f.write('LazyFS\n' + '\0'.join(contents) + '\0')
-		else:
-			f.write('LazyFS\n')
-		f.close()
-		os.rename(cache + dir + '/....', cache + dir + '/...')
-	
-	def put_file(self, rq, contents, mtime):
-		f = file(cache + rq, 'w')
-		f.write(contents)
-		f.close()
-		os.utime(cache + rq, (mtime, mtime))
-
-	def send_dir(self, dir, contents = None):
-		assert dir.startswith('/')
-		fd, path = self.next()
-		self.assertEquals(dir, path)
-		self.put_dir(dir, contents)
-		os.close(fd)
-	
-	def send_file(self, rq, contents, mtime):
-		assert rq.startswith('/')
-		if verbose:
-			print "Expecting", rq
-		fd, path = self.next()
-		self.assertEquals(rq, path)
-		self.put_file(rq, contents, mtime)
-		os.close(fd)
-
-	def send_reject(self, rq):
-		assert rq.startswith('/')
-		fd, path = self.next()
-		self.assertEquals(rq, path)
-		if verbose:
-			print "Rejecting", rq
-		os.close(fd)
 
 	def clientDownload(self):
 		assert not os.path.exists(cache + '/...')
@@ -447,6 +449,146 @@ class Test2WithHelper(WithHelper):
 		os.close(fd)
 
 	test13ParallelReads = cstest('ParallelReads')
+
+	def clientAbortHelper(self):
+		# Close the helper before a request has been delivered
+		try:
+			os.listdir(fs)
+			assert False
+		except OSError:
+			pass
+	
+	def serverAbortHelper(self):
+		os.close(self.c)
+		self.c = None
+	
+	test14AbortHelper = cstest('AbortHelper')
+
+	def clientTypes(self):
+		files = ['symlink', 'file', 'dir', 'exec']
+		perm = {'symlink': 0755,
+			'file': 0644,
+			'dir': 0755,
+			'exec': 0755}
+		self.assert_ls(fs, ['.lazyfs-cache', '.lazyfs-helper'] +
+				files)
+		assert os.path.islink(fs + '/symlink')
+		self.assertEquals('target', os.readlink(fs + '/symlink'))
+		assert os.path.isdir(fs + '/dir')
+		assert os.path.isfile(fs + '/file')
+		assert os.path.isfile(fs + '/exec')
+		for x in files:
+			info = os.lstat(fs + '/' + x)
+			self.assertEquals(0, info.st_uid)
+			self.assertEquals(0, info.st_gid)
+			self.assertEquals(5, info.st_size)
+			self.assertEquals(4, info.st_mtime)
+			self.assertEquals(perm[x], info.st_mode & 0777)
+	
+	def serverTypes(self):
+		self.send_dir('/', ['f 5 4 file',
+				    'x 5 4 exec',
+				    'd 5 4 dir',
+				    'l 5 4 symlink\0target'])
+		os.mkdir(cache + '/dir')
+		self.send_dir('/dir', [])
+	
+	test15Types = cstest('Types')
+
+	def clientSymlinks(self):
+		self.assert_ls(fs, ['.lazyfs-cache', '.lazyfs-helper',
+				    '@PLATFOR@', platform, 'normal',
+				    'plat'])
+		self.assert_ls(fs + '/@PLATFOR@', ['foo'])
+		self.assert_ls(fs + '/' + platform, ['bar'])
+
+		self.assertEquals('@PLATFOR@',
+				os.readlink(fs + '/normal'))
+		self.assertEquals(platform,
+				os.readlink(fs + '/plat'))
+		self.assertEquals('Normal',
+				file(fs + '/normal/foo').read())
+		self.assertEquals('Platform',
+				file(fs + '/plat/bar').read())
+		
+	def serverSymlinks(self):
+		self.send_dir('/', ['d 5 4 @PLATFOR@',
+				    'd 5 4 ' + platform,
+				    'l 5 4 normal\0@PLATFOR@',
+				    'l 5 4 plat\0@PLATFORM@'])
+		os.mkdir(cache + '/@PLATFOR@')
+		os.mkdir(cache + '/' + platform)
+		self.send_dir('/@PLATFOR@',
+				['f 6 0 foo'])
+		self.send_dir('/' + platform,
+				['f 8 0 bar'])
+		self.send_file('/@PLATFOR@/foo', 'Normal', 0)
+		self.send_file('/' + platform + '/bar', 'Platform', 0)
+	
+	test16Symlinks = cstest('Symlinks')
+
+	def clientBrokenIndex(self):
+		try:
+			os.listdir(fs)
+			assert 0
+		except OSError:
+			pass
+		assert not os.path.exists(cache + '/....')
+	
+	def serverBrokenIndex(self):
+		self.send_dir('/', ['d 5 4 @PLATFOR@',
+				    'd 5 4 ' + platform,
+				    'l 5 4 normal\0@PLATFOR@',
+				    'l 5 4 plat\0@PLATFORM@\0'])
+
+	test17BrokenIndex = cstest('BrokenIndex')
+
+	def clientParallelDynamic(self):
+		child = os.fork()
+		if child == 0:
+			try:
+				self.assert_ls(fs + '/foo', ['foo'])
+				os._exit(0)
+			finally:
+				os._exit(1)
+
+		# We should see /foo appear in a bit...
+		while len(os.listdir(fs)) == 2:
+			time.sleep(0.1)
+		os.chdir(fs + '/foo')
+		self.assert_ls(fs + '/bar', ['bar'])
+		self.assert_ls(fs + '/foo', ['foo'])
+		c, status = os.waitpid(child, 0)
+		assert c == child
+		assert status == 0
+	
+	def serverParallelDynamic(self):
+		self.send_dir('/')
+		os.mkdir(cache + '/foo')
+		self.send_dir('/foo', ['f 0 0 foo'])
+		os.mkdir(cache + '/bar')
+		self.send_dir('/bar', ['f 0 0 bar'])
+	
+	test18ParallelDynamic = cstest('ParallelDynamic')
+
+	def clientBadRead(self):
+		self.assert_ls(fs, ['.lazyfs-cache', '.lazyfs-helper', 'foo'])
+		self.assertEquals('Hello', file(fs + '/foo').read())
+	
+	def serverBadRead(self):
+		self.send_dir('/', ['f 5 3 foo'])
+		fd = self.read_rq()
+		try:
+			path = os.read(fd, 4)
+			assert 0
+		except OSError:
+			pass
+		path = os.read(fd, 5)
+		assert path == '/foo\0'
+		self.put_file('/foo', 'Hello', 3)
+		os.close(fd)
+	
+	test19BadRead = cstest('BadRead')
 
 # Run the tests
 sys.argv.append('-v')

@@ -8,8 +8,9 @@
 * Allow directories to be removed from dynamic directories (requested by
   Karl Bowden).
 
-* Added more unittests (for mmapping, concurrent access, and removing
-  dynamic directories).
+* Added more unittests (for mmapping, concurrent access, removing
+  dynamic directories, quitting while handing a request, checking file
+  types and permissions, invalid indexes and too-short buffers).
 
 * Run tests in an order that tests simpler functions first (in case the
   system crashes).
