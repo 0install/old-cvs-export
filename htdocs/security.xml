@@ -246,6 +246,67 @@ running software from a particular cracked site until the issue is resolved
 case that the site's secret key has been compromised).
 </p>
 
+<p>
+Imagine this: whenever the zero-install daemon wants to download from a new
+site, it first asks zero-install.sourceforge.net for the site's key. This
+web service will return the current key (or download it if it's not known).
+Then your system never needs to trust new sites.
+</p>
+
+<h3>Web-of-trust and pathname hashes</h3>
+
+<p>
+When you run a program that uses a library on another site which hasn't been
+seen before, Zero Install trusts that site. Security is only checked when
+upgrading a known site, not when accessing it for the first time. It would be
+possible for the linking site to check that an otherwise-unknown site is
+correctly signed.
+</p>
+
+<p>
+There are several ways to do this. One suggestion is to include the site's
+key's fingerprint in its name. So instead of accessing
+<tt>/uri/0install/gimp.org/gimp</tt>, you run
+<tt>/uri/0install/gimp.org,fb33hZzj/gimp</tt>. Zero Install will refuse to
+allow this access unless the site is signed with a key whose fingerprint is
+"fb33hZzj".
+</p>
+
+<p>
+There are two big problems with this approach:
+</p>
+
+<ol>
+<li>It makes the current maintainer's current key part of the library's
+interface. If the key changes (due to it expiring, a new maintainer
+taking over, or an actual compromise of the key) then every site linking to
+it must be updated. Thus all GTK software would stop working after a key
+compromise, even if the break-in was detected and fixed very quickly. This
+would affect all links, including those in older versions of software and
+software from CDs, etc. It would be a lot of work to fix this.
+</li>
+<li>It makes the interface look more confusing to users. Zero Install is
+actually a very simple system, which is accessed in much the same way
+as web-sites are by users. Having to explain to users what the funny
+characters in the file names are about will likely confuse them and scare
+them away. If users are prevented from even using the simple site name,
+the problem becomes even worse.</li>
+</ol>
+
+<p>
+So, in exchange for an increase in security, this system will lead to false
+positives (<i>This site may have been broken in to. Or the key may have just
+been updated. Trust it anyway?</i> Users will always click <i>Yes</i>).
+This is quite a big problem, and must be balanced against the fact that
+this technique is unlikely to lead to a significant increase in security.
+After all, very few sites get broken in to as it is (most free software sites
+don't use GPG keys at all), site breakins are detected very fast (due to other
+users upgrading), keyservers (see previous section) can provide the same
+increase in security without affecting the interface, and you still have the
+problem of trusting the authors of the software, even if you really know it was
+written by them.
+</p>
+
 <h3>Protecting users from themselves</h3>
 
 <p>
