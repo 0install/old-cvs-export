@@ -10,7 +10,7 @@ import md5
 ignored_names = ('CVS', '.svn', '.', '..')
 meta_names = ('.DirIcon', 'AppInfo.xml')
 archive_dir_leaf = '.0inst-archives'
-index_leaf = '.0inst-index.xml'
+index_leaf = '.0inst-index.tgz'
 saved_build = '.0inst-0build'
 
 target = None
@@ -31,8 +31,8 @@ if not (target and host):
 		"along with the index file <targetdir>/%s\n\n" \
 		"This file should be fetchable as: http://<your.host>/%s.\n\n" \
 		"Then the file ./<somefile> will be accessable as\n" \
-		"/uri/0http/<your.host>/<somefile>\n\n" \
-		"Eg: 0build /var/www/ /uri/0http/your.host\n\n" \
+		"/uri/0install/<your.host>/<somefile>\n\n" \
+		"Eg: 0build /var/www/ your.host\n\n" \
 		"The values are saved; in future, just run '0build'" % \
 		(archive_dir_leaf, index_leaf, index_leaf)
 	raise SystemExit
@@ -278,7 +278,7 @@ doc = minidom.Document()
 site = doc.createElementNS(ZERO_NS, 'site-index')
 site.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
 doc.appendChild(site)
-site.setAttributeNS(None, 'path', '/uri/0http/%s' % host)
+site.setAttributeNS(None, 'path', '/uri/0install/%s' % host)
 
 root = Dir('.', root = True)
 
@@ -286,7 +286,14 @@ root = Dir('.', root = True)
 index_path = os.path.join(target, index_leaf)
 old_doc = None
 if os.path.exists(index_path):
-	old_doc = dom.minidom.parse(index_path)
+	os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzf', index_path,
+			'-C', target, '.0inst-index.xml'])
+
+old_path = os.path.join(target, '.0inst-index.xml')
+if os.path.exists(old_path):
+	print "Converting from old index format"
+	old_doc = dom.minidom.parse(old_path)
+
 old_tgz = [a for a in os.listdir(archive_dir) if a.endswith('.tgz')]
 
 old_archives = {}
@@ -296,6 +303,10 @@ if old_doc:
 root.add_xml(site)
 doc.writexml(file(index_path + '.new', 'w'), addindent='  ', newl='\n')
 os.rename(index_path + '.new', index_path)
+
+assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_path,
+			'-C', target, '.0inst-index.xml']) == 0
+os.unlink(os.path.join(target, '.0inst-index.xml'))
 
 for x in old_tgz:
 	path = os.path.join(archive_dir, x)
