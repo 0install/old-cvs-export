@@ -41,13 +41,28 @@ It also removes the need to run ldconfig at install time (handy,
 since there is no 'install time' ;-), losing a major source of errors
 and user confusion.
 </p>
+
+<h3>Doesn't it require a fast internet connection?</h3>
+
 <p>
-As far as network bandwidth goes, the worst-case situation is that you
-downloaded the entire archive, which is what you'd have had to do
-anyway. However, by default each directory is downloaded on demand. Thus,
-if you want to run a ROX-Lib2 application like Memo, but you don't
-want to read the ROX-Lib2 developer reference documentation then it
-doesn't get downloaded (until you try to access it).
+No! Installing using tarballs or traditional packages will typically mean
+downloading around three to four times as much data you would using Zero
+Install, because Zero Install only downloads what you actually use.
+</p>
+
+<p>
+Tarballs/Debs/RPMs may be better if you want to download everything in one
+go and then disconnect from the net. However, if you have a slow
+connection that's always on (or it's easy to start a connection when you
+need to), Zero Install will be better.
+</p>
+
+<p>
+When I tested it, installing the ROX-Filer CVS snapshot over a mobile
+phone GPRS link (approx 2.5 kb/sec) took 1m48s, with 265 K received, 13 K sent,
+although it may fetch more if you have less of the dependancies already (eg, an
+icon theme and the MIME database). The corresponding tarball is over 1Mb, using
+the same compression scheme.
 </p>
 
 <h3>What about people without Internet connections?</h3>
