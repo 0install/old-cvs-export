@@ -19,6 +19,8 @@
 
 #define LAZYFS_DEBUG
 
+#define LAZYFS_MAGIC 0x3069
+
 #define LAZYFS_MAX_LISTING_SIZE (100*1024)
 
 #include "config.h"
@@ -62,8 +64,6 @@
 #include <linux/list.h>
 
 #include <asm/uaccess.h>
-
-#include "lazyfs.h"
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 20)
 # include "compat20.h"
