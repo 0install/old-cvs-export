@@ -1,3 +1,12 @@
+Changes since 0.1.24
+
+* Implemented poll for files. Before, select() would indicate that the file
+  was readable, but the actual read would block anyway.
+
+* Bugfix: When the helper's read() call returned, it was removed from the
+  wrong waitqueue (slightly inefficient, but shouldn't have caused any other
+  problems).
+
 Changes since 0.1.23-smp:
 
 * Bugfix: Symlink targets were corrupted by a double free when using SELinux.

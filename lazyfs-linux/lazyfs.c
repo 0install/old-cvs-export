@@ -1844,7 +1844,7 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 
 out:
         current->state = TASK_RUNNING;
-        remove_wait_queue(&lazy_wait, &wait);
+        remove_wait_queue(&helper_wait, &wait);
 
 	return err;
 }
@@ -1852,7 +1852,7 @@ out:
 /*			File operations				*/
 
 /* Try to fill in file->private_data->host_file with the host file.
- * If block is 0, this may just start a fetch and return -EAGAIN.
+ * flags are passed directly to get_host_dentry().
  */
 static int
 get_host_file(struct file *file, int flags)
@@ -1886,8 +1886,8 @@ get_host_file(struct file *file, int flags)
 	 */
 	if (finfo->host_file) {
 		/* Someone else filled in host_file while we were waiting. */
-		printk("get_host_file(%s): set during get_host_dentry\n",
-				dentry->d_name.name);
+		//printk("get_host_file(%s): set during get_host_dentry\n",
+		//		dentry->d_name.name);
 		dput(host_dentry);
 		dec(R_HOST_DENTRY);
 		return 0;
@@ -2113,6 +2113,21 @@ out:
 	return 0;
 }
 
+/* Return whether this file is readable (whether reading would block). */
+static unsigned int
+lazyfs_file_poll(struct file *file, poll_table *wait)
+{
+        unsigned int retval = 0;
+
+        poll_wait(file, &lazy_wait, wait);
+
+	if (get_host_file(file, GET_HOST_DONT_START) != -EAGAIN) {
+		retval = POLLIN | POLLRDNORM;
+	}
+
+        return retval;
+}
+
 static int
 lazyfs_dir_open(struct inode *inode, struct file *file)
 {
@@ -2173,7 +2188,7 @@ static struct file_operations lazyfs_file_operations = {
 	read:		lazyfs_file_read,
 	mmap:		lazyfs_file_mmap,
 	release:	lazyfs_file_release,
-	/* TODO: poll:	lazyfs_file_poll, */
+	poll:		lazyfs_file_poll,
 };
 
 static struct dentry_operations lazyfs_dentry_ops = {

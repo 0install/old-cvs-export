@@ -4,10 +4,11 @@ import sys
 import os, signal, time
 import traceback
 import mmap
+import select
 
-# You can edit these three lines to suit...
+# You can edit these four lines to suit...
 test_dir = os.path.expanduser('~/lazyfs-test')	# Where to put test files
-version = '0.1.24'				# Version of lazyfs to test
+version = '0.1.25'				# Version of lazyfs to test
 verbose = False					# Give extra debug information
 platform = 'Linux-ix86'
 
@@ -622,6 +623,85 @@ class Test2WithHelper(WithHelper):
 		self.send_dir('/', ['f 5 3 hello'])
 	
 	test21Fstat = cstest('Fstat')
+
+	def clientParallel(self):
+		# Request two files. The second is received first, and the first
+		# call continues to block.
+		f1 = file(fs + '/fred')
+
+		# Check fred isn't available yet
+		ready = select.select([f1], [], [], 0)[0]
+		#print `os.read(ready[0].fileno(), 100)`
+		self.assertEquals([], ready)
+
+		f2 = file(fs + '/bob')
+		self.assertEquals('Bob', f2.read())
+
+		# Check fred still isn't available
+		ready = select.select([f1], [], [], 0)[0]
+		assert not ready
+
+		# Tell the server to make fred available now
+		f3 = file(fs + '/jim')
+		self.assertEquals('Jim', f3.read())
+
+		ready = select.select([f1], [], [], 0)[0]
+		assert ready
+	
+	def serverParallel(self):
+		self.send_dir('/', ['f 4 3 fred',
+				    'f 3 3 bob',
+				    'f 3 3 jim'])
+		fd1, path = self.next()
+		self.assertEquals('/fred', path)
+
+		fd2, path = self.next()
+		self.assertEquals('/bob', path)
+		self.put_file('/bob', 'Bob', 3)
+		os.close(fd2)
+		
+		fd3, path = self.next()
+		self.assertEquals('/jim', path)
+		self.put_file('/jim', 'Jim', 3)
+		os.close(fd3)
+
+		self.put_file('/fred', 'Fred', 3)
+		os.close(fd1)
+	
+	test22Parallel = cstest('Parallel')
+
+	def clientSelectFail(self):
+		# Check that select() returns readable on error
+		f1 = file(fs + '/fred')
+
+		ready = select.select([f1], [], [], 0)[0]
+		assert not ready
+
+		self.assertEquals('Bob', file(fs + '/bob').read())
+
+		# The request for fred has now failed
+		ready = select.select([f1], [], [], 0)[0]
+		assert ready
+
+		try:
+			f1.read()
+			assert 0
+		except IOError:
+			pass
+	
+	def serverSelectFail(self):
+		self.send_dir('/', ['f 4 3 fred',
+				    'f 3 3 bob'])
+		fd1, path = self.next()
+		self.assertEquals('/fred', path)
+
+		fd2, path = self.next()
+		self.assertEquals('/bob', path)
+		self.put_file('/bob', 'Bob', 3)
+		os.close(fd1)		# Fail request for fred
+		os.close(fd2)
+		
+	test23SelectFail = cstest('SelectFail')
 
 # Run the tests
 sys.argv.append('-v')
