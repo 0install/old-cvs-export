@@ -19,6 +19,28 @@ AC_MSG_RESULT($KERNELDIR)
 AC_DEFINE_UNQUOTED(KERNELDIR, "$kerneldir")
 AC_SUBST(KERNELDIR)
 
+AC_MSG_CHECKING(for user to run helper as)
+AC_ARG_WITH(user,
+  [  --with-user=user       run helper application as 'user'],
+  [HELPER_USER="$withval"],
+  [HELPER_USER="yes"])
+if [[ "$HELPER_USER" = "yes" ]]; then
+  AC_MSG_RESULT(missing)
+  echo
+  echo "Must specify a user to run the helper as, eg:"
+  echo "./configure --with-user=zeroinst"
+  echo "(having created a new user called 'zeroinst' for the purpose)"
+  echo "Using 'root' is not recommended, for security reasons."
+  exit 1
+fi
+AC_MSG_RESULT($HELPER_USER)
+AC_SUBST(HELPER_USER)
+
+if [ ! id "$HELPER_USER" > /dev/null ]; then
+  echo "User '$HELPER_USER' does exist!"
+  exit 1
+fi
+
 dnl Check for kernel version...
 AC_MSG_CHECKING(for kernel headers)
 if ! test -r "$KERNELDIR/include/linux/version.h"; then

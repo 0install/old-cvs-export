@@ -5,6 +5,7 @@ else
 KERNEL := @KERNELDIR@
 MODULEDIR := /lib/modules/`uname -r`/kernel/fs/lazyfs
 LINUX_2_5_SERIES := @LINUX_2_5_SERIES@
+HELPER_USER := @HELPER_USER@
 
 TESTS := hello_glib
 CORE := /uri/http/zero-install.sourceforge.net/libs/core/1.0/Linux-i386
@@ -30,7 +31,9 @@ install:
 	cp lazyfs.o ${MODULEDIR}/
 	depmod -a
 	[ -d /uri ] || mkdir /uri
-	[ -d /var/cache/zero-inst ] || mkdir /var/cache/zero-inst
+	[ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst
+	chown "${HELPER_USER}" /var/cache/zero-inst
+	grep -q "^lazyfs" /etc/fstab ||	echo "lazyfs          /uri            lazyfs  /var/cache/zero-inst            0 0" >> /etc/fstab
 
 lazyfs.o: lazyfs.c
 	if [ -n "${LINUX_2_5_SERIES}" ]; then $(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules; else ${CC} -c ${KERNELFLAGS} ${MODFLAGS} -o $@ $<; fi
