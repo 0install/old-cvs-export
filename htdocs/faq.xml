@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><link rel="stylesheet" type="text/css" href="style.css" /><title>The Zero Install system</title></head><body><div class="heading" style="border-bottom: 2px dashed black"><h1>The Zero Install system</h1><p class="author">Thomas Leonard &lt;<a href="mailto:tal197@users.sourceforge.net">tal197@users.sourceforge.net</a>&gt;</p><p class="pages"><a href="index.html">Overview</a><a href="install.html">Installation</a><a href="compare.html">Motivation</a><a class="selected" href="faq.html">FAQ</a><a href="technical.html">Technical</a></p></div><div class="main">
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
 <h2>FAQ</h2>
 
@@ -105,8 +104,8 @@ However, knowing
 how much to download requires knowing what software the user may want
 to run in the future. Even the user doesn't know that. It's not a new
 problem. No modern system is 'closed'. There will always be an
-application that says &quot;This program works well with 'foo'. You can get
-it from this web site...&quot;. Should installing the program also install
+application that says "This program works well with 'foo'. You can get
+it from this web site...". Should installing the program also install
 'foo'? Should installing ROX-Lib also install the README? The
 developer documentation? The python tutorial at python.org?
 </p>
@@ -159,7 +158,7 @@ they've crashed</h3>
 
 <p>The system can provide a visual indication that software is being
 downloaded. Eg, a small box appears at the bottom of the screen saying
-&quot;Fetching resources from www.gimp.org. Please wait...&quot; when the Gimp
+"Fetching resources from www.gimp.org. Please wait..." when the Gimp
 is run for the first time. This can have progress bars, and maybe even
 a cancel button (the system knows which user triggered the download).</p>
 
@@ -207,4 +206,4 @@ If a program relies on a bugfix in libfoo-1.2.6 then it can check that
 not.
 </p>
 
-</div><div class="heading" style="border-top: 2px dashed black"><p class="pages"><a href="index.html">Overview</a><a href="install.html">Installation</a><a href="compare.html">Motivation</a><a class="selected" href="faq.html">FAQ</a><a href="technical.html">Technical</a></p><p><a href="http://sourceforge.net/projects/zero-install"><img width="88" height="31" alt="SF logo" src="http://sourceforge.net/sflogo.php?group_id=7023&amp;type=1" /></a> <a class="outside" href="http://validator.w3.org/check/referer"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p></div></body></html>
+</html>

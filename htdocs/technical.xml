@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><link rel="stylesheet" type="text/css" href="style.css" /><title>The Zero Install system</title></head><body><div class="heading" style="border-bottom: 2px dashed black"><h1>The Zero Install system</h1><p class="author">Thomas Leonard &lt;<a href="mailto:tal197@users.sourceforge.net">tal197@users.sourceforge.net</a>&gt;</p><p class="pages"><a href="index.html">Overview</a><a href="install.html">Installation</a><a href="compare.html">Motivation</a><a href="faq.html">FAQ</a><a class="selected" href="technical.html">Technical</a></p></div><div class="main">
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
 <h2>Technical information and project status</h2>
 
@@ -34,14 +33,14 @@ and you don't need it installed to run it :-)
 
 <pre>
 $ strace -e file ./hello_glib|&amp;grep -v ENOENT
-execve(&quot;./hello_glib&quot;, [&quot;./hello_glib&quot;], [/* 23 vars */]) = 0
-open(&quot;/uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386/lib/libglib-2.0.so.0&quot;, O_RDONLY) = 3
+execve("./hello_glib", ["./hello_glib"], [/* 23 vars */]) = 0
+open("/uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386/lib/libglib-2.0.so.0", O_RDONLY) = 3
 fstat64(3, {st_mode=S_IFREG|0555, st_size=1335762, ...}) = 0
-open(&quot;/etc/ld.so.cache&quot;, O_RDONLY)      = 3
+open("/etc/ld.so.cache", O_RDONLY)      = 3
 fstat64(3, {st_mode=S_IFREG|0644, st_size=73251, ...}) = 0
-open(&quot;/lib/libc.so.6&quot;, O_RDONLY)        = 3
+open("/lib/libc.so.6", O_RDONLY)        = 3
 fstat64(3, {st_mode=S_IFREG|0755, st_size=1104040, ...}) = 0
-open(&quot;/usr/lib/gconv/gconv-modules&quot;, O_RDONLY) = 3
+open("/usr/lib/gconv/gconv-modules", O_RDONLY) = 3
 fstat64(3, {st_mode=S_IFREG|0644, st_size=44467, ...}) = 0
 fstat64(1, {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
 Hello World from glib!
@@ -71,4 +70,4 @@ another. Thus, you can view a directory full of applications and you only
 download what you need (AppInfo.xml is for the tooltips).
 </p>
 
-</div><div class="heading" style="border-top: 2px dashed black"><p class="pages"><a href="index.html">Overview</a><a href="install.html">Installation</a><a href="compare.html">Motivation</a><a href="faq.html">FAQ</a><a class="selected" href="technical.html">Technical</a></p><p><a href="http://sourceforge.net/projects/zero-install"><img width="88" height="31" alt="SF logo" src="http://sourceforge.net/sflogo.php?group_id=7023&amp;type=1" /></a> <a class="outside" href="http://validator.w3.org/check/referer"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p></div></body></html>
+</html>

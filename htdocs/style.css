@@ -1,5 +1,52 @@
 body {
+	padding: 0;
+	margin: 0;
+	border: 0;
+}
+
+div.main {
 	padding: 0.5cm;
+	max-width: 100em;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+div.heading p {
+	text-align: center;
+}
+
+p.pages a {
+	padding: 2px;
+	border: 2px solid #c17419;
+	text-decoration: none;
+	color: blue;
+}
+
+p.pages a + a {
+	border-left: 0;
+}
+
+div.heading a.selected {
+	background: #ffefa1;
+}
+div.heading a.selected:hover {
+	background: #ffefa1;
+}
+
+div.heading a:hover {
+	background: #d9a05c;
+}
+
+div.heading {
+	color: black;
+	background: #efc696;
+	margin: 0;
+	padding: 1em;
+	border: 0;
+}
+
+div.main a:hover {
+	background: yellow;
 }
 
 h1 {
@@ -16,7 +63,7 @@ td {
 }
 
 p.author {
-	text-align: center;
+	/* font-style: italic; */
 }
 
 p.q {
@@ -24,15 +71,16 @@ p.q {
 	font-weight: bold;
 }
 
-div {
+div.note {
 	border: 1px solid black;
 	color: black;
 	background: #eee;
 	padding: .2cm;
 	text-align: center;
+	margin: 0 4em 0 4em;
 }
 
-div h3 {
+div.note h3 {
 	text-align: center;
 }
 
