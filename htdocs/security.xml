@@ -194,6 +194,27 @@ who it says it is, and it doesn't check that they're trust-worthy, but it
 trust-worthy in the past is from the same people as before.
 </p>
 
+<h3>Extra security from distributions</h3>
+
+<p>
+Distributions or other groups can provide extra security by distributing
+sites' public keys themselves. The RedHat installer might pre-install the file
+<tt>/var/cache/zero-inst/gimp.org/.0inst-key.pub</tt>, even if they didn't
+supply the Gimp itself. Other groups can provide a similar service; since
+they system will only work if both the key provider and the software provider
+use the same key, the worst that malicious key providers can do is to prevent
+genuine software from installing (but can't install malicious software
+themselves).
+</p>
+
+<p>
+Distributions can also provide users with notification and key-update
+services, allowing RedHat, for example, to prevent their users from
+running software from a particular cracked site until the issue is resolved
+(to protect users who've never accessed the site before, or in the extreme
+case that the site's secret key has been compromised).
+</p>
+
 <h3>Protecting users from themselves</h3>
 
 <p>
@@ -217,8 +238,7 @@ any user to run a whole Linux system within Linux. Normally, this rather
 restricts the amount of software available, but with Zero Install they can
 mount /uri within the virtual machine as a hostfs type mount of the real
 machine's /uri directly, thus sharing all downloads between both the real
-and virtual machines. However, any changes made will only affect the virtual
-machine.
+and virtual machines. Any changes made will only affect the virtual machine.
 </p>
 
 <p>
@@ -318,7 +338,7 @@ problem of preferences. OpenOffice should be able to save user preferences
 and a list of recently edited documents without having to ask the user
 for permission. Zero Install makes this easy; when the user runs
 `.../openoffice.org/writer' in the filer, the filer could automatically grant it
-write permission on `~/.choices/openoffice.org', without any risk that it
+write permission on `~/.config/openoffice.org', without any risk that it
 could mess up another application's preferences.
 </p>
 
@@ -351,8 +371,8 @@ currently do, with no extra effort.
 
 <p>
 Having a URI-based naming scheme, shared by all platforms and distributions,
-we can share a single Zero Install downloader amoung any number of virtual
-machines, making running `sandboxed' applications much easier. By referring
+we can share a single Zero Install downloader among any number of virtual
+machines, making running `sand-boxed' applications much easier. By referring
 to each application by it's full URI, we can grant an application write access
 to it's own private configuration area with no additional user interaction.
 </p>
