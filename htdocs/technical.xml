@@ -3,6 +3,17 @@
 
 <h2>Technical information and project status</h2>
 
+<h3>Many users, one cache</h3>
+
+<p>Each user has their own customised setup (represented here by Start menus),
+which are lists of applications and their corresponding URIs. The cache
+is shared by all users.
+</p>
+
+<p style='text-align:center'>
+<img src="StartMenus.png" width="626" height="404" alt="Start menus and the cache"/>
+</p>
+
 <h3>Design and implementation details</h3>
 
 <p>
