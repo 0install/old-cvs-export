@@ -198,7 +198,7 @@ them all these years?</h3>
 directories</a>. Application directories provide an ideal user interface for
 this system, since they don't all have to be installed in a single directory
 (in PATH, etc). However, the system can be used for software not packaged as
-ROX-style applications too (libraries in particular, require few changes).
+ROX-style applications too (libraries, in particular, require few changes).
 </p>
 
 <h3>How do I link against a library such that when it's upgraded I get
