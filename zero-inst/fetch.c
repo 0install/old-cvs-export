@@ -20,6 +20,8 @@
 
 #define ZERO_INSTALL_INDEX ".0inst-index.xml"
 
+#define META ".0inst-meta"
+
 static void build_ddd_from_index(xmlNode *dir_node, char *dir);
 
 /* Create directory 'path' from 'node' */
@@ -362,89 +364,125 @@ static void got_archive(Task *task, int success)
 	task_destroy(task, success);
 }
 
-static void got_site_index(Task *task, int success)
+/* 1 on success */
+static int build_ddds_for_site(Index *index, const char *site)
 {
-	char *slash;
 	char path[MAX_PATH_LEN];
-	Index *index;
+	char *dir;
 
-	assert(task->type == TASK_INDEX);
-	assert(task->child_pid == -1);
+	dir = build_filename("%s/%s", cache_dir, site);
+	if (!dir)
+		return 0;
 
-	if (!success) {
-		fprintf(stderr, "Failed to fetch archive\n");
-		task_destroy(task, 0);
-		return;
+	if (strlen(dir) + 1 >= MAX_PATH_LEN) {
+		fprintf(stderr, "Path %s too long\n", dir);
+		free(dir);
+		return 0;
 	}
 
-	/* printf("[ got '%s' ]\n", task->str); */
+	strcpy(path, dir);
+	free(dir);
 
-	slash = strrchr(task->str, '/');
-	*slash = '\0';
+	build_ddd_from_index(index_get_root(index), path);
 
-	if (chdir(task->str)) {
-		perror("chdir");
-		goto err;
+	return 1;
+}
+
+/* The index.tgz file is in site's meta directory.
+ * Check signatures, validate, unpack and build all ... files.
+ * Returns the new index on success, or NULL on failure.
+ */
+static Index *unpack_site_index(const char *site)
+{
+	Index *index = NULL;
+
+	assert(strchr(site, '/') == NULL);
+
+	/* Change to meta dir */
+	{
+		char *meta;
+
+		meta = build_filename("%s/%s/" META, cache_dir, site);
+		if (!meta)
+			goto out;
+
+		if (chdir(meta)) {
+			perror("chdir");
+			free(meta);
+			goto out;
+		}
+		free(meta);
 	}
 
-	if (system("tar xzf .0inst-index.tgz -O " ZERO_INSTALL_INDEX
-				" >.0inst-index.new")) {
+	if (system("tar xzf index.tgz -O .0inst-index.xml >index.new")) {
 		fprintf(stderr, "Failed to unpack index\n");
-		goto err;
+		goto out;
 	}
 
 	fprintf(stderr, "TODO: skipping GPG signature check\n");
 
-	assert(strncmp(task->str, cache_dir, strlen(cache_dir)) == 0);
-	assert(!strchr(task->str + strlen(cache_dir) + 1, '/'));
-		
-	index = parse_index(".0inst-index.new");
-	if (!index_valid(index, task->str + strlen(cache_dir) + 1)) {
+	index = parse_index("index.new");
+	if (!index_valid(index, site)) {
 		index_free(index);
-		if (unlink(".0inst-index.new"))
+		index = NULL;
+		if (unlink("index.new"))
 			perror("unlink");
-		goto err;
-	}
-
-	if (rename(".0inst-index.new", ZERO_INSTALL_INDEX)) {
-		perror("rename");
-		goto err;
+		goto out;
 	}
 
 	assert(index);
 
-	task_steal_index(task, index);
-
-	if (strlen(task->str) >= MAX_PATH_LEN) {
-		fprintf(stderr, "Path %s too long\n", task->str);
-		goto err;
+	if (rename("index.new", "index.xml")) {
+		perror("rename");
+		index_free(index);
+		index = NULL;
+		goto out;
 	}
 
-	strcpy(path, task->str);
+	if (!build_ddds_for_site(index, site)) {
+		index_free(index);
+		index = NULL;
+	}
 
-	build_ddd_from_index(index_get_root(task->index), path);
+out:
 	chdir("/");
-
-	task_destroy(task, 1);
-	return;
-err:
-	chdir("/");
-	task_destroy(task, 0);
+	return index;
 }
 
-/* Fetch the index file 'path' (in the cache).
- * path must be in the form <cache>/site/ZERO_INSTALL_INDEX.
- * (this actually fetches the .tgz file, checks it, and then unpacks it
- * to create ZERO_INSTALL_INDEX)
+static void got_site_index(Task *task, int success)
+{
+	assert(task->type == TASK_INDEX);
+	assert(task->child_pid == -1);
+
+	if (!success)
+		fprintf(stderr, "Failed to fetch archive\n");
+	else {
+		char *site = NULL;
+
+		site = build_filename("%h", task->str + cache_dir_len + 1);
+		if (site) {
+			task_steal_index(task, unpack_site_index(site));
+			success = task->index != NULL;
+			free(site);
+		} else
+			success = 0;
+	}
+
+	task_destroy(task, success);
+}
+
+/* Fetch the index file for 'path'.
+ * This fetches the .tgz file, checks it, and then unpacks it.
  */
 static Task *fetch_site_index(const char *path, int use_cache)
 {
 	Task *task = NULL;
 	char *tgz = NULL, *uri = NULL;
+	char *meta_dir = NULL;
 
-	assert(strncmp(path, cache_dir, strlen(cache_dir)) == 0);
+	assert(path[0] != '/');
 
-	tgz = build_filename("%r.tgz", path);
+	tgz = build_filename("%s/%h/" META "/index.tgz", cache_dir, path);
 	if (!tgz)
 		goto out;
 
@@ -457,7 +495,7 @@ static Task *fetch_site_index(const char *path, int use_cache)
 	
 	assert(!task);
 
-	uri = build_filename("http://%c", tgz);
+	uri = build_filename("http://%h/.0inst-index.tgz", path);
 	if (!uri)
 		goto out;
 
@@ -466,6 +504,10 @@ static Task *fetch_site_index(const char *path, int use_cache)
 		goto out;
 
 	task->step = got_site_index;
+
+	meta_dir = build_filename("%s/%h/" META, cache_dir, path);
+	if (!meta_dir || !ensure_dir(meta_dir))
+		goto out;
 
 	wget(task, uri, tgz, use_cache);
 	if (task->child_pid == -1) {
@@ -478,6 +520,8 @@ out:
 		free(tgz);
 	if (uri)
 		free(uri);
+	if (meta_dir)
+		free(meta_dir);
 	return task;
 }
 
@@ -502,7 +546,7 @@ Index *get_index(const char *path, Task **task, int force)
 	if (strcmp(path, "AppRun") == 0 || *path == '.')
 		return NULL;	/* Don't waste time looking for these */
 
-	index_path = build_filename("%s/%h/" ZERO_INSTALL_INDEX,
+	index_path = build_filename("%s/%h/" META "/index.xml",
 			cache_dir, path);
 	if (!index_path)
 		return NULL;
@@ -522,7 +566,7 @@ Index *get_index(const char *path, Task **task, int force)
 	}
 
 	if (task)
-		*task = fetch_site_index(index_path, !force);
+		*task = fetch_site_index(path, !force);
 	free(index_path);
 
 	return NULL;
