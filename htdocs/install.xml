@@ -147,6 +147,12 @@ $ <b>tail /var/log/daemon.log</b>
 Oct  5 16:00:16 everest zero-install: Started: using cache directory '/var/cache/zero-inst'
 </pre>
 
+<div class='note'>
+On some systems, running 0install tries to log you in as the zero install
+user instead of running the helper. Try using sudo or 'su -c' in the 0install
+script file. Let us know if you find a solution!
+</div>
+
 <h2>Testing the installation</h2>
 
 <p>
@@ -221,6 +227,18 @@ GTK, Java and NEdit, can be found in the directory
 to bring its index format up-to-date. Until then, zero-install will reject it
 because it is not digitally signed.
 </p>
+
+<h3>Notes</h3>
+<ul>
+<li>I/O errors indicate that the helper failed to fetch the requested file.
+Check <strong>/var/log/daemon.log</strong> for information. In future,
+ZeroProgress will report this information.</li>
+<li>When you reboot, /uri/0install is automatically mounted, but the
+zero-install helper program is <strong>not</strong> run automatically.
+Therefore, you will get I/O errors when trying to access anything new, until
+you start the helper.
+</li>
+</ul>
 
 <h2>Further reading</h2>
 
