@@ -42,7 +42,7 @@ since there is no 'install time' ;-), losing a major source of errors
 and user confusion.
 </p>
 
-<h3>Doesn't it require a fast internet connection?</h3>
+<h3>Doesn't it require a fast Internet connection?</h3>
 
 <p>
 No! Installing using tarballs or traditional packages will typically mean
