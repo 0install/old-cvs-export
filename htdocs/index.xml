@@ -149,6 +149,42 @@ make a shell alias or use any other normal method of making something easier to
 get to.
 </p>
 
+<p class='q'>Slow down... can we go through this step-by-step?</p>
+
+<p>
+Sure. It works like this:
+</p>
+
+<ol>
+<li>Alice opens <tt>/uri/0install/gimp.org</tt> in her filemanager.</li>
+<li><tt>gimp.org</tt> isn't in the cache, so Linux asks the Zero Install
+daemon process (zero-install) to fetch it.</li>
+<li>zero-install downloads the index file from the site
+(<tt>http://gimp.org/.0inst-index.tar.bz2</tt> if you must know) and puts the
+directory structure it describes in the cache.</li>
+<li>Alice explores the site in her filemanager, and eventually clicks on
+<tt>gimp.org/Testing/Gimp-1.3</tt>.</li>
+<li>Gimp-1.3 isn't in the cache, so Linux asks the zero-install daemon to
+fetch it. zero-install downloads it from a mirror site (checking the MD5 sum
+against the one in the index to make sure it's genuine) and puts it in the
+cache.</li>
+<li>Gimp-1.3 runs.</li>
+</ol>
+
+<p>Notice that the zero-install daemon didn't run any scripts. It only fetched
+and extracted some archives into the cache directory. Gimp hasn't been added
+to any other user's Start menu or similar (it might be on Alice's Start menu
+now... that's between Alice and the Gimp).</p>
+
+<ol>
+<li>A few days later, Bob (another user on the same computer) opens
+<tt>/uri/0install/gimp.org</tt> in his filemanager. Since it's in the cache, it
+opens instantly.</li>
+<li>Bob goes into the <tt>Testing</tt> directory and clicks on
+<tt>Gimp-1.3</tt>. Since it's in the cache, it starts right away without using
+the network at all.</li>
+</ol>
+
 <p class='q'>I have more questions!</p>
 
 <p>Try <a href="faq.html">the FAQ</a>.</p>
