@@ -131,6 +131,39 @@ $ <b>su -c 'make install'</b>
 <li><a href="http://article.gmane.org/gmane.comp.file-systems.zero-install.devel/374">dmesg: version magic...</a> (Debian custom kernel)</li>
 </ul>
 
+<p>
+If you've got Python installed, now would be a good time to run the unit-tests.
+This is optional, but it makes it easier for us to diagnose bugs if they're
+detected here (save your work first!):
+</p>
+
+<pre>
+$ <b>sync</b>
+$ <b>python tests/check.py -v</b>
+testANothing (__main__.TestWithHelper) ... ok
+testDoubleOpen (__main__.TestWithHelper) ... ok
+testDownload (__main__.TestWithHelper) ... ok
+testGetROX (__main__.TestWithHelper) ... ok
+testLsRoot (__main__.TestWithHelper) ... ok
+testReleaseHelper (__main__.TestWithHelper) ... ok
+testCacheLink (__main__.TestWithoutHelper) ... ok
+testUnconnectedEmpty (__main__.TestWithoutHelper) ... ok
+                                                                                
+----------------------------------------------------------------------
+Ran 8 tests in 0.955s
+                                                                                
+OK
+</pre>
+
+<p>
+If any of the tests fail or (even more exciting!) your system hangs, please
+<a href="support.html">report it</a>! Reliable crashes in the unit tests
+should be easy to track down and fix. Note that if your kernel crashes, it
+might be better to run the tests from a text console. You're more likely
+to get diagnostics printed there than from within X. See also
+<a href="http://sourceforge.net/tracker/index.php?func=detail&amp;aid=934185&amp;group_id=76468&amp;atid=547191">this bug report</a> (for Arch Linux).
+</p>
+
 <h3>Installing Zero Install</h3>
 
 <p>Once you've got LazyFS installed (see above), you can install Zero
