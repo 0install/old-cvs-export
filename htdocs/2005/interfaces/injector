@@ -2,7 +2,7 @@
 Hash: SHA1
 
 <?xml version="1.0" ?>
-<interface last-modified="1110401472" uri="/home/talex/Projects/injector/injector/injector.xml.asc" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch-auto'>
+<interface last-modified="1110401472" uri="http://0install.net/2005/interfaces/injector" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch-auto'>
   <name>Injector</name>
   <summary>Chooses software components to run programs</summary>
   <description>
@@ -27,7 +27,7 @@ buttons). Thus, the injector must choose implementations of each dependancy
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCNLcDrgeCgFmlPMERAvWqAJ0VOBeqAbpuNibUUZ3/09U4hZUJawCgwfC0
-iBejJl6+CA/tmecbkcIQSc8=
-=Y/3A
+iD8DBQFCNLn+rgeCgFmlPMERAkn1AKChS94SyrNvmzj4ljxzDE0gsKnwJgCcDeRS
+5+Bh0P6mM1E0f4MeXGJ9xNU=
+=TYng
 -----END PGP SIGNATURE-----
