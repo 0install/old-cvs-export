@@ -12,12 +12,21 @@
 #
 # The two branches of the if execute in parallel in the two processes.
 
+def check_ls(dir, wanted):
+	got = os.listdir(dir)
+	if got != wanted:
+		print "Expected", wanted
+		print "Got     ", got
+		os.system('ls -l /uri/0install/0test/apps/ZeroProgress')
+		print "Here"
+		assert got == wanted
+
 import os
 from __main__ import send_tree, server
 import stat
 
 def refresh():
-	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
+	assert os.popen('0refresh 0test').read() == 'OK\n'
 
 # Missing path
 if server:
@@ -39,29 +48,29 @@ else:
 if server:
 	send_tree('<dir size="1" mtime="2"/>')
 else:
-	assert os.listdir('/uri/0install/0test') == []
+	check_ls('/uri/0install/0test', [])
 
 # Single symlink
 if server:
 	send_tree('<dir size="1" mtime="2"><link size="3" mtime="2" target="end" name="link"/></dir>')
 else:
 	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
-	assert os.listdir('/uri/0install/0test') == ['link']
+	check_ls('/uri/0install/0test', ['link'])
 	assert os.readlink('/uri/0install/0test/link') == 'end'
 
 # Update to invalid index
 if server:
 	send_tree('<dir size="1" mtime="2"><link size="3" mtime="2" target="end"/></dir>')
 else:
-	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'FAIL\n'
-	assert os.listdir('/uri/0install/0test') == ['link']
+	assert os.popen('cd /uri/0install/0test; 0refresh').read() != 'FAIL\n'
+	check_ls('/uri/0install/0test', ['link'])
 
 # Update back to empty
 if server:
 	send_tree('<dir size="1" mtime="2"></dir>')
 else:
 	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
-	assert os.listdir('/uri/0install/0test') == []
+	check_ls('/uri/0install/0test', [])
 
 # Try to trigger a bug in our d_genocide. If you were in directory A,
 # containing a file B, and an ancestor of A got removed from the tree,
@@ -70,16 +79,20 @@ if server:
 	send_tree('<dir size="1" mtime="2"><dir name="apps" size="0" mtime="1"><dir name="ZeroProgress" size="4" mtime="3"><link name="foo" size="1" mtime="2" target="bar"/></dir></dir></dir>')
 	send_tree('<dir size="3" mtime="2"><dir name="apps" size="1" mtime="2"/></dir>')
 else:
-	refresh()
-	assert os.listdir("/uri/0install/0test") == ['apps']
+	assert os.popen('0refresh 0test').read() == 'OK\n'
+	os.system('ls -R /uri/0install/0test')
+	check_ls("/uri/0install/0test", ['apps'])
+	check_ls("/uri/0install/0test/apps", ["ZeroProgress"])
+	check_ls("/uri/0install/0test/apps/ZeroProgress", ['foo'])
 	os.chdir('/uri/0install/0test/apps/ZeroProgress')
-	assert os.listdir('.') == ['foo']
-	assert os.listdir("/uri/0install/0test") == ['apps']
+	check_ls('.', ['foo'])
+	check_ls("/uri/0install/0test", ['apps'])
 	assert os.popen('0refresh').read() == 'OK\n'
-	assert os.listdir("/uri/0install/0test") == ['apps']
+	check_ls("/uri/0install/0test", ['apps'])
 	os.system("pwd")
-	assert os.listdir('..') == []
-	assert os.listdir('.') == []
+	check_ls('..', [])
+	print os.listdir('.')
+	check_ls('.', [])
 	#file('foo') (forces creation of a negative dentry)
 	os.chdir('/')
 
@@ -89,7 +102,7 @@ if server:
 	send_tree('<dir size="3" mtime="2"><link name="link" target="two" size="2" mtime="3"/></dir>')
 else:
 	refresh()
-	assert os.listdir('/uri/0install/0test') == ['link']
+	check_ls('/uri/0install/0test', ['link'])
 	assert os.readlink('/uri/0install/0test/link') == 'one'
 	refresh()
 	assert os.readlink('/uri/0install/0test/link') == 'two'

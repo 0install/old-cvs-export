@@ -70,6 +70,7 @@ static int count_group(Element *group)
 	Element *node;
 
 	if (!xml_get_attr(group, "MD5sum") ||
+	    !xml_get_attr(group, "href") ||
 	    !xml_get_attr(group, "size")) {
 		error("Missing <group> attribute");
 		return -1;
@@ -321,6 +322,8 @@ Index *parse_index(const char *pathname, int validate, const char *site)
 {
 	Element *doc;
 	Index *index;
+
+	validate = 1;	/* Always validate. Files may be from old version. */
 
 	assert(site);
 	assert(strchr(site, '/') == NULL);

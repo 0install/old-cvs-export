@@ -36,7 +36,7 @@ install-real:
 	rm -f /uri/0http /uri/http
 	[ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst
 	chown "${HELPER_USER}" /var/cache/zero-inst
-	echo "lazyfs	/uri/0install	lazyfs-@VERSION@	/var/cache/zero-inst	0 0" >> ${FSTAB}
+	echo "lazyfs	/uri/0install	lazyfs@COMMA_VERSION@	/var/cache/zero-inst	0 0" >> ${FSTAB}
 	echo "Mounting Zero Install filesystem"
 	[ ! -L /uri/0install/.lazyfs-cache ] || (echo "Already mounted!"; exit 1)
 	mount /uri/0install

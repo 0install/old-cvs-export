@@ -12,14 +12,14 @@ def unmount():
 			raise Exception("Can't unmount /uri/0install!")
 		lines = os.popen('dmesg').readlines()
 		lines.reverse()
-		i = lines.index("lazyfs: Resource usage after put_super:\n")
+		#i = lines.index("lazyfs: Resource usage after put_super:\n")
 		#for i in range(len(lines)):
 		#	if lines[i].startswith("'/' "):
 		#		i += 1
 		#		break
 		lines.reverse()
 		print ">> dmesg output"
-		print ''.join(lines[-i:])
+		#print ''.join(lines[-i:])
 		os.system('sudo rmmod lazyfs')
 
 unmount()
@@ -41,11 +41,15 @@ http.listen(5)
 
 os.environ['http_proxy'] = 'http://localhost:%d' % port
 
-zero = os.spawnlp(os.P_NOWAIT, './zero-install', './zero-install')
+zero = os.spawnlp(os.P_NOWAIT, './zero-install', './zero-install', '--debug')
 
 def tgz_containing(name, contents):
 	file(os.path.join(tmp, name), 'w').write(contents)
-	data = os.popen('tar -cz -O -C "%s" "%s"' % (tmp, name)).read()
+	os.system("cd '%s'; rm -f index.xml.sig keyring.pub; gpg -o index.xml.sig --default-key 0install@0test --detach-sign '%s'; gpg -o keyring.pub --export 0install@0test" %
+		(tmp, name))
+	file(os.path.join(tmp, "mirrors.xml"), 'w').write('Hello')
+	os.system('ls /tmp')
+	data = os.popen('tar -cz -O -C "%s" "%s" mirrors.xml keyring.pub index.xml.sig' % (tmp, name)).read()
 	os.unlink(os.path.join(tmp, name))
 	return data
 

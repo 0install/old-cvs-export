@@ -93,9 +93,11 @@ void task_destroy(Task *task, int success)
 	t = all_tasks;
 	while (t) {
 		if (t->child_task == task) {
+#if 0
 			if (verbose)
 				syslog(LOG_DEBUG,
 					"Move forward with task %d", t->n);
+#endif
 			t->child_task = NULL;
 			assert(t->step);
 			t->step(t, success);
@@ -120,9 +122,11 @@ void task_process_done(pid_t pid, int success)
 
 	for (t = all_tasks; t; t = t->next) {
 		if (t->child_pid == pid) {
+#if 0
 			if (verbose)
 				syslog(LOG_DEBUG,
 					"Move forward with task %d", t->n);
+#endif
 			t->child_pid = -1;
 			t->step(t, success);
 			return;
