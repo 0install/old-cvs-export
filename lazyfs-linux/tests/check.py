@@ -662,11 +662,13 @@ class Test2WithHelper(WithHelper):
 		
 		fd3, path = self.next()
 		self.assertEquals('/jim', path)
-		self.put_file('/jim', 'Jim', 3)
-		os.close(fd3)
 
 		self.put_file('/fred', 'Fred', 3)
 		os.close(fd1)
+
+		self.put_file('/jim', 'Jim', 3)
+		os.close(fd3)
+
 	
 	test22Parallel = cstest('Parallel')
 
