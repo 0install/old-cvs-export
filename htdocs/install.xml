@@ -210,6 +210,7 @@ It worked!
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/375">Input/output error: Failed to extract GPG signature/keyring/mirrors!</a> (with old version of tar)</li>
 <li>I/O error and nothing in the log (try 'chsh zeroinst' if the shell in
 /etc/passwd is /bin/false; use /bin/sh)</li>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/438">Using a web-proxy with http_proxy</a></li>
 </ul>
 
 <p>
