@@ -65,6 +65,9 @@ Request *open_requests = NULL;
 
 static int to_wakeup_pipe = -1;	/* Write here to get noticed */
 
+/* Static prototypes */
+static void request_ensure_running(Request *request);
+
 static int open_helper(void)
 {
 	int helper;
@@ -130,6 +133,12 @@ static void finish_request(Request *request)
 	free(request);
 }
 
+/* Create a new Request object. There is one of these for each directory
+ * we are handling, possibly containing multiple requests within that
+ * dir. The new Request will be in the READY state with no actual fetches,
+ * and not in the global requests list yet.
+ * NULL on error (out of memory).
+ */
 static Request *request_new(const char *path)
 {
 	Request *request;
@@ -310,7 +319,7 @@ static int ensure_dir(const char *path)
 static void wget(Request *request, const char *uri, char *path,
 		 int use_cache)
 {
-	const char *argv[] = {"wget", "-v", "-O", path, uri,
+	const char *argv[] = {"wget", "-q", "-O", path, uri,
 			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
 
@@ -347,8 +356,30 @@ static void wget(Request *request, const char *uri, char *path,
 
 static void request_done_head(Request *request)
 {
-	printf("TODO: only remove the head!\n");
-	finish_request(request);
+	uid_t uid;
+	int i;
+
+	assert(request->n_users > 0);
+
+	printf("request_done_head(%s : %s)\n",
+			request->path, request->users[0].leaf);
+
+	close(request->users[0].fd);
+	free(request->users[0].leaf);
+	uid = request->users[0].uid;
+
+	request->n_users--;
+	for (i = 0; i < request->n_users; i++)
+		request->users[i] = request->users[i + 1];
+
+	control_notify_user(uid);
+
+	printf("[ next; %d remaining ]\n", request->n_users);
+
+	if (request->n_users)
+		request_ensure_running(request);
+	else
+		finish_request(request);
 }
 
 /* Either do finish_request or start a child process and advance state */
@@ -359,8 +390,10 @@ static void request_ensure_running(Request *request)
 	char path[MAX_PATH_LEN];
 	int err;
 	
-	if (request->child_pid != -1)
+	if (request->child_pid != -1) {
+		fprintf(stderr, "request_ensure_running: In progrss!\n");
 		goto err;
+	}
 
 	if (request->n_users == 0) {
 		fprintf(stderr, "request_ensure_running: Internal error\n");
@@ -488,7 +521,10 @@ static void request_ensure_running(Request *request)
 		goto err;
 	return;
 err:
-	finish_request(request);
+	if (request->state == FETCHING_ARCHIVE)
+		request_done_head(request);
+	else
+		finish_request(request);
 }
 
 static void handle_request(int request_fd, uid_t uid, char *path)
@@ -526,10 +562,8 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	request_add_user(request, request_fd, uid, slash + 1);
 	if (request->n_users == 0) {
 		finish_request(request);
-		return;
-	}
-
-	request_ensure_running(request);
+	} else if (request->n_users == 1)
+		request_ensure_running(request);
 }
 
 /* This is called as a signal handler; simply ensures that
@@ -598,7 +632,7 @@ static void request_child_finished(Request *request)
 {
 	request->child_pid = -1;
 
-	/* printf("[ process completed - continue with request ]\n"); */
+	printf("[ process completed - continue with request ]\n");
 	request_ensure_running(request);
 }
 
