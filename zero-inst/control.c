@@ -28,7 +28,7 @@ static DBusWatch *current_watch = NULL;	/* tmp */
 static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 			 DBusError *error, int force);
 
-#define OLD_SOCKET "unix:path=/uri/0install/.lazyfs-cache/control"
+#define OLD_SOCKET "/uri/0install/.lazyfs-cache/control"
 #define SERVER_SOCKET "unix:path=/uri/0install/.lazyfs-cache/.control"
 #define DBUS_Z_NS "net.sourceforge.zero-install"
 
