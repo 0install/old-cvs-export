@@ -11,13 +11,13 @@
   <xsl:param name="file">unknown</xsl:param>
 
   <xsl:template name='page'>
-    <xsl:param name="href">unknown</xsl:param>
+    <xsl:param name="base">unknown</xsl:param>
     <span>
-      <xsl:if test='$file = $href'>
+      <xsl:if test='$file = concat($base, ".html")'>
         <xsl:attribute name='class'>selected</xsl:attribute>
       </xsl:if>
       <xsl:text>&#160;</xsl:text>
-      <a href="{$href}"><xsl:value-of select='$label'/></a>
+      <a href="{$base}.html"><xsl:value-of select='$label'/></a>
       <xsl:text>&#160;</xsl:text>
     </span>
   </xsl:template>
@@ -26,43 +26,26 @@
 <xsl:text>
 </xsl:text>
     <div class='pages'>
-      <xsl:call-template name='page'>
-        <xsl:with-param name='href'>index.html</xsl:with-param>
-        <xsl:with-param name='label'>Overview</xsl:with-param>
-      </xsl:call-template>
-      <xsl:call-template name='page'>
-        <xsl:with-param name='href'>install.html</xsl:with-param>
-        <xsl:with-param name='label'>Installation</xsl:with-param>
-      </xsl:call-template>
-      <xsl:call-template name='page'>
-        <xsl:with-param name='href'>compare.html</xsl:with-param>
-        <xsl:with-param name='label'>Motivation</xsl:with-param>
-      </xsl:call-template>
-      <xsl:call-template name='page'>
-        <xsl:with-param name='href'>faq.html</xsl:with-param>
-        <xsl:with-param name='label'>FAQ</xsl:with-param>
-      </xsl:call-template>
-      <xsl:call-template name='page'>
-        <xsl:with-param name='href'>docs.html</xsl:with-param>
-        <xsl:with-param name='label'>Documentation</xsl:with-param>
-      </xsl:call-template>
-      <xsl:call-template name='page'>
-        <xsl:with-param name='href'>packagers.html</xsl:with-param>
-        <xsl:with-param name='label'>Packagers</xsl:with-param>
-      </xsl:call-template>
-      <xsl:call-template name='page'>
-        <xsl:with-param name='href'>security.html</xsl:with-param>
-        <xsl:with-param name='label'>Security</xsl:with-param>
-      </xsl:call-template>
-      <xsl:call-template name='page'>
-        <xsl:with-param name='href'>support.html</xsl:with-param>
-        <xsl:with-param name='label'>Support</xsl:with-param>
-      </xsl:call-template>
-      <xsl:call-template name='page'>
-        <xsl:with-param name='href'>technical.html</xsl:with-param>
-        <xsl:with-param name='label'>Technical</xsl:with-param>
-      </xsl:call-template>
+      <xsl:for-each select='document("structure.xml")/layout/item'>
+        <xsl:call-template name='page'>
+          <xsl:with-param name='base'><xsl:value-of select='@base'/></xsl:with-param>
+          <xsl:with-param name='label'><xsl:value-of select='@label'/></xsl:with-param>
+        </xsl:call-template>
+      </xsl:for-each>
     </div>
+    <!-- second level navigation -->
+    <xsl:for-each select='document("structure.xml")/layout/item[item]'>
+      <xsl:if test='starts-with($file, @base)'>
+        <div class='pages'>
+          <xsl:for-each select='item'>
+            <xsl:call-template name='page'>
+              <xsl:with-param name='base'><xsl:value-of select='@base'/></xsl:with-param>
+              <xsl:with-param name='label'><xsl:value-of select='@label'/></xsl:with-param>
+            </xsl:call-template>
+          </xsl:for-each>
+	</div>
+      </xsl:if>
+    </xsl:for-each>
 <xsl:text>
 </xsl:text>
   </xsl:template>

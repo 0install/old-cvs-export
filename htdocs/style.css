@@ -28,9 +28,12 @@ div.heading div {
 	text-align: center;
 }
 
+div.pages {
+	margin-bottom: 4px;
+}
+
 div.pages span {
-	padding: 2px;
-	border: 2px solid #c17419;
+	border: 1px solid #c17419;
 }
 
 div.pages a {
