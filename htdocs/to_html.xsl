@@ -105,6 +105,9 @@
 	
         <div class='heading' style='border-top: 2px dashed black'>
 	  <xsl:call-template name='make-links'/>
+	  <p class='thanks'>
+Thanks to the University of Southampton for the 0install.org, 0install.net, zero-install.org and zero-install.net domain names!
+	  </p>
 	</div>
       </body>
     </html>

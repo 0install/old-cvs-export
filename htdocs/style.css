@@ -140,3 +140,9 @@ tt {
 dt {
 	font-weight: bold;
 }
+
+div.heading p.thanks {
+	text-align: center;
+	font-size: small;
+	color: #836d52;
+}
