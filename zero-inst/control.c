@@ -20,17 +20,19 @@
 
 #define ZERO_INSTALL_ERROR "net.sourceforge.zero_install.Error"
 
+/* Our connection to the system bus */
+static DBusConnection *bus = NULL;
+
 static DBusWatch *dbus_watches = NULL;
-static DBusServer *server = NULL;
 
 static DBusWatch *current_watch = NULL;	/* tmp */
-
-static const char *current_error = NULL;
 
 static DBusObjectPathVTable vtable;
 
 static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 			 DBusError *error, int force);
+static DBusMessage *handle_dbus_version(DBusConnection *connection,
+			DBusMessage *message, DBusError *error);
 static void dbus_cancel_download(DBusConnection *connection,
 			DBusMessage *message, DBusError *error);
 
@@ -38,7 +40,50 @@ static void dbus_cancel_download(DBusConnection *connection,
 #define OLD_SOCKET2 "/uri/0install/.lazyfs-cache/.control"
 
 static ListHead dispatches = LIST_INIT;
-static ListHead monitors = LIST_INIT;
+
+typedef struct _Monitor Monitor;
+
+struct _Monitor {
+	unsigned long uid;	/* Events to this user... */
+	char *service;		/* ...should be sent here. */
+	Monitor *next;
+};
+
+static Monitor *monitors = NULL;
+
+/* Register a watcher for this user. Error if the user is already
+ * registered.
+ */
+static void add_monitor(const char *service, unsigned long uid, DBusError *err)
+{
+	Monitor *next, *new;
+
+	for (next = monitors; next; next = next->next) {
+		if (next->uid == uid) {
+			dbus_set_error_const(err, "AlreadyRegistered",
+				"You already have a monitor registered");
+			return;
+		}
+	}
+
+	new = my_malloc(sizeof(Monitor));
+	if (!new)
+		goto oom;
+
+	new->uid = uid;
+	new->service = my_strdup(service);
+	if (!new->service) {
+		free(new);
+		goto oom;
+	}
+
+	new->next = monitors;
+	monitors = new;
+	return;
+
+oom:
+	dbus_set_error_const(err, "Error", "Out of memory");
+}
 
 static void remove_watch(DBusWatch *watch, void *data)
 {
@@ -84,7 +129,7 @@ static void dispatch_status_function(DBusConnection *connection,
 	list_prepend(&dispatches, connection);
 }
 
-static void send_task_update(DBusConnection *connection, Task *task)
+static void send_task_update(const char *service, Task *task)
 {
 	DBusMessage *message;
 
@@ -93,24 +138,32 @@ static void send_task_update(DBusConnection *connection, Task *task)
 
 	task->notify_on_end = 1;
 
-	message = dbus_message_new_signal("/Main", DBUS_Z_NS, "UpdateTask");
+	message = dbus_message_new_signal("/ZeroInstall",
+					DBUS_Z_NS, "UpdateTask");
 
-	if (message &&
-	    dbus_message_append_args(message,
+	if (!message)
+		goto oom;
+
+	if (dbus_message_append_args(message,
 			DBUS_TYPE_STRING, task->str,
 			DBUS_TYPE_STRING, task->child_task->str,
 			DBUS_TYPE_INT64, (dbus_int64_t) task->child_task->size,
-			DBUS_TYPE_INVALID) &&
-	    dbus_connection_send(connection, message, NULL)) {
-	} else {
-		error("Out of memory");
-	}
+			DBUS_TYPE_INVALID))
+		goto oom;
+	
+	if (dbus_connection_send(bus, message, NULL))
+		goto oom;
 
 	if (message)
 		dbus_message_unref(message);
+
+	return;
+oom:
+	error("Out of memory");
 }
 
-static void send_task_error(DBusConnection *connection, Task *task)
+static void send_task_error(const char *service, Task *task,
+			    const char *error)
 {
 	DBusMessage *message;
 
@@ -121,9 +174,9 @@ static void send_task_error(DBusConnection *connection, Task *task)
 	if (message &&
 	    dbus_message_append_args(message,
 			DBUS_TYPE_STRING, task->str,
-			DBUS_TYPE_STRING, current_error,
+			DBUS_TYPE_STRING, message,
 			DBUS_TYPE_INVALID) &&
-	    dbus_connection_send(connection, message, NULL)) {
+	    dbus_connection_send(bus, message, NULL)) {
 	} else {
 		error("Out of memory");
 	}
@@ -132,7 +185,7 @@ static void send_task_error(DBusConnection *connection, Task *task)
 		dbus_message_unref(message);
 }
 	
-static void send_task_end(DBusConnection *connection, Task *task)
+static void send_task_end(const char *service, Task *task)
 {
 	DBusMessage *message;
 
@@ -144,7 +197,7 @@ static void send_task_end(DBusConnection *connection, Task *task)
 	    dbus_message_append_args(message,
 			DBUS_TYPE_STRING, task->str,
 			DBUS_TYPE_INVALID) &&
-	    dbus_connection_send(connection, message, NULL)) {
+	    dbus_connection_send(bus, message, NULL)) {
 	} else {
 		error("Out of memory");
 	}
@@ -153,29 +206,45 @@ static void send_task_end(DBusConnection *connection, Task *task)
 		dbus_message_unref(message);
 }
 
-static void dbus_monitor(DBusConnection *connection, DBusError *error)
+static DBusMessage *handle_dbus_monitor(DBusConnection *connection,
+			 DBusMessage *message, DBusError *error)
 {
+	DBusMessage *reply = NULL;
 	Task *task;
 	unsigned long uid;
+	const char *sender;
 
-	if (!dbus_connection_get_unix_user(connection, &uid)) {
-		error("Can't get UID");
-		return;
+	sender = dbus_message_get_sender(message);
+	if (!sender)
+	{
+		error("Can't get message sender!");
+		return NULL;
 	}
 
-	if (list_contains(&monitors, connection)) {
-		dbus_set_error_const(error, "Error", "Already monitoring!");
-		return;
+	uid = dbus_bus_get_unix_user(connection, sender, error);
+
+	if (dbus_error_is_set(error)) {
+		error("Can't get UID: %s", error->message);
+		return NULL;
 	}
-	
-	list_prepend(&monitors, connection);
+
+	error("Monitor request from %s for %ld", sender, uid);
+
+	add_monitor(sender, uid, error);
+	if (dbus_error_is_set(error))
+		return NULL;
 
 	for (task = all_tasks; task; task = task->next) {
 		if ((task->type == TASK_CLIENT || task->type == TASK_KERNEL) &&
 		    task->child_task && task->uid == uid) {
-			send_task_update(connection, task);
+			send_task_update(sender, task);
 		}
 	}
+
+	reply = dbus_message_new_method_return(message);
+	if (!reply)
+		dbus_set_error_const(error, "Error", "Out of memory");
+	return reply;
 }
 
 static DBusHandlerResult message_handler(DBusConnection *connection,
@@ -195,11 +264,15 @@ static DBusHandlerResult message_handler(DBusConnection *connection,
 		if (dbus_error_is_set(&error))
 			goto err;
 	} else if (dbus_message_is_method_call(message, DBUS_Z_NS, "Monitor")) {
-		dbus_monitor(connection, &error);
+		reply = handle_dbus_monitor(connection, message, &error);
 		if (dbus_error_is_set(&error))
 			goto err;
 	} else if (dbus_message_is_method_call(message, DBUS_Z_NS, "Cancel")) {
 		dbus_cancel_download(connection, message, &error);
+		if (dbus_error_is_set(&error))
+			goto err;
+	} else if (dbus_message_is_method_call(message, DBUS_Z_NS, "Version")) {
+		reply = handle_dbus_version(connection, message, &error);
 		if (dbus_error_is_set(&error))
 			goto err;
 	} else
@@ -216,7 +289,8 @@ err:
 	}
 
 	if (dbus_error_is_set(&error)) {
-		reply = dbus_message_new_error(message, ZERO_INSTALL_ERROR, error.message);
+		reply = dbus_message_new_error(message,
+					ZERO_INSTALL_ERROR, error.message);
 		dbus_error_free(&error);
 		if (!reply)
 			goto oom;
@@ -233,13 +307,6 @@ out:
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
-static dbus_bool_t allow_anyone_to_connect(DBusConnection *connection,
-                                           unsigned long   uid,
-                                           void           *data)
-{
-	return 1;
-}
-
 static DBusHandlerResult filter_func(DBusConnection *connection,
 				     DBusMessage    *message,
 				     void           *user_data)
@@ -248,8 +315,8 @@ static DBusHandlerResult filter_func(DBusConnection *connection,
 				DBUS_INTERFACE_ORG_FREEDESKTOP_LOCAL,
 				"Disconnected"))
 	{
-		if (list_contains(&monitors, connection))
-			list_remove(&monitors, connection);
+		error("Zero Install: lost connection to system bus");
+
 		dbus_connection_disconnect(connection);
 		return DBUS_HANDLER_RESULT_HANDLED;
 	}
@@ -257,73 +324,67 @@ static DBusHandlerResult filter_func(DBusConnection *connection,
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
-static void new_dbus_client(DBusServer *server,
-			    DBusConnection *new_connection,
-			    void *data)
-{
-	const char *path[] = {"Main", NULL};
-
-	if (!dbus_connection_set_watch_functions(new_connection,
-				add_watch, remove_watch, NULL,
-				NULL, NULL))
-		goto err;
-
-	dbus_connection_set_unix_user_function(new_connection,
-			allow_anyone_to_connect, NULL, NULL);
-
-	dbus_connection_set_dispatch_status_function(new_connection,
-					dispatch_status_function, NULL, NULL);
-
-
-	if (!dbus_connection_register_object_path(new_connection, path,
-			&vtable, NULL)) {
-		error("new_dbus_client: Out of memory");
-		goto err;
-	}
-
-	if (!dbus_connection_add_filter(new_connection,
-				filter_func, NULL, NULL)) {
-		error("new_dbus_client: Out of memory");
-		goto err;
-	}
-
-	dbus_connection_ref(new_connection);
-	return;
-err:
-	/* Comment in bus.c suggests we need to do this; merely not
-	 * taking a ref won't actually close it.
-	 */
-	dbus_connection_disconnect(new_connection);
-	return;
-
-}
-
 void create_control_socket(void)
 {
 	DBusError error;
-	const char *ext_only[] = {"EXTERNAL", NULL};
-
 	list_init(&dispatches);
-	list_init(&monitors);
 
 	dbus_error_init(&error);
-	server = dbus_server_listen(DBUS_SERVER_SOCKET, &error);
-	if (!server) {
-		error("Can't create DBUS server socket (%s): %s",
-				DBUS_SERVER_SOCKET, error.message);
+	bus = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
+	if (!bus) {
+		error("Can't connect to D-BUS system bus: %s", error.message);
 		dbus_error_free(&error);
 		exit(EXIT_FAILURE);
 	}
-	dbus_server_set_auth_mechanisms(server, ext_only);
-	dbus_server_set_new_connection_function(server, new_dbus_client,
-						NULL, NULL);
-	if (!dbus_server_set_watch_functions(server,
-				add_watch, remove_watch, NULL,
-				NULL, NULL)) {
+
+	dbus_connection_set_dispatch_status_function(bus,
+					dispatch_status_function, NULL, NULL);
+
+	if (!dbus_connection_set_watch_functions(bus,
+				add_watch, remove_watch, NULL, NULL, NULL)) {
 		error("Out of memory");
 		exit(EXIT_FAILURE);
 	}
 
+#if 0
+	if (!dbus_connection_set_timeout_functions (connection,
+				add_timeout,
+				remove_timeout,
+				NULL,
+				NULL, NULL))
+		goto nomem;
+#endif
+
+	dispatch_status_function(bus,
+			dbus_connection_get_dispatch_status(bus), NULL);
+
+	if (!dbus_connection_add_filter(bus,
+				filter_func, NULL, NULL)) {
+		error("dbus_connection_add_filter: Out of memory");
+		exit(EXIT_FAILURE);
+	}
+
+
+	error("Zero Install: Connected to D-BUS system bus as %s",
+			dbus_bus_get_base_service(bus));
+
+	dbus_bus_acquire_service(bus, DBUS_ZEROINSTALL_SERVICE, 0, &error);
+
+	if (dbus_error_is_set(&error))
+	{
+		error("Can't aquire Zero Install D-BUS service %s: %s",
+				DBUS_ZEROINSTALL_SERVICE, error.message);
+		dbus_error_free(&error);
+		exit(EXIT_FAILURE);
+	}
+
+	if (!dbus_connection_register_object_path(bus, "/ZeroInstall",
+						  &vtable, NULL)) {
+		error("dbus_connection_register_object_path: Out of memory");
+		exit(EXIT_FAILURE);
+	}
+
+	unlink(DBUS_SERVER_SOCKET);
 	unlink(OLD_SOCKET2);
 	unlink(OLD_SOCKET);
 }
@@ -409,8 +470,8 @@ static void send_result(Task *task, const char *err)
 	task_destroy(task, err);
 }
 
-/* This task is about to be cancelled. If nothing else depends on its child task,
- * kill the child task too.
+/* This task is about to be cancelled. If nothing else depends on its child
+ * task, kill the child task too.
  */
 static void may_kill_child(Task *parent)
 {
@@ -419,7 +480,8 @@ static void may_kill_child(Task *parent)
 
 	for (task = all_tasks; task; task = task->next) {
 		if (task != parent && task->child_task == child) {
-			error("Not cancelling download; another user wants '%s' too", parent->str);
+			error("Not cancelling download; another "
+			      "user wants '%s' too", parent->str);
 			return;
 		}
 	}
@@ -443,7 +505,8 @@ static int cancel_download(const char *request, uid_t uid)
 			may_kill_child(task);
 
 			if (task->type == TASK_CLIENT)
-				send_result(task, "Cancelled at user's request");
+				send_result(task,
+					    "Cancelled at user's request");
 			else
 				kernel_cancel_task(task);
 
@@ -473,6 +536,26 @@ static void dbus_cancel_download(DBusConnection *connection,
 	if (!cancel_download(request, uid)) {
 		dbus_set_error_const(error, "Error", "Not being fetched");
 	}
+}
+
+static DBusMessage *handle_dbus_version(DBusConnection *connection,
+			DBusMessage *message, DBusError *error)
+{
+	DBusMessage *reply = NULL;
+
+	if (!dbus_message_get_args(message, error, DBUS_TYPE_INVALID))
+		return NULL;
+
+	reply = dbus_message_new_method_return(message);
+	if (!reply || !dbus_message_append_args(reply,
+				DBUS_TYPE_STRING, VERSION,
+				DBUS_TYPE_INVALID)) {
+		dbus_set_error_const(error, "Error", "Out of memory");
+		if (reply)
+			dbus_message_unref(reply);
+	}
+
+	return reply;
 }
 
 /* Message requests the cache for 'host' be refetched.
@@ -572,34 +655,42 @@ void control_check_select(fd_set *rfds, fd_set *wfds)
 
 void control_notify_update(Task *task)
 {
-	list_foreach(&monitors, send_task_update, 0, task);
+	Monitor *next;
+
+	for (next = monitors; next; next = next->next) {
+		if (task->uid == next->uid)
+			send_task_update(next->service, task);
+	}
 }
 
 void control_notify_end(Task *task)
 {
-	list_foreach(&monitors, send_task_end, 0, task);
+	Monitor *next;
+
+	for (next = monitors; next; next = next->next) {
+		if (task->uid == next->uid)
+			send_task_end(next->service, task);
+	}
 }
 
 void control_notify_error(Task *task, const char *message)
 {
-	assert(!current_error);
-	current_error = message;
-	list_foreach(&monitors, send_task_error, 0, task);
-	current_error = NULL;
-}
+	Monitor *next;
 
-static void drop_monitors(DBusConnection *connection, Task *unused)
-{
-	dbus_connection_disconnect(connection);
+	for (next = monitors; next; next = next->next) {
+		if (task->uid == next->uid)
+			send_task_error(next->service, task, message);
+	}
 }
 
 void control_drop_clients(void)
 {
-	dbus_server_disconnect(server);
-	dbus_server_unref(server);
-	list_foreach(&monitors, drop_monitors, 1, NULL);
+	dbus_connection_disconnect(bus);
+	dbus_connection_unref(bus);
+	bus = NULL;
+	//list_foreach(&monitors, drop_monitors, 1, NULL);
 	list_destroy(&dispatches);
-	list_destroy(&monitors);
+	//list_destroy(&monitors);
 }
 
 static DBusObjectPathVTable vtable = {

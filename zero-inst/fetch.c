@@ -27,7 +27,6 @@
  */
 #define AUTO_REJECT_PERIOD 5
 
-
 static char *last_reject_request = NULL;
 static uid_t last_reject_user = 0;
 static time_t last_reject_time = 0;
@@ -37,7 +36,7 @@ static char *wget_log = NULL;
 static void build_ddd_from_index(Element *dir_node, char *dir);
 
 /* 0 on success (cwd is changed). */
-static int chdir_meta(const char *site)
+static int chdir_meta(/*@notnull@*/ const char *site)
 {
 	char *meta;
 
@@ -61,7 +60,7 @@ static int chdir_meta(const char *site)
 /* Return the index for site. If index does not exist, or signature does
  * not match (index out-of-date), returns NULL.
  */
-static IndexP load_index(const char *site)
+static IndexP load_index(/*@notnull@*/ const char *site)
 {
 	Index *index = NULL;
 	struct stat info;
@@ -88,7 +87,8 @@ out:
 	if (index_path)
 		free(index_path);
 
-	chdir("/");
+	if (chdir("/"))
+		abort();
 
 	return index;
 }
@@ -108,7 +108,8 @@ void fetch_create_directory(const char *path, Element *node)
 	}
 
 	build_ddd_from_index(node, cache_path);
-	chdir("/");
+	if (chdir("/"))
+		abort();
 }
 
 static void recurse_ddd(Element *item, void *data)
@@ -121,6 +122,8 @@ static void recurse_ddd(Element *item, void *data)
 		return;
 
 	name = xml_get_attr(item, "name");
+	if (!name)
+		abort();	/* Already validated... */
 
 	assert(strchr(name, '/') == NULL);
 
@@ -141,7 +144,7 @@ static void recurse_ddd(Element *item, void *data)
 
 static void write_item(Element *item, void *data)
 {
-	FILE *ddd = data;
+	FILE *ddd = (FILE *) data;
 	const char *size, *mtime, *name;
 	char t = item->name[0];
 
@@ -151,9 +154,9 @@ static void write_item(Element *item, void *data)
 	mtime = xml_get_attr(item, "mtime");
 	name = xml_get_attr(item, "name");
 
-	assert(size);
-	assert(mtime);
-	assert(name);
+	assert(size != NULL);
+	assert(mtime != NULL);
+	assert(name != NULL);
 
 	fprintf(ddd, "%c %ld %ld %s%c",
 		t == 'e' ? 'x' : t,
@@ -309,7 +312,8 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	
 	if (access(".0inst-tmp", F_OK) == 0) {
 		/* error("Removing old .0inst-tmp directory"); */
-		system("rm -r .0inst-tmp");
+		if (system("rm -r .0inst-tmp"))
+			error("rm .0inst-tmp");
 	}
 
 	if (mkdir(".0inst-tmp", 0700)) {
@@ -329,7 +333,7 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	}
 
 	if (child == 0) {
-		execvp(argv[0], (char **) argv);
+		(void) execvp(argv[0], (char **) argv);
 		error("Trying to run tar: execvp: %m");
 		_exit(1);
 	}
@@ -345,8 +349,12 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 		pull_up_files(group);
 	}
 
-	chdir("..");
-	system("rm -rf .0inst-tmp");
+	if (chdir(".."))
+		error("chdir: %m");
+	else {
+		if (system("rm -rf .0inst-tmp"))
+			error("rm .0inst-tmp");
+	}
 }
 
 static void may_rotate_log(void) {
@@ -360,9 +368,13 @@ static void may_rotate_log(void) {
 		return;	/* Nice and small. Keep it. */
 
 	backup = build_string("%s.old", wget_log);
-	syslog(LOG_INFO, "Wget log is too big. Backing up as '%s'", backup);
-	if (rename(wget_log, backup))
-		error("rename:%m");
+	if (backup) {
+		syslog(LOG_INFO, "Wget log is too big. Backing up as '%s'",
+				backup);
+		if (rename(wget_log, backup))
+			error("rename:%m");
+		free(backup);
+	}
 }
 
 /* Begins fetching 'uri', storing the file as 'path'.
@@ -386,7 +398,7 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 	argv[2] = task->str;
 
 	slash = strrchr(task->str, '/');
-	assert(slash);
+	assert(slash != NULL);
 
 	*slash = '\0';
 	if (!ensure_dir(task->str))
@@ -402,7 +414,7 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 	} else if (task->child_pid)
 		return;
 
-	execvp(argv[0], (char **) argv);
+	(void) execvp(argv[0], (char **) argv);
 
 	error("Trying to run wget: execvp: %m");
 	_exit(1);
@@ -410,14 +422,17 @@ err:
 	task_set_string(task, NULL);
 }
 
-static void got_archive(Task *task, const char *err)
+static void got_archive(/*@dependent@*/ Task *task, const char *err)
 {
 	if (!err) {
 		char *dir;
+		const char *archive_path = task->str;
 
-		dir = build_string("%d", task->str);
+		assert(archive_path != NULL);
+
+		dir = build_string("%d", archive_path);
 		if (dir) {
-			unpack_archive(task->str, dir, task->data);
+			unpack_archive(archive_path, dir, task->data);
 			free(dir);
 		}
 	} else {
@@ -425,7 +440,8 @@ static void got_archive(Task *task, const char *err)
 		error("Failed to fetch archive (%s)", task->str);
 	}
 
-	unlink(task->str);
+	if (unlink(task->str))
+		error("unlink '%s': %m", task->str);
 
 	task_destroy(task, err);
 }
@@ -436,8 +452,8 @@ int build_ddds_for_site(Index *index, const char *site)
 	char path[MAX_PATH_LEN];
 	char *dir;
 
-	assert(site);
-	assert(index);
+	assert(site != NULL);
+	assert(index != NULL);
 	assert(strchr(site, '/') == NULL);
 
 	dir = build_string("%s/%s", cache_dir, site);
@@ -461,9 +477,10 @@ int build_ddds_for_site(Index *index, const char *site)
 /* The index.tar.bz2 file is in site's meta directory.
  * Unpack it. NULL on success, or pointer to error message.
  */
-static const char *unpack_site_archive(const char *site)
+/*@observer@*/ /*@null@*/ static const char *unpack_site_archive(
+					/*@notnull@*/ const char *site)
 {
-	const char *err = "Error";
+	/*@null@*/ const char *err = "Error";
 
 	assert(strchr(site, '/') == NULL);
 
@@ -476,7 +493,8 @@ static const char *unpack_site_archive(const char *site)
 	else
 		err = "Failed to extract GPG signature/keyring/mirrors!";
 
-	chdir("/");
+	if (chdir("/"))
+		abort();
 	return err;
 }
 
@@ -484,7 +502,10 @@ static const char *unpack_site_archive(const char *site)
  * Check signatures, validates and build all ... files.
  * Returns the new index on success, or NULL on failure (error is set).
  */
-static Index *unpack_site_index(const char *site, const char **err)
+typedef /*@null@*/ /*@shared@*/ const char *MaybeString;
+static /*@null@*/ IndexP unpack_site_index(/*@notnull@*/ const char *site,
+					   /*@shared@*/ MaybeString *err)
+	/*@requires isnull *err@*/
 {
 	Index *index = NULL;
 
@@ -492,6 +513,7 @@ static Index *unpack_site_index(const char *site, const char **err)
 	assert(*err == NULL);
 
 	if (chdir_meta(site)) {
+		*err = NULL;
 		return NULL;
 	}
 

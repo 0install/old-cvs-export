@@ -28,7 +28,11 @@ void list_prepend(ListHead *head, DBusConnection *connection)
 	assert(dbus_connection_get_data(connection, slot) == NULL);
 	
 	if (head->next)
-		dbus_connection_set_data(connection, slot, head->next, NULL);
+	{
+		if (!dbus_connection_set_data(connection, slot,
+						head->next, NULL))
+			abort();
+	}
 
 	head->next = connection;
 	dbus_connection_ref(connection);
@@ -58,7 +62,8 @@ void list_remove(ListHead *head, DBusConnection *connection)
 
 		this = dbus_connection_get_data(prev, slot);
 		if (this == connection) {
-			dbus_connection_set_data(prev, slot, next, NULL);
+			if (!dbus_connection_set_data(prev, slot, next, NULL))
+				abort();
 			goto out;
 		}
 	}

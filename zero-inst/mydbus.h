@@ -10,6 +10,7 @@
 
 #include <dbus/dbus-macros.h>
 #include <dbus/dbus-types.h>
+#include <dbus/dbus-memory.h>
 
 #define DBUS_ERROR_H
 #define DBUS_CONNECTION_H
@@ -90,7 +91,17 @@ pDBusMessage dbus_connection_send_with_reply_and_block(DBusConnection *connectio
 							 int timeout_milliseconds,
 							 DBusError *error);
 pDBusConnection dbus_connection_open(const char *address, DBusError *error);
+void dbus_connection_ref(DBusConnection *connection);
 void dbus_connection_unref(/*@killref@*/ pDBusConnection connection);
+
+dbus_bool_t dbus_connection_set_data(pDBusConnection connection,
+				     dbus_int32_t slot,
+				     void *data,
+				     DBusFreeFunction free_data_func);
+
+dbus_bool_t dbus_connection_allocate_data_slot(dbus_int32_t *slot_p);
+/*@refcounted@*/ void* dbus_connection_get_data(pDBusConnection connection, dbus_int32_t slot);
+
 
 #include <dbus/dbus-address.h>
 #include <dbus/dbus-bus.h>
