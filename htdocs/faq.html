@@ -31,7 +31,7 @@ never work without them. You didn't try it out, did you?</p>
 system caches everything, and will never even check that the cache is
 up-to-date if it can satisfy a request without updating.
 </p><p>
-There is effectively no speed hit to using stuff once it's downloaded.
+There is no speed hit to using stuff once it's downloaded.
 The fact that everything is referenced by fixed URIs instead of
 having to search means that this system can actually be faster in some
 cases. Consider loading a shared library. At the moment, a program
@@ -56,7 +56,7 @@ and user confusion.
 <p>
 As far as network bandwidth goes, the worst-case situation is that you
 downloaded the entire archive, which is what you'd have had to do
-anyway. However, by default each file is downloaded on demand. Thus,
+anyway. However, by default each directory is downloaded on demand. Thus,
 if you want to run a ROX-Lib2 application like Memo, but you don't
 want to read the ROX-Lib2 developer reference documentation then it
 doesn't get downloaded (until you try to access it).
