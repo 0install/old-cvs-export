@@ -6,7 +6,7 @@ Overview
 
 The zero-install system is a high-performance caching HTTP based read-only
 network filesystem. Programs and resources on remote machines can be read via
-standard Unix paths, such as /uri/http/zero-install.sf.net/demo.
+standard Unix paths, such as /uri/http/zero-install.sourceforge.net/demo.
 Because speed is of utmost importance, all resources accessed are cached on
 the local machine.
 
