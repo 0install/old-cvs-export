@@ -365,6 +365,7 @@ static void got_site_index(Task *task, int success)
 {
 	char *slash;
 	char path[MAX_PATH_LEN];
+	Index *index;
 
 	assert(task->type == TASK_INDEX);
 	assert(task->child_pid == -1);
@@ -382,32 +383,38 @@ static void got_site_index(Task *task, int success)
 
 	if (chdir(task->str)) {
 		perror("chdir");
-		task_destroy(task, 0);
-		return;
+		goto err;
 	}
 
-	if (system("tar xzf .0inst-index.tgz " ZERO_INSTALL_INDEX)) {
+	if (system("tar xzf .0inst-index.tgz -O " ZERO_INSTALL_INDEX
+				" >.0inst-index.new")) {
 		fprintf(stderr, "Failed to unpack index\n");
-		task_destroy(task, 0);
-		return;
+		goto err;
 	}
 
-	strcpy(slash + sizeof(ZERO_INSTALL_INDEX) - 3, "xml");
-	*slash = '/';
-
-	task_steal_index(task, parse_index(task->str));
-
-	*slash = '\0';
-
-	if (!task->index) {
-		task_destroy(task, 0);
-		return;
+	assert(strncmp(task->str, cache_dir, strlen(cache_dir)) == 0);
+	assert(!strchr(task->str + strlen(cache_dir) + 1, '/'));
+		
+	index = parse_index(".0inst-index.new");
+	if (!index_valid(index, task->str + strlen(cache_dir) + 1)) {
+		index_free(index);
+		if (unlink(".0inst-index.new"))
+			perror("unlink");
+		goto err;
 	}
+
+	if (rename(".0inst-index.new", ZERO_INSTALL_INDEX)) {
+		perror("rename");
+		goto err;
+	}
+
+	assert(index);
+
+	task_steal_index(task, index);
 
 	if (strlen(task->str) >= MAX_PATH_LEN) {
 		fprintf(stderr, "Path %s too long\n", task->str);
-		task_destroy(task, 0);
-		return;
+		goto err;
 	}
 
 	strcpy(path, task->str);
@@ -416,6 +423,10 @@ static void got_site_index(Task *task, int success)
 	chdir("/");
 
 	task_destroy(task, 1);
+	return;
+err:
+	chdir("/");
+	task_destroy(task, 0);
 }
 
 /* Fetch the index file 'path' (in the cache).

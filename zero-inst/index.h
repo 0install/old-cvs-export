@@ -17,3 +17,4 @@ void index_dump(Index *site);
 void index_init(void);
 void index_shutdown(void);
 xmlNode *index_get_root(Index *index);
+int index_valid(Index *index, const char *site);

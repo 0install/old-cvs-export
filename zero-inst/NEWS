@@ -13,6 +13,8 @@ Changes since 0.1.13:
 
 * Made zero-install slightly more verbose by default.
 
+* Refuse to process an index file if the path attribute is wrong.
+
 Changes since 0.1.12:
 
 * Support compiling with older Linux 2.4.18 kernels (Joachim Kupke).

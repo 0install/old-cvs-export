@@ -208,10 +208,10 @@ int main(int argc, char **argv)
 		}
 
 		site = path + sizeof(ZERO_MNT);
-		slash = strchr(path, '/');
+		slash = strchr(site, '/');
 		if (slash)
 			*slash = '\0';
-		refresh(path);
+		refresh(site);
 	} else if (argc == 2) {
 		/* 0refresh site */
 		refresh(argv[1]);

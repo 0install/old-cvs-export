@@ -180,6 +180,48 @@ static int dir_valid(xmlNode *dir)
 	return ok;
 }
 
+/* Check index is valid for this site. 0 on error (already reported). */
+int index_valid(Index *index, const char *site)
+{
+	xmlNode *node;
+	char *path;
+
+	if (!index) {
+		fprintf(stderr, "Bad index (missing/bad XML?)\n");
+		return 0;
+	}
+	
+	assert(site);
+	assert(!strchr(site, '/'));
+
+	assert(schema);
+
+	if (xmlRelaxNGValidateDoc(schema, index->doc)) {
+		fprintf(stderr, "Index file does not validate -- aborting\n");
+		return 0;
+	}
+
+	node = xmlDocGetRootElement(index->doc);
+	path = xmlGetNsProp(node, "path", NULL);
+	assert(path);
+	if (strncmp(path, MNT_DIR "/", sizeof(MNT_DIR)) != 0) {
+		fprintf(stderr, "Path attribute must start with '%s'\n",
+				MNT_DIR);
+		return 0;
+	}
+
+	if (strcmp(path + sizeof(MNT_DIR), site) != 0) {
+		fprintf(stderr, "Site '%s' accessed incorrectly as '%s'\n",
+				path + sizeof(MNT_DIR), site);
+		return 0;
+	}
+
+	if (!dir_valid(index_get_root(index)))
+		return 0;
+
+	return 1;
+}
+
 /* Load 'pathname' as an XML index file. Returns NULL if document is invalid
  * in any way. Ref-count on return is 1.
  */
@@ -188,17 +230,9 @@ Index *parse_index(const char *pathname)
 	xmlDoc *doc;
 	Index *index;
 
-	assert(schema);
-
 	doc = xmlParseFile(pathname);
 	if (!doc)
 		return NULL;
-
-	if (xmlRelaxNGValidateDoc(schema, doc)) {
-		fprintf(stderr, "Index file does not validate -- aborting\n");
-		xmlFreeDoc(doc);
-		return NULL;
-	}
 
 	index = my_malloc(sizeof(Index));
 	if (!index) {
@@ -207,11 +241,6 @@ Index *parse_index(const char *pathname)
 	}
 	index->doc = doc;
 	index->ref = 1;
-
-	if (!dir_valid(index_get_root(index))) {
-		index_free(index);
-		return NULL;
-	}
 
 	return index;
 }
