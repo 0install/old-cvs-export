@@ -82,7 +82,9 @@ These require a central authority to maintain the database. For example, you
 can't install Memo using APT, because Debian don't package it. The best an
 author can do is provide Debian .deb packages on the site. But then the user
 still has to do the manual dependency resolution above for everything not in
-Debian's system.
+Debian's system (some people have suggested setting up additional APT
+respositories: I'd consider that adding all the required third-party
+respositories to <tt>sources.list</tt> still counts as 'manual').
 </p><p>
 They are also fragile; if the user deletes managed files then
 the system may stop working. However, a user can remove any part of the
