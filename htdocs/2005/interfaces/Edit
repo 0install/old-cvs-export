@@ -1,0 +1,40 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+<?xml version="1.0" ?>
+<interface last-modified="1110752708" main="Edit/AppRun" uri="http://rox.sourceforge.net/2005/interfaces/Edit" xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
+  <name>Edit</name>
+  <summary>Simple text editor</summary>
+  <description>
+    Edit is a simple text editor, with a ROX-style user interface. It has drag-and-drop saving, search-and-replace and multi-level undo.
+  </description>
+  
+  <group stability="stable">
+    <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib">
+      <version min="1.9.6"/>
+      <environment insert="ROX-Lib2/python" name="PYTHONPATH"/>
+    </requires>
+    <implementation id="sha1=00720a16dd9e38c8d29b844730e930db13dc0783" stability="stable" version="1.9.3">
+      <archive extract="edit-1.9.3" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.3.tgz" size="24322"/>
+    </implementation>
+    <implementation id="sha1=d75d71af38d65654f5245d1a2ec4949cf94d527f" stability="stable" version="1.9.4">
+      <archive extract="edit-1.9.4" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.4.tgz" size="30952"/>
+    </implementation>
+    <implementation id="sha1=c690569d7f7a4ed508eeeb1a350b1efeb6766682" stability="stable" version="1.9.5">
+      <archive extract="edit-1.9.5" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.5.tgz" size="35143"/>
+    </implementation>
+    <implementation id="sha1=c690569d7f7a4ed508eeeb1a350b1efeb6766683" stability="stable" version="1.9.6">
+      <archive extract="edit-1.9.6" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.6.tgz" size="38916"/>
+    </implementation>
+    <implementation id="sha1=c86d09f1113041f5eaaa8c3d1416fcf4dad8e2e0" stability="stable" version="1.9.7">
+      <archive extract="edit-1.9.7" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.7.tgz" size="44646"/>
+    </implementation>
+  </group>
+</interface>
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.0 (GNU/Linux)
+
+iD8DBQFCNL8FrgeCgFmlPMERAgVHAJ9Gu6RfmoTlXpxg4wcX1xiDFULVGgCeKjkE
+JYvgUq593ZjNZdIAia1Tjkk=
+=bZr+
+-----END PGP SIGNATURE-----
