@@ -67,10 +67,6 @@
  </define>		\
 </grammar>"
 
-struct _Index {
-	Item *root;
-};
-
 static xmlRelaxNGValidCtxtPtr schema = NULL;
 static xmlRelaxNGParserCtxtPtr context = NULL;
 static xmlRelaxNGPtr sc = NULL;
@@ -97,11 +93,12 @@ void index_shutdown(void)
 }
 
 /* Load 'pathname' as an XML index file. Returns NULL if document is invalid
- * in any way.
+ * in any way. Ref-count on return is 1.
  */
 Index *parse_index(const char *pathname)
 {
 	xmlDoc *doc;
+	Index *index;
 
 	assert(schema);
 
@@ -115,12 +112,27 @@ Index *parse_index(const char *pathname)
 		return NULL;
 	}
 
-	return doc;
+	index = my_malloc(sizeof(Index));
+	if (!index) {
+		xmlFreeDoc(doc);
+		return NULL;
+	}
+
+	index->doc = doc;
+	index->ref = 1;
+
+	return index;
 }
 
+/* Decrement ref count */
 void index_free(Index *index)
 {
-	xmlFreeDoc(index);
+	assert(index->ref > 0);
+
+	index->ref--;
+	
+	if (!index->ref)
+		xmlFreeDoc(index->doc);
 }
 
 void index_dump(Index *index)
@@ -167,7 +179,7 @@ xmlNode *index_get_root(Index *index)
 {
 	xmlNode *node;
 
-	node = xmlDocGetRootElement(index);
+	node = xmlDocGetRootElement(index->doc);
 
 	for (node = node->children; node; node = node->next) {
 		if (node->type == XML_ELEMENT_NODE) {
@@ -217,7 +229,7 @@ xmlNode *index_lookup(Index *index, const char *path)
 		char *slash;
 		Info info;
 
-		printf("Looking for %s\n", path);
+		/* printf("Looking for %s\n", path); */
 
 		assert(path[0] == '/');
 		path++;
@@ -239,556 +251,18 @@ xmlNode *index_lookup(Index *index, const char *path)
 	return dir;
 }
 
-
-#if 0
-typedef enum {ERROR, DOC, SITE, DIRECTORY, GROUP,
-	      ITEM, GROUP_ITEM, ARCHIVE} ParseState;
-
-struct _SiteIndex {
-	Item		*root;
-
-	ParseState	state;	/* Used during parsing */
-	int		skip;	/* >0 => wait for end tag */
-	Item		*current;
-};
-
-static const XML_Char *get_attr(const XML_Char **atts, const char *name)
+/* Find an archive for this file */
+xmlNode *index_find_archive(xmlNode *file)
 {
-	while (*atts) {
-		if (strcmp(name, atts[0]) == 0)
-			return atts[1];
-		atts += 2;
+	xmlNode *node;
+	
+	assert(file->name[0] == 'f' || file->name[0] == 'x');
+
+	for (node = file->parent->children; node; node = node->next) {
+		if (strcmp(node->name, "archive") == 0)
+			return node;
 	}
 
+	assert(0);
 	return NULL;
 }
-
-static long get_long_attr(const XML_Char **atts, const char *name)
-{
-	const XML_Char *value;
-
-	value = get_attr(atts, name);
-	if (!value)
-		return -1;
-	return atol(value);
-}
-
-static void item_free(Item *item)
-{
-	if (item->target)
-		free(item->target);
-	if (item->leafname)
-		free(item->leafname);
-	free(item);
-}
-
-static void start_item(SiteIndex *site, const XML_Char *type,
-			const XML_Char **atts)
-{
-	Item *new;
-	long size = -1;
-	long mtime = -1;
-	const XML_Char *name = NULL, *href = NULL;
-	Item *index = site->current;
-
-	if (type[0] != 'a') {
-		size = get_long_attr(atts, "size");
-		mtime = get_long_attr(atts, "mtime");
-		name = get_attr(atts, "name");
-		if (size < 0 || mtime < 0 || !name) {
-			site->state = ERROR;
-			return;
-		}
-	} else {
-		href = get_attr(atts, "href");
-		if (!href)
-			return;
-	}
-
-	new = my_malloc(sizeof(Item));
-	if (!new) {
-		site->state = ERROR;
-		return;
-	}
-	
-	new->leafname = name ? my_strdup(name) : NULL;
-	new->target = NULL;
-	new->mtime = mtime;
-	new->size = size;
-	new->parent = site->current;
-
-	if (type[0] == 'd') {
-		site->state = DIRECTORY;
-		site->current = new;
-	} else if (type[0] == 'l') {
-		new->type = type[0];
-		new->next = index->no_data;
-		index->no_data = new;
-		site->state = ITEM;
-		if (new->type == 'l') {
-			const XML_Char *target;
-			target = get_attr(atts, "target");
-			if (target)
-				new->target = my_strdup(target);
-			/* (will check for not found / OOM later) */
-		}
-	} else if (type[0] == 'f' || type[0] == 'e') {
-		new->type = type[0] == 'f' ? 'f' : 'x';
-		new->next = index->groups->items;
-		index->groups->items = new;
-		site->state = GROUP_ITEM;
-	} else if (type[0] == 'a') {
-		new->type = 'a';
-		new->next = index->groups->archives;
-		new->target = my_strdup(href);	/* Check OOM later */
-		index->groups->archives = new;
-		site->state = ARCHIVE;
-	} else {
-		site->state = ERROR;
-		item_free(new);
-	}
-}
-
-static void start_element(void *userData, const XML_Char *name,
-			  const XML_Char **atts)
-{
-	SiteIndex *site = userData;
-	Index *index = site->current;
-
-	if (site->state == ERROR)
-		return;
-
-	if (site->skip > 0) {
-		printf("Skipping '%s'\n", name);
-		site->skip++;
-		return;
-	}
-
-	/* printf("> %s\n", name); */
-
-	if (site->state == DOC) {
-		if (strcmp(name, ZERO_NS " site-index") != 0) {
-			fprintf(stderr, "Bad root element (%s)\n", name);
-			site->state = ERROR;
-			return;
-		}
-		site->state = SITE;
-		return;
-	}
-
-	if (strncmp(name, ZERO_NS " ", sizeof(ZERO_NS)) != 0) {
-		fprintf(stderr, "Skipping unknown element '%s'\n", name);
-		site->skip = 1;
-		return;
-	}
-
-	name += sizeof(ZERO_NS);
-
-	if (site->state == SITE) {
-		if (strcmp(name, "dir") == 0) {
-			assert(site->root == NULL);
-			site->root = index_new();
-			if (!site->root) {
-				site->state = ERROR;
-				return;
-			}
-			site->current = site->root;
-			site->state = DIRECTORY;
-			return;
-		}
-	}
-
-	if (site->state == DIRECTORY) {
-		/* Expecting a group, dir or link */
-		if (strcmp(name, "dir") == 0 ||
-		    strcmp(name, "link") == 0) {
-			start_item(site, name, atts);
-			return;
-		}
-		if (strcmp(name, "group") == 0) {
-			Group *new;
-			char *md5;
-			off_t size;
-
-			md5 = (char *) get_attr(atts, "MD5sum");
-			size = get_long_attr(atts, "size");
-			if (md5)
-				md5 = my_strdup(md5);
-			if (size <= 0 || !md5) {
-				site->state = ERROR;
-				return;
-			}
-			new = my_malloc(sizeof(Group));
-			if (!new) {
-				site->state = ERROR;
-				free(md5);
-				return;
-			}
-			new->items = NULL;
-			new->archives = NULL;
-			new->next = index->groups;
-			new->md5 = md5;
-			index->groups = new;
-
-			new->size = size;
-
-			site->state = GROUP;
-			return;
-		}
-	} else if (site->state == GROUP) {
-		if (strcmp(name, "file") == 0 ||
-		    strcmp(name, "exec") == 0 ||
-		    strcmp(name, "archive") == 0) {
-			start_item(site, name, atts);
-			return;
-		}
-	}
-
-	fprintf(stderr, "Unknown element '%s'\n", name);
-	site->skip = 1;
-}
-
-static void end_element(void *userData, const XML_Char *name)
-{
-	SiteIndex *site = userData;
-
-	if (site->state == ERROR) {
-		/* printf("Skipping </%s> due to earlier errors\n", name); */
-		return;
-	}
-
-	if (site->skip > 0) {
-		site->skip--;
-		return;
-	}
-
-	/* printf("Exit %s in state %d\n", name, site->state); */
-
-	if (site->state == ITEM)
-		site->state = DIRECTORY;
-	else if (site->state == GROUP)
-		site->state = DIRECTORY;
-	else if (site->state == DIRECTORY) {
-		site->current = site->current->parent;
-		if (site->current)
-			site->state = DIRECTORY;
-		else
-			site->state = SITE;
-	} else if (site->state == SITE)
-		site->state = DOC;
-	else if (site->state == GROUP_ITEM || site->state == ARCHIVE)
-		site->state = GROUP;
-	else
-		printf("Unknown exit from '%s'\n", name);
-}
-
-static void free_items(Item *item)
-{
-	while (item) {
-		Item *old = item;
-		
-		item = item->next;
-
-		item_free(old);
-	}
-}
-
-void index_free(Index *index)
-{
-	Group *group = index->groups;
-	Index *subdir = index->subdirs;
-
-	free_items(index->no_data);
-
-	while (group) {
-		Group *old = group;
-		
-		group = group->next;
-
-		if (old->md5)
-			free(old->md5);
-
-		free_items(old->archives);
-		free_items(old->items);
-		free(old);
-	}
-
-	while (subdir) {
-		Index *old = subdir;
-		
-		subdir = subdir->next_sibling;
-
-		index_free(old);
-	}
-
-	if (index->dirname)
-		free(index->dirname);
-
-	free(index);
-}
-
-static int compar(const void *a, const void *b)
-{
-	Item *aa = *(Item **) a;
-	Item *bb = *(Item **) b;
-	int retval;
-
-	retval = strcmp(aa->leafname, bb->leafname);
-	
-	if (retval)
-		return retval;
-
-	assert(aa != bb);
-
-	return aa > bb ? 1 : -1;	/* Stable sort */
-}
-
-static int index_valid(SiteIndex *site)
-{
-	int i = 0;
-	int n = 0;
-	Item *item;
-	Group *group;
-	Item **array;
-	Index *index = site->root; 	/* XXX */
-
-	if (site->state == ERROR || !index)
-		return 0;
-
-	for (item = index->no_data; item; item = item->next) {
-		if (!item->leafname)
-			return 0;
-		if (item->type != 'd' && item->type != 'l')
-			return 0;
-		if (item->type == 'l' && !item->target)
-			return 0;
-		if (strchr(item->leafname, '/'))
-			return 0;
-		n++;
-	}
-
-	for (group = index->groups; group; group = group->next) {
-		for (item = group->items; item; item = item->next) {
-			if (!item->leafname)
-				return 0;
-			if (item->type != 'f' && item->type != 'x')
-				return 0;
-			if (strchr(item->leafname, '/'))
-				return 0;
-			n++;
-		}
-		for (item = group->archives; item; item = item->next) {
-			if (!item->target)
-				return 0;
-		}
-	}
-
-	array = my_malloc(sizeof(Item *) * n);
-	if (!array)
-		return 0;
-
-	for (item = index->no_data; item; item = item->next) {
-		array[i] = item;
-		i++;
-	}
-	for (group = index->groups; group; group = group->next) {
-		for (item = group->items; item; item = item->next) {
-			array[i] = item;
-			i++;
-		}
-	}
-
-	assert(i == n);
-
-	qsort(array, n, sizeof(Item *), compar);
-
-	for (i = 0; i < n - 1; i++) {
-		if (strcmp(array[i]->leafname, array[i + 1]->leafname) == 0) {
-			fprintf(stderr, "Duplicate: %s\n",
-					array[i]->leafname);
-			free(array);
-			return 0;
-		}
-	}
-
-	free(array);
-
-	return 1;
-}
-
-void site_index_free(SiteIndex *site)
-{
-	if (site->root)
-		index_free(site->root);
-	free(site);
-}
-
-/* Load and parse the XML index file 'path'. NULL on error. */
-SiteIndex *parse_index(const char *path)
-{
-	XML_Parser parser = NULL;
-	SiteIndex *site = NULL;
-	int src = -1;
-
-	site = my_malloc(sizeof(SiteIndex));
-	if (!site)
-		goto err;
-
-	parser = XML_ParserCreateNS(NULL, ' ');
-	if (!parser)
-		goto err;
-	XML_SetUserData(parser, site);
-
-	site->root = NULL;
-	site->current = NULL;
-	site->state = DOC;
-	site->skip = 0;
-
-	XML_SetStartElementHandler(parser, start_element);
-	XML_SetEndElementHandler(parser, end_element);
-
-	src = open(path, O_RDONLY);
-	if (src == -1) {
-		perror("open");
-		goto err;
-	}
-
-	for (;;) {
-		char buffer[256];
-		int got;
-		
-		got = read(src, buffer, sizeof(buffer));
-		if (got < 0) {
-			perror("read");
-			goto err;
-		}
-		if (!XML_Parse(parser, buffer, got, got == 0)) {
-			fprintf(stderr, "Invalid XML\n");
-			goto err;
-		}
-		if (site->state == ERROR)
-			goto err;
-		if (got == 0)
-			break;
-	}
-
-	if (index_valid(site))
-		goto out;
-	fprintf(stderr, "Validation failed\n");
-
-err:
-	fprintf(stderr, "parse_index: failed\n");
-	if (site)
-		site_index_free(site);
-	site = NULL;
-out:
-	if (parser)
-		XML_ParserFree(parser);
-	if (src != -1)
-		close(src);
-	return site;
-}
-
-static void in(int indent)
-{
-	while (indent--)
-		fputc('\t', stderr);
-}
-
-static void index_dump(Index *index, int indent)
-{
-	Index *subdir;
-	Group *group;
-	Item *item;
-
-	if (!index) {
-		fprintf(stderr, "index_dump: no index!\n");
-		return;
-	}
-
-	in(indent);
-	fprintf(stderr, "Index: %s\n", index->dirname ? index->dirname : "/");
-
-	for (group = index->groups; group; group = group->next) {
-		fprintf(stderr, "\tGroup: %ld (%s)\n", group->size, group->md5);
-		for (item = group->items; item; item = item->next) {
-			in(indent);
-			fprintf(stderr, "\t\t%c : %s : %ld : %s",
-				item->type,
-				item->leafname ? item->leafname : "(null)",
-				item->size,
-				ctime(&item->mtime));
-		}
-		for (item = group->archives; item; item = item->next) {
-			in(indent);
-			fprintf(stderr, "\t\t%c : %s\n",
-				item->type,
-				item->target ? item->target : "(null)");
-		}
-	}
-
-	for (item = index->no_data; item; item = item->next) {
-		in(indent);
-		fprintf(stderr, "\t%c : %s : %ld : %s",
-				item->type,
-				item->leafname ? item->leafname : "(null)",
-				item->size,
-				ctime(&item->mtime));
-	}
-
-	for (subdir = index->subdirs; subdir; subdir = subdir->next_sibling) {
-		index_dump(subdir, indent + 1);
-	}
-}
-
-void site_index_dump(SiteIndex *site)
-{
-	index_dump(site->root, 0);
-}
-
-void index_foreach(Index *index,
-		   void (*fn)(Item *item, void *data),
-		   void *data)
-{
-	Item *item;
-	Group *group;
-
-	for (group = index->groups; group; group = group->next) {
-		for (item = group->items; item; item = item->next) {
-			fn(item, data);
-		}
-	}
-
-	for (item = index->no_data; item; item = item->next) {
-		fn(item, data);
-	}
-}
-
-void index_lookup(Index *index, const char *leaf,
-		  Group **group_ret, Item **item_ret)
-{
-	Item *item;
-	Group *group;
-
-	for (group = index->groups; group; group = group->next) {
-		for (item = group->items; item; item = item->next) {
-			if (strcmp(item->leafname, leaf) == 0) {
-				*group_ret = group;
-				*item_ret = item;
-				return;
-			}
-		}
-	}
-
-	*group_ret = NULL;
-
-	for (item = index->no_data; item; item = item->next) {
-		if (strcmp(item->leafname, leaf) == 0) {
-			*item_ret = item;
-			return;
-		}
-	}
-
-	*item_ret = NULL;
-}
-#endif

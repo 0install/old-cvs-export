@@ -18,6 +18,7 @@
 #include "global.h"
 #include "support.h"
 #include "task.h"
+#include "index.h"
 
 static Task *all_tasks = NULL;
 static int n = 0;
@@ -42,6 +43,7 @@ Task *task_new(TaskType type)
 	task->step = NULL;
 	task->data = NULL;
 	task->str = NULL;
+	task->index = NULL;
 
 	task->next = all_tasks;
 	all_tasks = task;
@@ -91,6 +93,7 @@ void task_destroy(Task *task, int success)
 	}
 
 	task_set_string(task, NULL);
+	task_set_index(task, NULL);
 	free(task);
 }
 
@@ -120,4 +123,18 @@ void task_set_string(Task *task, const char *str)
 	if (task->str)
 		free(task->str);
 	task->str = str ? my_strdup(str) : NULL;
+}
+
+/* Sets task->index. Ref count is incremented. */
+void task_set_index(Task *task, Index *index)
+{
+	if (index) {
+		assert(index->ref > 0);
+		index->ref++;
+	}
+
+	if (task->index)
+		index_free(task->index);
+
+	task->index = index;
 }

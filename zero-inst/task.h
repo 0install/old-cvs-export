@@ -9,6 +9,7 @@ Task *task_new(TaskType type);
 void task_destroy(Task *task, int success);
 void task_process_done(pid_t pid, int success);
 void task_set_string(Task *task, const char *str);
+void task_set_index(Task *task, Index *index);
 
 struct _Task {
 	TaskType type;
@@ -25,6 +26,7 @@ struct _Task {
 	uid_t uid;
 	int fd;
 	char *str;		/* Will be free()d */
+	Index *index;		/* Will be unref'd */
 
 	Task	*next;		/* In all_tasks */
 };

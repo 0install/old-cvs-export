@@ -19,6 +19,8 @@
 
 #define ZERO_INSTALL_INDEX ".0inst-index.xml"
 
+#define TMP_NAME ".0inst-archive.tgz"
+
 static int build_ddd_from_index(xmlNode *dir_node, char *dir);
 
 /* Create directory 'path' from 'node' */
@@ -40,6 +42,7 @@ void fetch_create_directory(const char *path, xmlNode *node)
 	build_ddd_from_index(node, cache_path);
 }
 
+#if 0
 static void recurse_ddd(xmlNode *item, void *data)
 {
 	int *retval = data;
@@ -57,6 +60,7 @@ static void recurse_ddd(xmlNode *item, void *data)
 
 	xmlFree(name);
 }
+#endif
 
 static void write_item(xmlNode *item, void *data)
 {
@@ -181,30 +185,39 @@ static void pull_up_files(Group *group)
 }
 #endif
 
-/* Unpacks the archive, which should contain the file 'leaf'. Uses the
- * group to find out what other files should be there and extract them
- * too. Ensures types, sizes and MD5 sums match.
+/* Unpacks the archive. Uses the group to find out what other files should be
+ * there and extract them too. Ensures types, sizes and MD5 sums match.
  * Changes cwd.
  */
-void unpack_archive(const char *archive_path, Group *group, Item *archive)
+static void unpack_archive(const char *archive_dir, xmlNode *archive)
 {
-#if 0
 	int status = 0;
 	struct stat info;
 	pid_t child;
-	const char *argv[] = {"tar", "-xzf", archive_path, NULL};
+	const char *argv[] = {"tar", "-xzf", "../" TMP_NAME, NULL};
+	xmlChar *size;
+	xmlNode *group = archive->parent;
 	
-	printf("\t(unpacking '%s')\n", archive_path);
+	printf("\t(unpacking '%s/" TMP_NAME "')\n", archive_dir);
 
-	if (lstat(archive_path, &info)) {
+	if (chdir(archive_dir)) {
+		perror("chdir");
+		return;
+	}
+
+	if (lstat(TMP_NAME, &info)) {
 		perror("lstat");
 		return;
 	}
 
-	if (archive->size != info.st_size) {
+	size = xmlGetNsProp(group, "size", NULL);
+
+	if (info.st_size != atol(size)) {
+		xmlFree(size);
 		fprintf(stderr, "Downloaded archive has wrong size!\n");
 		return;
 	}
+	xmlFree(size);
 
 	printf("\t(TODO: skipping MD5 check)\n");
 	
@@ -243,12 +256,11 @@ void unpack_archive(const char *archive_path, Group *group, Item *archive)
 	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
 		printf("\t(error unpacking archive)\n");
 	} else {
-		pull_up_files(group);
+		//pull_up_files(group);
 	}
 
 	chdir("..");
-	system("rm -r .0inst-tmp");
-#endif
+	//system("rm -r .0inst-tmp");
 }
 
 /* Begins fetching 'uri', storing the file as 'path'.
@@ -293,9 +305,21 @@ err:
 	task_set_string(task, NULL);
 }
 
-void got_site_index(Task *task, int success)
+static void got_archive(Task *task, int success)
 {
-	Index *index;
+	if (success) {
+		task->str[strlen(task->str) - sizeof(TMP_NAME)] = '\0';
+		unpack_archive(task->str, task->data);
+		task->str[strlen(task->str)] = '/';
+	}
+
+	unlink(task->str);
+
+	task_destroy(task, success);
+}
+
+static void got_site_index(Task *task, int success)
+{
 	char *slash;
 	char path[MAX_PATH_LEN];
 	int dir_len;
@@ -310,9 +334,9 @@ void got_site_index(Task *task, int success)
 	}
 
 	printf("[ got '%s' ]\n", task->str);
-	index = parse_index(task->str);
+	task_set_index(task, parse_index(task->str));
 
-	if (!index) {
+	if (!task->index) {
 		task_destroy(task, 0);
 		return;
 	}
@@ -330,7 +354,7 @@ void got_site_index(Task *task, int success)
 	memcpy(path, task->str, dir_len);
 	path[dir_len] = '\0';
 
-	build_ddd_from_index(index_get_root(index), path);
+	build_ddd_from_index(index_get_root(task->index), path);
 
 	task_destroy(task, 1);
 }
@@ -428,4 +452,71 @@ Index *get_index(const char *path, Task **task, int force)
 		*task = fetch_site_index(index_path);
 
 	return NULL;
+}
+
+/* 'file' is the path of a file within the archive */
+Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
+{
+	Task *task = NULL;
+	char uri[MAX_URI_LEN];
+	char path[MAX_PATH_LEN];
+	char *slash;
+	int cache_len;
+	int stem_len;
+	char *relative_uri;
+	const char *abs_uri = NULL;
+
+	cache_len = strlen(cache_dir);
+	slash = strrchr(file, '/');
+	stem_len = slash - file;
+	
+	if (cache_len + stem_len + sizeof(TMP_NAME) + 1 >= sizeof(path)) {
+		fprintf(stderr, "Path %s too long\n", file);
+		return NULL;
+	}
+	
+	memcpy(path, cache_dir, cache_len);
+	memcpy(path + cache_len, file, stem_len);
+	path[cache_len + stem_len] = '\0';
+
+	relative_uri = xmlGetNsProp(archive, "href", NULL);
+	assert(relative_uri);
+
+	if (!strstr(relative_uri, "://")) {
+		/* Make URI absolute */
+		slash = strchr(path + cache_len + 1, '/');
+		slash = strchr(slash + 1, '/');
+		*slash = '\0';
+		
+		if (!build_uri(uri, sizeof(uri),
+				path + cache_len, relative_uri, NULL))
+			goto out;
+		abs_uri = uri;
+
+		*slash = '/';
+	} else
+		abs_uri = relative_uri;
+
+	strcpy(path + cache_len + stem_len, "/" TMP_NAME);
+
+	printf("Fetch archive as '%s'\n", path);
+
+	task = task_new(TASK_ARCHIVE);
+	if (!task)
+		return NULL;
+	task_set_index(task, index);
+
+	task->step = got_archive;
+	wget(task, abs_uri, path, 1);
+	task->data = archive;
+
+	if (task->child_pid == -1) {
+		task_destroy(task, 0);
+		task = NULL;
+	}
+
+out:
+	if (relative_uri)
+		xmlFree(relative_uri);
+	return task;
 }
