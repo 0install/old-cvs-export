@@ -105,9 +105,6 @@ gimp1.3
 gimp2.0
 </pre>
 
-(this command only updates the directory listing at present; if a file's
-contents change, you must delete it manually from the cache to cause a
-refetch).
 </dd>
 
 </dl>
