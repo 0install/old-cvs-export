@@ -27,9 +27,9 @@ running. The easiest way to ensure this is to have compiled your own kernel
 </p>
 
 <p>
-Only Linux 2.4.20 and later 2.4 kernels are currently supported, not the
-2.5 series. If you want to port the (small) module to other kernels (BSD, MacOS
-X, etc) please get in touch.
+Only Linux 2.4 series kernels are currently supported, not the 2.5 series. If
+you want to port the (small) module to other kernels (BSD, MacOS X, etc) please
+get in touch.
 </p>
 
 <p>
@@ -57,13 +57,13 @@ Add<br/><tt>deb http://www-i1.informatik.rwth-aachen.de/~joachimk debian/</tt>
 </div>
 -->
 
-<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.12.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.12.tar.gz.sig">GPG Sig</a> ]. Extract it, and
+<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.13.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.13.tar.gz.sig">GPG Sig</a> ]. Extract it, and
 move to the new directory (things you type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.12.tar.gz</b>
-$ <b>cd zero-install-0.1.12</b>
+$ <b>tar xzf zero-install-0.1.13.tar.gz</b>
+$ <b>cd zero-install-0.1.13</b>
 </pre>
 
 <p>
