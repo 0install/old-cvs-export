@@ -1,5 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 	# We're building for Linux 2.6 from kconfig
+	EXTRA_CFLAGS  += -I${SUBDIRS}/@srcdir@
 	obj-m	:= lazyfs@COMMA_VERSION@.o
 else
 
@@ -22,12 +23,12 @@ endif
 all: lazyfs@COMMA_VERSION@.$(KOBJECT)
 
 CC	 := @CC@
-CFLAGS   := -O2 -Wall -Wstrict-prototypes -g
+CFLAGS   := -O2 -Wall -Wstrict-prototypes -g -I$(srcdir)
 
 UMFLAGS := -I${KERNEL}/arch/um/include -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
 
 clean:
-	rm -f lazyfs*.o lazyfs@COMMA_VERSION@.c
+	rm -f lazyfs*.o lazyfs@COMMA_VERSION@.c .lazy* *.mod.c *.ko
 
 # -Werror causes problems on some builds (unsigned int problems in headers)
 KERNELFLAGS := -I${KERNEL}/include -Wno-trigraphs -fno-strict-aliasing -fno-common -Wall -Wstrict-prototypes -O2 -Wall # ${UMFLAGS} -Werror
@@ -35,10 +36,10 @@ MODFLAGS := -DMODULE -D__KERNEL__
 
 install: lazyfs@COMMA_VERSION@.$(KOBJECT)
 	mkdir -p ${MODULEDIR}
-	cp lazyfs@COMMA_VERSION@.$(KOBJECT) ${MODULEDIR}/
 	[ -n "${ROOT_PREFIX}" ] || ${MAKE} real-install
 
 real-install:
+	cp lazyfs@COMMA_VERSION@.$(KOBJECT) ${MODULEDIR}/
 	depmod -a
 	echo Stopping existing daemon...
 	/etc/init.d/0install stop || echo '(not already running)'
@@ -56,7 +57,7 @@ lazyfs@COMMA_VERSION@.o: lazyfs@COMMA_VERSION@.c
 	${CC} -I. -I$(srcdir) -c ${KERNELFLAGS} ${MODFLAGS} -o "$@" "$<"
 
 lazyfs@COMMA_VERSION@.ko: lazyfs@COMMA_VERSION@.c
-	$(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules
+	$(MAKE) V=1 -C $(KERNEL) SUBDIRS=`pwd` modules
 
 distclean: clean
 
