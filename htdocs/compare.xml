@@ -169,6 +169,21 @@ best. Of course, the same warnings that apply to opening email attachments must
 be given when running untrusted software.
 </p>
 
+<h3>Index handling is slow</h3>
+<p>
+APT must download the latest package listing for the whole archive before
+doing anything. Thus, the time taken to install a package is proportional
+to both the size of the package, and to the total number of packages available.
+Installing a 50K package with APT over a dial-up connection often takes around
+15 minutes due to this.
+</p>
+
+<p class='zero'>
+Zero Install only needs to download the index for the site you are accessing,
+not for every site in the world. Thus, increasing the total amount of software
+available through Zero Install does not slow the system down.
+</p>
+
 <h2>Closing remarks</h2>
 
 <p>

@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<h2>Zero Install security</h2>
+
+<p>
+This page discusses some of the security issues relating to Zero Install.
+</p>
+
+<p>
+The key idea behind making secure systems is always the same: make a small
+and trusted 'core' system, and make sure that the rest of the system can grow
+without introducing additional security problems.
+</p>
+
+<h3>Security on Unix-type systems</h3>
+
+<p>
+On Unix-type systems, such as Linux, each piece of software runs with a
+particular 'user ID' (UID). The kernel ensures that a piece of software running
+with one UID cannot interfere with another piece of software running with a
+different one. Typically, each person who uses the computer has a
+corresponding UID, and each system process (such as booting or serving web
+pages) has its own one too. Thus, I can't accidentally delete someone else's
+files, or prevent the computer from booting in future, since running as
+a different UID requires a password.
+</p>
+
+<p style='text-align: center'>
+<img src="Users.png" width='475' height='421' alt='Linux protects users from each other'/>
+</p>
+
+<p>
+In fact, UID 0 ('root') is special. Programs running as root can do anything
+they like, including messing with other user's files and programs and even
+changing Linux itself. Therefore, we try to run as little software
+as possible as root.
+</p>
+
+<h3>Installing as different users</h3>
+
+<p>
+Debian's approach to security (which is typical) is to only allow you to
+install their 'trusted' packages. Each package contains an installer program
+which is run as 'root' when the package is installed, uninstalled or upgraded.
+Clearly, Debian cannot allow users to install arbitrary packages while using
+this system; the user could install a package with a malicious install program.
+Once packages are installed, however, the programs they contain are run only as
+normal users. Tarballs and RPMs are typically installed in a similar fashion.
+</p>
+
+<p>
+Zero Install separates installation from trust: only the (small) Zero Install
+system itself must be audited for correctness and security. When a package
+is 'installed' using Zero Install, none of the code within the package is
+run at all, it is simply copied from the remote machine to a local disk cache
+(for speed reasons).
+If Zero Install is secure, any other software may be installed and upgraded
+using it without risking the system. Trust in the software is only needed when
+the software is run, and only the user running the software needs to trust it.
+</p>
+
+<p>
+For example, if Mary (in the picture above) wanted to install KWord on a Debian
+system, she would need to ask the system administrator for permission, because
+a bug or exploit in KWord's installer could delete John's files. This is
+both inconvenient (having to find the administrator) and still a risk (bugs
+may still slip through).
+</p>
+
+<p>
+Mary could install KWord herself, without running it as root, but then only
+she could use it. If John decided to run KWord too, he would have to
+download a second copy, wasting time and disk space. Of course, he could
+use Mary's copy, but this has two problems:
+</p>
+
+<ul>
+<li><p>John has to know that Mary (or some other user) has installed it, and
+she has to have made it accessible to him.</p>
+</li>
+
+<li><p>
+John has to trust not only Mary herself, but any program she runs now or
+in the future. Any program running with Mary's UID can modify her copy of
+KWord, which John is also using. Thus, by running Mary's copy of KWord, John
+is giving Mary access to all his files (and, by extension, to all the files
+of everyone who trusts software John has installed, and so on).</p>
+</li>
+</ul>
+
+<p>
+The Zero Install system has its own UID. It acts like a very trust-worthy
+version of Mary, downloading software for other people, but never actually
+<i>running</i> anything. Since none of the downloaded software runs with
+the Zero Install UID, the software can't be changed.
+</p>
+
+<h3>Trusting software on the web</h3>
+
+<p>
+So Zero Install moves the issue of trust on to individual users. Instead of
+the Debian model, where the administrator only installs trusted software and
+all users trust the administrator's judgement, any piece of software can be
+'installed', but users must decide whether they want to run it.
+</p>
+
+<p>
+Zero Install can do this, because users specify some software to run by its URI
+(Internet address). There is no question of a user asking to run 'gimp' and
+having to decide which program named 'gimp' they mean; they explicity ask for
+'http://www.gimp.org/gimp-1.2' (though, as explained elsewhere, the user
+interface may not present it quite like this).
+</p>
+
+<p>
+This brings up two questions:
+</p>
+
+<ul>
+<li>How does a user know what sources of software on the Internet are
+trust-worthy?</li>
+<li>How does Zero Install know that the software came from where it says
+it does?</li>
+</ul>
+
+<p>
+The answer to the first question is that you still need some kind of
+recommendation system. In Debian's case, this is tied up with the installer:
+what Debian recommend can be installed; what they don't, can't. In Zero
+Install, sites such as <a href="http://freshmeat.net">freshmeat.net</a>,
+or distributions, take on this responsiblity. A user of Zero Install may
+choose, for example, to only run programs listed on Debian's web-site.
+However, they may also choose to trust a magazine, a friend or some other
+source.
+</p>
+
+<p>
+The second question is more technical. Since software is named by its
+Internet address, Zero Install simply fetches it from that, just as a web
+browser does with a named web page. However, there are some issues with this:
+</p>
+
+<ul>
+<li><p>To speed things up, we may choose to get the software from a mirror
+(a computer with a copy of the program which happens to be closer to us).
+Can we trust the mirror?</p></li>
+
+<li><p>The computer serving the software could have been broken into, and the
+software replaced with a trojaned version.</p></li>
+</ul>
+
+<div class='note'>
+The following is a desciption of how it <i>will</i> work. This is not yet
+implemented.
+</div>
+
+<p>
+To solve the mirror problem, Zero Install creates index files which list
+every file available from the site, alternative download locations for the
+files, and checksums for each group of files. The (small) index file comes from
+the master site, but the data can come from anywhere. When the data arrives,
+the checksum (MD5) is calculated and compared to the one in the index. If they
+differ, the download is refused. So, it is only necessary to ensure that the
+index files are authentic. (MD5 is a popular checksum algorithm designed for
+exactly this purpose; it is infeasible to find a way of changing the archive
+while preserving the checksum)
+</p>
+
+<p>
+For the index files themselves, we use a different system. Zero Install
+actually downloads three files: the index, the site's public key, and
+the index's digital signature. It confirms that the signature was created
+using the private key corresponding to the downloaded public key, and that
+the signature is a checksum of the index file (see the
+<a href="http://www.gnupg.org/">GNU Privacy Guard</a> homepage for an
+explanation of how all this is possible).
+</p>
+
+<p>
+This may not seem to buy us anything (an attacker could change all three files
+at once), but the advantage is that when we <i>upgrade</i> the software
+(by fetching an updated index file) we check the new index and signature
+using the <i>original</i> key. Thus, if an attacker does change the files
+on the server, the next person to try to update will be shown a big scary
+message telling them to warn the site owner, and the problem can be fixed
+quickly.
+</p>
+
+<p>
+In other words, Zero Install doesn't check that the software is written by
+who it says it is, and it doesn't check that they're trust-worthy, but it
+<i>can</i> tell you that an upgrade for a piece of software you've found to be
+trust-worthy in the past is from the same people as before.
+</p>
+
+</html>

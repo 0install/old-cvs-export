@@ -1,4 +1,4 @@
-HTML = index.html compare.html faq.html install.html technical.html support.html docs.html
+HTML = index.html compare.html faq.html install.html technical.html support.html docs.html security.html
 
 all: ${HTML}
 
