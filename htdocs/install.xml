@@ -44,8 +44,14 @@ Kernel</a>.
 </p>
 
 <p>
-Only Linux 2.4 series kernels are currently supported, not the 2.6 series. If
-you want to port the (small) module to that or to other kernels (BSD, MacOS
+Supported kernels are:
+</p>
+<ul>
+<li> Linux 2.4 series</li>
+<li> Linux 2.6 (tested with 2.6.0-pre7)</li>
+</ul>
+<p>
+If you want to port the (small) module to that or to other kernels (BSD, MacOS
 X, etc) please get in touch.
 </p>
 
