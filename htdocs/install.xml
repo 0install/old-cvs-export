@@ -146,7 +146,7 @@ Zero Install started: using cache directory '/var/cache/zero-inst'
 The helper will print information about what it's doing when it's used.
 </p>
 
-<h3>Testing the installation</h3>
+<h2>Testing the installation</h2>
 
 <p>
 With /uri mounted and the helper running, open another window, and try
@@ -199,5 +199,9 @@ XFree86 Version 4.3.0
 Release Date: 27 February 2003
 # <b>./XFree86 :1</b>
 </pre>
+
+<h2>Futher reading</h2>
+
+<p>Please see <a href="docs.html">the documentation</a> for more information.</p>
 
 </html>
