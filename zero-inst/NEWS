@@ -4,6 +4,8 @@ Changes since 0.1.19:
 
 * Before forking, send errors to stderr (in addition to syslog).
 
+* Set SHELL in init.d/0install, so that it works during booting.
+
 Changes since 0.1.18:
 
 * Use 'su -p -c' instead of 'su -s'. Some systems don't have -s (reported by
