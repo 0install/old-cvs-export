@@ -7,6 +7,109 @@
 This page describes the design of the injector.
 </p>
 
+<h2>Requirements</h2>
+
+<p>
+The injector has the same overall goals as Zero Install:
+</p>
+
+<ul>
+<li>Any user can run any program they want, without it needing to be
+installed first.</li>
+<li>Users refer to programs by globally unique names (URLs). So, a
+user asks to run "http://gimp.org/gimp", rather than the rather vague
+"The Gimp".</li>
+<li>Users can run whatever version of a program they want.</li>
+<li>Users don't need the root password.</li>
+<li>Users don't need to trust each other.</li>
+<li>The system administrator doesn't have to trust the users.</li>
+<li>Any developer can make software available through the system (without
+needing the blessing of some distribution first).</li>
+</ul>
+
+<h2>Security and sharing</h2>
+
+<p>
+To clarify the security requirements: the injector is designed to support
+this situation:
+</p>
+
+<ul>
+<li>There are two users.</li>
+<li>The system administrator doesn't trust either with root permission.</li>
+<li>The users don't trust each other.</li>
+<li>Both users want to run (the same version of) the Gimp.</li>
+<li>The Gimp must only be downloaded and stored on disk once.</li>
+</ul>
+
+<p>
+Current systems make you choose either:
+</p>
+
+<ul>
+<li>Inefficient (two copies downloaded and installed), or</li>
+<li>Insecure (second user must trust first user to get and install a good
+  copy).</li>
+</ul>
+
+<p>
+Although this situation obviously occurs in schools, libraries, etc,
+solving it is also useful in the home. Although you might expect family
+members to trust each other, remember that trust includes trusting them
+not to get infected with viruses, etc. If my brother gets some spyware
+and then installs the Gimp, I shouldn't get infected too. This also
+applies if you're doing sandboxing within a single user account, or
+using a dedicated 'sandbox' user for some tasks.
+</p>
+
+<h3>The injector's solution</h3>
+
+<p>
+First, users need some way to specify what they want to run exactly.
+"Run the Gimp" is too vague (good gimp or evil gimp?), so we use URLs
+(like autopackage).
+</p>
+
+<p>
+If both users say "Run gimp.org/gimp" then the system is smart enough to
+only get it once. If one user says "Run evil.com/gimp" and one says "Run
+gimp.org/gimp", the system downloads both programs.
+</p>
+
+<p>
+Clearly, something has to actually download the software. It can either
+be one of the users, or a system daemon.
+</p>
+
+<p>
+Traditional Zero Install uses a system daemon running as its own user.
+Both users know that /uri/0install/gimp.org/gimp has been downloaded
+faithfully from gimp.org, because only the daemon can make things appear
+there and it won't do anything else.
+</p>
+
+<p>
+Injector Zero Install has one of the users download the software. This
+is nicer, because they can do things like use a mirror or a CD to get the
+archives. The user uses a setuid (to 'zeroinstall') program to copy the
+downloaded (unpacked) directory into the cache. The helper generates a
+digest of the whole directory structure (the SHA1 of the manifest file,
+which contains the directory structure and the SHA1 sums of all the
+files inside it) and puts the directory in the cache named with the
+digest (/var/cache/zero-install/sha1=8374ab3254...).
+</p>
+
+<p>
+When user B wants to run the Gimp, 0launch gets the SHA1 sum for
+gimp.org/gimp and looks to see if it's in the cache. If it is, the user
+knows that it is the copy they wanted (since the helper won't copy
+modified versions into the cache under that digest name). Everything in
+the cache is owned by zeroinstall, and no user (or virus ;-) has write
+access to it.
+</p>
+
+<h2>Policies</h2>
+
 <p>
 A running process is created by combining many different libraries (and other components).
 In the Zero Install world, we have all versions of each library available at
