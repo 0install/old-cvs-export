@@ -43,6 +43,25 @@ ZeroProgress (to tell the user what is currently being fetched). These messages
 are in the DBUS format (but no DBUS daemon is used; only the protocol).
 </p>
 
+<h3>The index files and mirrors</h3>
+
+<p>
+When you access a remote site, zero-install downloads three files from the
+remote machine (in one archive): the site's GPG key, the site index, and
+the site index's signature. See the <a href="security.html">security page</a>
+for information about the key and signature.
+</p>
+
+<p>
+The index lists every file on the site along with its size and mtime. This
+allows zero-install to present the complete filesystem to the user with only
+the index. The index also organises the files into groups, and gives URIs
+which can be used to download each group's archive. There may be several
+mirrors provided. Also, since MD5 sums for all the archives are provided
+in the index, group archives can be safely downloaded using peer-to-peer
+systems for greater speed and reliability.
+</p>
+
 <h3>Tasks list</h3>
 
 There is a list of current TODO items on the <a
