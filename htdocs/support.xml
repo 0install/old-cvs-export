@@ -12,6 +12,34 @@ bug reports, patches, suggestions, questions, etc.
   <li><a href="http://sourceforge.net/mailarchive/forum.php?forum=zero-install-devel">Archives</a></li>
 </ul>
 
+<h2>Mail-to-news gateway</h2>
+
+<p>
+The mailing list is also available as newsgroups (which can be read with a
+newsreader such as Pan):
+</p>
+
+<ul>
+<li><a href="news://news.gmane.org/gmane.comp.file-systems.zero-install.devel">news://news.gmane.org/gmane.comp.file-systems.zero-install.devel</a>
+(<a href="http://news.gmane.org/gmane.comp.file-systems.zero-install.devel">web interface</a>)</li>
+</ul>
+
+<div class='note' style='text-align: left'>
+<h3>If clicking on the link above directly doesn't work</h3>
+
+<ol>
+<li>Load Pan and add <b>news.gmane.org</b> as a new server (<b>Tools-&gt;News
+Servers</b>).</li>
+<li>Select gmane using the <b>Server</b> menu.</li>
+<li>Type <b>zero-install</b> into the group search box (top left) and press
+Return to find the group.</li>
+<li>You can right click over the group and choose <b>Subscribe</b> from the
+menu to make it easier to find them in future. Note that 'Subscribing' to a
+news group just marks it as interesting to your newsreader. It is completely
+different to subscribing to a mailing list.</li>
+</ol>
+</div>
+
 <h2>Bug tracker</h2>
 
 <p>Bugs can also be filed on the bug tracker. However, it's best to post
