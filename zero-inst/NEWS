@@ -1,3 +1,8 @@
+Changes since 0.1.13:
+
+* 0refresh can be given a path and a date (like 0run), and only does
+  the refresh if the path isn't recent enough.
+
 Changes since 0.1.12:
 
 * Support compiling with older Linux 2.4.18 kernels (Joachim Kupke).
