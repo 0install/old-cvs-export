@@ -236,6 +236,7 @@ class Dir(Item):
 		self.kids = []
 		meta = []
 		files = []
+		debug = []
 
 		for name in os.listdir(source):
 			if name in ignored_names: continue
@@ -260,6 +261,8 @@ class Dir(Item):
 			elif os.path.isfile(path):
 				if name in meta_names:
 					meta.append(name)
+				elif name.endswith('.debug'):
+					debug.append(name)
 				else:
 					files.append(name)
 			else:
@@ -269,6 +272,8 @@ class Dir(Item):
 			self.kids.append(Archive(meta, source))
 		if files:
 			self.kids.append(Archive(files, source))
+		if debug:
+			self.kids.append(Archive(debug, source))
 	
 	def __str__(self):
 		kids = '\n'.join(map(str, self.kids)).split('\n')
