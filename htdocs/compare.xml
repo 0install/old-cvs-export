@@ -174,6 +174,14 @@ resources to package. Ordinary software authors cannot just put their software
 on the web and be part of the Debian repository.
 </p>
 
+<p>
+Although third-party repositories can be added manually, the security
+risks of editing <tt>sources.list</tt> mean that few admins are willing to
+do it. For example, the ROX project provides a Debian repository, but a
+university student sitting at a Debian machine is very unlikely to be able to
+run ROX-Filer using it.
+</p>
+
 <p class='zero'>
 Anyone can make software available via Zero Install. Trust is for individual
 users to decide, not the admin, since their choices only affect them. Sites
