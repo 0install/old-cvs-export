@@ -120,7 +120,7 @@ class Archive:
 		return us == other
 
 	def get_old_tgz(self, old):
-		# 'old' is an <group> with the same contents as us.
+		# 'old' is a <group> with the same contents as us.
 		# Set self.tgz to it's href and prevent the old archive
 		# from being deleted. Sets self.tgz on success.
 		for x in old.getElementsByTagNameNS(ZERO_NS, 'archive'):
@@ -171,13 +171,18 @@ class Archive:
 		parent.appendChild(node)
 		for k in self.kids:
 			k.add_xml(node)
+		
+		# For new mirrors.xml
+		node.setAttributeNS(None, 'href', os.path.basename(self.tgz))
+
+		# For old <mirror> elements
 		mirror = node.ownerDocument.createElementNS(ZERO_NS, 'archive')
 		node.appendChild(mirror)
 		mirror.setAttributeNS(None, 'href', self.tgz)
 
+		# For both
 		path = os.path.join(target, self.tgz)
 		node.setAttributeNS(None, 'MD5sum', md5sum(path))
-
 		node.setAttributeNS(None, 'size', str(os.stat(path).st_size))
 
 class Item:
@@ -363,12 +368,11 @@ def make_mirrors():
 	root = doc.createElementNS(ZERO_NS, 'mirrors')
 	root.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
 	doc.appendChild(root)
-	root.setAttributeNS(None, 'index', index_bz_leaf)
+	root.setAttributeNS(None, 'index', os.path.basename(index_bz_leaf))
 	root.setAttributeNS(None, 'index_size', str(os.stat(index_bz).st_size))
 	mirror = doc.createElementNS(ZERO_NS, 'mirror')
-	# TODO: put archive_dir_leaf here, not in each link.
-	# But have to cope with older zero-install versions for a while.
-	mirror.setAttributeNS(None, 'base', 'http://%s' % host)
+	mirror.setAttributeNS(None, 'base', 'http://%s/%s' %
+					(host, archive_dir_leaf))
 	root.appendChild(mirror)
 	
 	doc.writexml(file(mirrors_path, 'w'), addindent = ' ', newl = '\n')
