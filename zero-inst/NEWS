@@ -1,5 +1,8 @@
 Changes since 0.1.15:
 
+* Added version numbers to LazyFS module. Allows easier upgrading.
+  (suggested by Joachim Kupke).
+
 * Allow sub-sites (example.com#~bob fetches the index
   http://example.com/~bob/.0inst-index.tgz).
   (XXX: can't create GPG key!)

@@ -28,18 +28,16 @@ MODFLAGS := -DMODULE -D__KERNEL__
 
 install: lazyfs.o
 	mkdir -p ${MODULEDIR}
-	cp lazyfs.o ${MODULEDIR}/
+	cp lazyfs.o ${MODULEDIR}/lazyfs-@VERSION@.o
 	[ -n "${ROOT_PREFIX}" ] || ${MAKE} real-install
 
 real-install:
 	depmod -a
-	[ ! -L /uri/.lazyfs-cache ] || umount /uri
-	[ ! -L /uri/0http/.lazyfs-cache ] || umount /uri/0http
-	[ ! -L /uri/0install/.lazyfs-cache ] || umount /uri/0install
-	if lsmod | grep -q '^lazyfs[ \t]'; then rmmod lazyfs; fi
+	[ ! -L /uri/0install/.lazyfs-cache ] || umount -l /uri/0install
+	lsmod | grep '^lazyfs' | awk '{print $$1}' | xargs rmmod || echo "*** Old LazyFS module is still in use. You should remove it later."
 
 uninstall:
-	rm -f ${MODULEDIR}/lazyfs.o
+	rm -f ${MODULEDIR}/lazyfs*.o
 
 .PHONY: module-Linux_2_4 module-Linux_2_5
 lazyfs.o: lazyfs.c

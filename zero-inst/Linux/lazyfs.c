@@ -2067,14 +2067,15 @@ static struct dentry_operations lazyfs_dentry_ops = {
 
 #ifdef LINUX_2_5_SERIES
 struct file_system_type lazyfs_fs_type = {
-	.name		= "lazyfs",
+	.name		= "lazyfs-" VERSION,
 	.get_sb		= lazyfs_get_sb,
 	.fs_flags	= 0,
 	.owner		= THIS_MODULE,
 	.kill_sb	= kill_litter_super,
 };
 #else
-static DECLARE_FSTYPE(lazyfs_fs_type, "lazyfs", lazyfs_read_super, FS_LITTER);
+static DECLARE_FSTYPE(lazyfs_fs_type, "lazyfs-" VERSION,
+			lazyfs_read_super, FS_LITTER);
 #endif
 
 static int __init init_lazyfs_fs(void)
