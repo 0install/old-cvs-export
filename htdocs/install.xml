@@ -88,7 +88,7 @@ a bug report</a>.
 Download the kernel module for your operating system:
 
 <ul>
-<li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.23-smp.tgz.gpg?download">lazyfs-linux-0.1.23-smp.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels)</li>
+<li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.23-smp.tgz.gpg?download">lazyfs-linux-0.1.23-smp.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels - this version also works with SMP kernels)</li>
 </ul>
 
 <strong>SE-Linux users: the current release (0.1.23-smp) and all previous
