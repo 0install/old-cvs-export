@@ -91,7 +91,10 @@ Download the kernel module for your operating system:
 <li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.23-smp.tgz.gpg?download">lazyfs-linux-0.1.23-smp.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels)</li>
 </ul>
 
-<strong>SMP users: If your kernel is compiled with SMP support, versions before 0.1.23-smp would deadlock (easily seen with the unit tests). Make sure you use the latest version! Other users are unaffected -- the 0.1.23 release is identical to 0.1.23-smp for you.</strong>
+<strong>SE-Linux users: the current release (0.1.23-smp) and all previous
+versions of lazyfs do not work correctly with SE-Linux. The problem is fixed in
+the CVS version of lazyfs.
+</strong>
 
 <p>
 Check the GPG signature, unpack the archive, and move to the new directory
