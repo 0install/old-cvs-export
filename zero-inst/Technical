@@ -19,7 +19,7 @@ but the cache says that 1.2.1 is the latest version).
 The cached downloads may be kept anywhere. On a traditional Linux filesystem,
 /var/cache/zero-install is the obvious choice. The network filesystem itself
 must also be mounted somewhere. '/uri' must be used for this, since software
-much be able to rely on absolute paths to identify linked resources. For
+must be able to rely on absolute paths to identify linked resources. For
 example, a python program might start with:
 	
 	#!/uri/http/www.python.org/python-latest/python
@@ -29,14 +29,22 @@ example, a python program might start with:
 LazyFS
 
 LazyFS implements the kernel side of things. A lazyfs filesystem should
-be mounted on /uri. The mount data should contain a file handle for the root of
-the cache directory (see the zero.c program). Because the system must show
-files even before they have been downloaded, the directory listing for a
-directory in /uri is fetched from a file called '...' in the corresponding
-cache directory.
+be mounted on /uri. The path of the cache directory must be passed as
+the mount option:
 
-These files begin with the magic string 'LazyFS\n', then continue with a list
-of lines in the form:
+	mount lazyfs -t lazyfs /uri -o /var/cache/zero-inst
+
+The equivalent line for /etc/fstab is:
+
+	lazyfs	/uri	lazyfs	/var/cache/zero-inst	0 0
+
+Because the system must show files even before they have been downloaded, the
+directory listing for a directory in /uri is fetched from a file called '...'
+in the corresponding cache directory. If this doesn't exist yet, 'ls /uri' will
+report an IO error.
+
+The '...' files begin with the magic string 'LazyFS\n', then continue with a
+list of lines in the form:
 
 d 100 1234 name\0
 x 5 12 name2\0
@@ -78,6 +86,8 @@ There can only be one registered helper at a time. It registers by opening
 the /uri/.lazyfs-helper file and reading requests from it. When a process
 opens a file or directory which has a missing host inode, it is put to
 sleep and a request sent to the helper in the form of a file handle.
+The file is given the same owner as the cache directory, so there is no
+need for the helper to run as root.
 
 The request is a number (ASCII) followed by \n. You have to read the
 whole line in a single read() operation (and you'll only get one per
@@ -91,12 +101,19 @@ find that the missing file has appeared). If more processes request the
 file, they will also be put to sleep until the request is handled.
 
 If the helper closes the /uri/.lazyfs-helper file then all pending requests
-return EIO errors. The helper can be safely restarted without having to
-remount the filesystem.
+(those not yet delivered to the helper) return EIO errors. The helper can be
+safely restarted without having to remount the filesystem.
 
 The user-space helper may handle any number of requests in parallel, and
 can pass the file handles to subprocesses (remember to close them in the
 parent, though!). It may also choose to limit the number of fetches.
+
+As well as normal directories, the helper can create a 'dynamic' directory
+by creating a '...' file containing only 'LazyFS Dynamic\n'. In this case,
+any lookup performed in the directory will create a subdirectory with that
+name and ask the helper to fill it in. On error, it is removed again. The
+caller sleeps, but other applications can see the temporary directory,
+although they'll block if they try to open it.
 
 
 Kernel implementation details
@@ -118,14 +135,14 @@ right away.
 
 	Host directory		    LazyFS mirror
 
-host_inode <-- host_dentry <-- dentry --> inode
-    		      |		     |
-   hi2 <--------- hd2 <--------- d2 -----> i2
-	      |		    	 |
-   hi3 <--------- hd3	     	 |
-			     	 |
-   				 d4 -----> i4
-   hi5
+host_inode <-- host_dentry <---- dentry --> inode
+    		      |		    |
+      hi2 <--------- hd2 <--------- d2 -----> i2
+	 	      |		    |
+      hi3 <--------- hd3	    |
+			     	    |
+   				    d4 -----> i4
+      hi5
 
 When a regular file dentry is opened, we pair up the file structures:
 

@@ -1,16 +1,22 @@
 KERNEL := @KERNELDIR@
+MODULEDIR := /lib/modules/`uname -r`/kernel/fs/lazyfs
 
 all: lazyfs.o zero
 
 CC=gcc
 CFLAGS   := -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -g
 MODFLAGS := -DMODULE -D__KERNEL__
-UMFLAGS  := -I${KERNEL}/include -U__i386__ -Ui386 -DUM_FASTCALL -D__arch_um__ -DSUBARCH="i386" -D_LARGEFILE64_SOURCE -I${KERNEL}/arch/um/include -Derrno=kernel_errno -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
+#UMFLAGS  := -I${KERNEL}/include -U__i386__ -Ui386 -DUM_FASTCALL -D__arch_um__ -DSUBARCH="i386" -D_LARGEFILE64_SOURCE -I${KERNEL}/arch/um/include -Derrno=kernel_errno -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
 
 clean:
 	rm lazyfs.o zero
 
-KERNELFLAGS := ${UMFLAGS}
+KERNELFLAGS := -I${KERNEL}/include
+
+install:
+	mkdir -p ${MODULEDIR}
+	cp lazyfs.o ${MODULEDIR}/
+	depmod -a
 
 lazyfs.o: lazyfs.c
 	${CC} -c ${CFLAGS} ${KERNELFLAGS} ${MODFLAGS} -o $@ $<
