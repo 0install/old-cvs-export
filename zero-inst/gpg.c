@@ -28,14 +28,14 @@ static int ok_for_site(const char *email, const char *site)
 	return email[0] == '>' && email[1] == '\n';
 }
 
-/* Check that ./index.new is signed by ./index.xml.sig, whose public key
- * is known to us.
+/* Check that ./<leafname> is signed by ./index.xml.sig, whose public key
+ * is known to us. <leafname> must not contain funny characters.
  * Merge keyring.pub into our database of known keys, and check there is
  * a trust path to it.
  * If we have no keys yet, trust everything in keyring.pub!
- * 1 if index.new looks OK, 0 to reject it.
+ * 1 if <leafname> looks OK, 0 to reject it.
  */
-int gpg_trusted(const char *site)
+int gpg_trusted(const char *site, const char *leafname)
 {
 	/* The key used to sign the last accepted version of the index.
 	 * We ultimately trust this key to sign others. The key used to sign
@@ -85,14 +85,15 @@ int gpg_trusted(const char *site)
 			command = build_string("gpg " GPG_OPTIONS
 				" --status-fd 1"
 				" --trusted-key %s"
-				" --verify index.xml.sig index.new",
-				trusted_key);
+				" --verify index.xml.sig '%s'",
+				trusted_key, leafname);
 
 			free(trusted_key);
 		} else {
 			command = build_string("gpg " GPG_OPTIONS
 				" --status-fd 1"
-				" --verify index.xml.sig index.new");
+				" --verify index.xml.sig '%s'",
+				leafname);
 		}
 	}
 

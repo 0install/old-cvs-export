@@ -1,5 +1,9 @@
+* Configure check for missing expat.h.
+
 * Fixed some cases of using GFP_KERNEL with a spinlock held (reported by
   Tristan).
+
+* Use new index.tar.bz2 file. Only fetch index.xml file if actually needed.
 
 Changes since 0.1.16:
 

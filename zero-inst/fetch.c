@@ -21,9 +21,71 @@
 
 #define TMP_PREFIX ".0inst-tmp-"
 
-#define ZERO_INSTALL_INDEX ".0inst-index.xml"
-
 static void build_ddd_from_index(Element *dir_node, char *dir);
+
+/* 0 on success */
+static int chdir_meta(const char *site)
+{
+	char *meta;
+
+	assert(strchr(site, '/') == NULL);
+
+	meta = build_string("%s/%s/" META, cache_dir, site);
+	if (!meta)
+		return 1;
+
+	if (chdir(meta)) {
+		error("chdir: %m");
+		free(meta);
+		return 1;
+	}
+	
+	free(meta);
+
+	return 0;
+}
+
+/* Return the index for site. If index does not exist, or signature does
+ * not match (index out-of-date), returns NULL.
+ */
+static Index *load_index(const char *site)
+{
+	Index *index = NULL;
+	struct stat info;
+	char *index_path = NULL;
+
+	assert(strchr(site, '/') == NULL);
+
+	index_path = build_string("%s/%h/" META "/index.xml", cache_dir, site);
+	if (!index_path)
+		goto out;	/* OOM */
+
+	if (stat(index_path, &info) != 0)
+		goto out;	/* Index file doesn't exist */
+	
+	if (chdir_meta(site))
+		goto out;
+
+	if (!gpg_trusted(site, "index.xml"))
+		goto out;
+		
+	index = parse_index(index_path, 0, site);
+
+	if (index && !gpg_trusted(site, "index.xml")) {
+		/* Index exists but is out-of-date */
+		index_free(index);
+		index = NULL;
+	}
+
+out:
+	if (index_path)
+		free(index_path);
+
+	chdir("/");
+
+	return index;
+}
+
 
 /* Create directory 'path' from 'node' */
 void fetch_create_directory(const char *path, Element *node)
@@ -370,13 +432,12 @@ int build_ddds_for_site(Index *index, const char *site)
 	return 1;
 }
 
-/* The index.tgz file is in site's meta directory.
- * Check signatures, validate, unpack and build all ... files.
- * Returns the new index on success, or NULL on failure.
+/* The index.tar.bz2 file is in site's meta directory.
+ * Unpack it. 0 on success.
  */
-static Index *unpack_site_index(const char *site)
+static int unpack_site_archive(const char *site)
 {
-	Index *index = NULL;
+	int success = 0;
 
 	assert(strchr(site, '/') == NULL);
 
@@ -394,40 +455,56 @@ static Index *unpack_site_index(const char *site)
 			goto out;
 		}
 		
-#if 0
-		if (chmod(".", 0700))
-			error("chmod: %m");	/* Quiet GPG */
-#endif
-
 		free(meta);
 	}
 
-	if (system("tar xzf index.tgz -O .0inst-index.xml >index.new")) {
+	if (system("tar xjf index.tar.bz2 keyring.pub mirrors.xml "
+		   "index.xml.sig") == 0)
+		success = 1;
+	else
+		error("Failed to extract GPG signature/keyring/mirrors!");
+
+out:
+	chdir("/");
+	return success;
+}
+
+/* The index.xml.bz2 file is in site's meta directory.
+ * Check signatures, validates and build all ... files.
+ * Returns the new index on success, or NULL on failure.
+ */
+static Index *unpack_site_index(const char *site)
+{
+	Index *index = NULL;
+
+	assert(strchr(site, '/') == NULL);
+
+	if (chdir_meta(site))
+		return NULL;
+
+	if (system("bunzip2 -c index.xml.bz2 >index.new")) {
 		error("Failed to extract index file");
 		goto out;
+	} else {
+		if (unlink("index.xml.bz2"))
+			error("unlink bz2");
 	}
 
-	if (system("tar xzf index.tgz keyring.pub mirrors.xml index.xml.sig")) {
-		error("Failed to extract GPG signature/keyring/mirrors!");
-		goto out;
-	} else if (gpg_trusted(site) != 1)
-		goto out;
-
-	index = parse_index("index.new", 1, site);
-	if (!index) {
+	if (!gpg_trusted(site, "index.new")) {
+		error("No valid index found");
 		if (unlink("index.new"))
 			error("unlink: %m");
 		goto out;
 	}
 
-	assert(index);
-
 	if (rename("index.new", "index.xml")) {
 		error("rename: %m");
-		index_free(index);
-		index = NULL;
 		goto out;
 	}
+
+	index = load_index(site);
+	if (!index)
+		goto out;
 
 	if (!build_ddds_for_site(index, site)) {
 		index_free(index);
@@ -445,7 +522,7 @@ static void got_site_index(Task *task, int success)
 	assert(task->child_pid == -1);
 
 	if (!success)
-		error("Failed to fetch archive");
+		error("Failed to fetch site index file");
 	else {
 		char *site = NULL;
 
@@ -461,23 +538,81 @@ static void got_site_index(Task *task, int success)
 	task_destroy(task, success);
 }
 
-/* Fetch the index file for 'path'.
- * This fetches the .tgz file, checks it, and then unpacks it.
+/* We've downloaded the index archive, but don't have an up-to-date
+ * index.xml. Start fetching that...
+ * 1 on success (fetch in progress).
+ */
+static int fetch_index_file(Task *task, const char *site)
+{
+	char *uri, *bz;
+
+	uri = mirrors_get_best_url(site, NULL);
+	if (!uri)
+		return 0;
+
+	bz = build_string("%s/%h/" META "/index.xml.bz2", cache_dir, site);
+	if (!bz) {
+		free(uri);
+		return 0;
+	}
+
+	task->step = got_site_index;
+	wget(task, uri, bz, 1);
+	free(bz);
+
+	if (task->child_pid == -1)
+		return 0;
+
+	return 1;
+}
+
+static void got_site_index_archive(Task *task, int success)
+{
+	assert(task->type == TASK_INDEX);
+	assert(task->child_pid == -1);
+
+	if (!success)
+		error("Failed to fetch site archive");
+	else {
+		char *site = NULL;
+
+		site = build_string("%h", task->str + cache_dir_len + 1);
+		if (site) {
+			if (!unpack_site_archive(site)) {
+				success = 0;
+			} else {
+				task_steal_index(task, load_index(site));
+				if (!task->index) {
+					if (fetch_index_file(task, site))
+						return;
+					success = 0;
+				}
+			}
+			free(site);
+		} else
+			success = 0;
+	}
+
+	task_destroy(task, success);
+}
+
+/* Fetch the index archive for 'path'.
+ * This fetches the .tar.bz2 file, checks it, and then unpacks it.
  */
 static Task *fetch_site_index(const char *path, int use_cache)
 {
 	Task *task = NULL;
-	char *tgz = NULL, *uri = NULL;
+	char *tbz = NULL, *uri = NULL;
 	char *site_dir = NULL;
 
 	assert(path[0] != '/');
 
-	tgz = build_string("%s/%h/" META "/index.tgz", cache_dir, path);
-	if (!tgz)
+	tbz = build_string("%s/%h/" META "/index.tar.bz2", cache_dir, path);
+	if (!tbz)
 		goto out;
 
 	for (task = all_tasks; task; task = task->next) {
-		if (task->type == TASK_INDEX && strcmp(task->str, tgz) == 0) {
+		if (task->type == TASK_INDEX && strcmp(task->str, tbz) == 0) {
 			syslog(LOG_INFO, "Merging with task %d", task->n);
 			goto out;
 		}
@@ -485,7 +620,7 @@ static Task *fetch_site_index(const char *path, int use_cache)
 	
 	assert(!task);
 
-	uri = build_string("http://%H/.0inst-index.tgz", path);
+	uri = build_string("http://%H/.0inst-index.tar.bz2", path);
 	if (!uri)
 		goto out;
 
@@ -497,17 +632,17 @@ static Task *fetch_site_index(const char *path, int use_cache)
 	if (!task)
 		goto out;
 
-	task->step = got_site_index;
+	task->step = got_site_index_archive;
 
-	wget(task, uri, tgz, use_cache);
+	wget(task, uri, tbz, use_cache);
 	if (task->child_pid == -1) {
 		task_destroy(task, 0);
 		task = NULL;
 	}
 
 out:
-	if (tgz)
-		free(tgz);
+	if (tbz)
+		free(tbz);
 	if (uri)
 		free(uri);
 	if (site_dir)
@@ -522,9 +657,6 @@ out:
  */
 Index *get_index(const char *path, Task **task, int force)
 {
-	char *index_path;
-	struct stat info;
-
 	assert(!task || !*task);
 
 	if (!task)
@@ -536,36 +668,24 @@ Index *get_index(const char *path, Task **task, int force)
 	if (strcmp(path, "AppRun") == 0 || *path == '.')
 		return NULL;	/* Don't waste time looking for these */
 
-	index_path = build_string("%s/%h/" META "/index.xml",
-			cache_dir, path);
-	if (!index_path)
-		return NULL;
-
-#if 0
-	if (verbose)
-		printf("Index for '%s' is '%s'\n", path, index_path);
-#endif
-
-	/* TODO: compare times */
-	if (force == 0 && stat(index_path, &info) == 0) {
+	/* TODO: compare times? */
+	if (!force) {
 		Index *index;
 		char *site;
 
 		site = build_string("%h", path);
-		if (site) {
-			index = parse_index(index_path, 0, site);
-			free(site);
-			if (index) {
-				free(index_path);
-				return index;
-			}
-		} else
-			task = NULL;	/* OOM */
+		if (!site)
+			return NULL;	/* OOM */
+
+		index = load_index(site);
+		free(site);
+
+		if (index)
+			return index;
 	}
 
 	if (task)
 		*task = fetch_site_index(path, !force);
-	free(index_path);
 
 	return NULL;
 }

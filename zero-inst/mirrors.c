@@ -11,6 +11,8 @@
 /* Decide the URI where the archive is to be downloaded from.
  * file is the cache-relative path of a file in the group.
  * free() the result.
+ *
+ * If leafname is NULL, get the site index.
  */
 char *mirrors_get_best_url(const char *site, const char *leafname)
 {
@@ -20,7 +22,6 @@ char *mirrors_get_best_url(const char *site, const char *leafname)
 	const char *base;
 
 	assert(strchr(site, '/') == NULL);
-	assert(leafname);
 
 	path = build_string("%s/%s/" META "/mirrors.xml", cache_dir, site);
 	if (!path)
@@ -32,6 +33,12 @@ char *mirrors_get_best_url(const char *site, const char *leafname)
 	}
 	free(path);
 	path = NULL;
+
+	if (!leafname) {
+		leafname = xml_get_attr(mirrors, "index");
+		if (!leafname)
+			goto out;
+	}
 
 	for (mirror = mirrors->lastChild; mirror;
 					mirror = mirror->previousSibling) {
