@@ -536,7 +536,7 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 
 		inode->i_fop = &lazyfs_helper_operations;
 		inode->i_uid = sbi->host_dentry->d_inode->i_uid;
-		inode->i_mode = S_IFFIFO | 0400;
+		inode->i_mode = S_IFIFO | 0400;
 	} else
 		BUG();
 	return inode;
@@ -701,7 +701,7 @@ lazyfs_fill_super(struct super_block *sb, void *data, int silent)
 
 	/* Create /.lazyfs-helper */
 	sbi->helper_dentry = new_dentry(sb, sb->s_root, ".lazyfs-helper",
-			S_IFFIFO, 0, CURRENT_TIME, NULL);
+			S_IFIFO, 0, CURRENT_TIME, NULL);
 	if (!sbi->helper_dentry)
 		goto err;
 
@@ -1653,6 +1653,26 @@ lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	return start_count - count;
 }
 
+/* put_filp is no longer exported from 2.6.10.
+ * On such kernels, we use fput instead. We need a valid dentry
+ * so fput() can examine the inode and dput() it. Inode mustn't be
+ * a device, or that gets put too.
+ */
+static void my_put_filp(struct dentry *dummy, struct file *file)
+{
+	BUG_ON(dummy == NULL);
+	BUG_ON(dummy->d_inode == NULL);
+	BUG_ON(dummy->d_inode->i_cdev != NULL);
+	BUG_ON(file->f_dentry != NULL);
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 9)
+	file->f_dentry = dget(dummy);
+	fput(file);
+#else
+	put_filp(file);
+#endif
+}
+
 /* We create a new file object and pass it to userspace. When closed, we
  * check to see if the host has been created. If we don't return an error
  * then lazyfs_handle_release will get called eventually for this dentry...
@@ -1679,7 +1699,7 @@ send_to_helper(char *buffer, size_t count, struct lazy_user_request *request)
 
 	fd = get_unused_fd();
 	if (fd < 0) {
-		put_filp(file);
+		my_put_filp(sb->s_root, file);
 		return fd;
 	}
 	len = snprintf(number, sizeof(number), "%d uid=%d", fd, request->uid);
@@ -1691,7 +1711,7 @@ send_to_helper(char *buffer, size_t count, struct lazy_user_request *request)
 		err = copy_to_user(buffer, number, len + 1);
 	if (err)
 	{
-		put_filp(file);
+		my_put_filp(sb->s_root, file);
 		put_unused_fd(fd);
 		return err;
 	}

@@ -1,5 +1,8 @@
 * Check that check.py is executable (reported by Olivier Kaloudoff).
 
+* Workaround for missing put_filp() function in Linux 2.6.10 (reported by
+  Martin Lucina).
+
 Changes since 0.1.24
 
 * Implemented poll for files. Before, select() would indicate that the file
