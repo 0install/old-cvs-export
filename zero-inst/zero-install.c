@@ -74,8 +74,6 @@ static const char *prog; /* argv[0] */
 
 static int finished = 0;
 
-Request *open_requests = NULL;
-
 static int to_wakeup_pipe = -1;	/* Write here to get noticed */
 
 static int open_helper(void)
