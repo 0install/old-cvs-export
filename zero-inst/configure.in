@@ -1,5 +1,5 @@
 AC_INIT(zero-install.c)
-AM_INIT_AUTOMAKE(zero-install, 0.1.21)
+AM_INIT_AUTOMAKE(zero-install, 0.1.22)
 AC_PROG_MAKE_SET
 
 LAZYFS_VERSION=0d1d21
