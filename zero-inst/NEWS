@@ -1,3 +1,7 @@
+Changes since 0.1.14:
+
+* Removed unused expat include (spotted by Stuart Langridge).
+
 Changes since 0.1.13:
 
 * 0refresh can be given a path and a date (like 0run), and only does
