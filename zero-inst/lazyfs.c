@@ -330,12 +330,10 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	if(!sbi)
 		goto err;
 
-	printk("Setup sbi\n");
 	sbi->host_file = file;
 	file = NULL;
 	sb->u.generic_sbp = sbi;
 
-	printk("Make root dentry\n");
 	sb->s_root = new_dentry(sb, NULL, "/", S_IFDIR | 0111, 0,
 			sbi->host_file->f_dentry->d_inode->i_mtime);
 	if (!sb->s_root)
@@ -347,8 +345,6 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sbi->helper_dentry->d_inode->i_fop = &lazyfs_helper_operations;
 	sbi->have_helper = 0;
 	sbi->helper_mnt = NULL;
-
-	printk("Done\n");
 
 	/* Hash '...'. If fs provides its own hash, that will override
 	 * this, but that should be OK.
@@ -390,7 +386,7 @@ static struct dentry *get_host_dentry(struct dentry *dentry)
 	if (!info)
 		BUG();
 
-	printk("ensure_host: %ld\n", dentry->d_inode->i_ino);
+	//printk("get_host_dentry: %ld\n", dentry->d_inode->i_ino);
 
 	if (info->host_dentry)
 		return dget(info->host_dentry);	/* dcached */
@@ -467,11 +463,11 @@ static struct dentry *get_host_dentry(struct dentry *dentry)
 				goto out;
 			}
 			
-			printk("get_host_dentry: sleeping...\n");
+			//printk("get_host_dentry: sleeping...\n");
 			schedule();
-			printk("get_host_dentry: try again...\n");
+			//printk("get_host_dentry: try again...\n");
 		}
-		printk("get_host_dentry: it's us!\n");
+		//printk("get_host_dentry: it's us!\n");
 	} while (1);
 
 	if (S_ISDIR(dentry->d_inode->i_mode))
@@ -524,8 +520,6 @@ static void mark_children_may_delete(struct dentry *dentry)
 
 		if (child != sbi->helper_dentry)
 			info->may_delete = 1;
-		else
-			printk("Don't delete helper!\n");
 	}
 
 	spin_unlock(&dcache_lock);
@@ -624,12 +618,10 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		if (existing && existing->d_inode)
 		{
 			struct inode *i = existing->d_inode;
-			printk("lazyfs: '%s' already exists\n",
-					name.name);
 			if (i->i_mode != mode || i->i_size != size ||
 			    i->i_mtime != time)
 			{
-				printk("It's changed!\n");
+				printk("lazyfs: '%s' changed\n", name.name);
 				d_delete(existing);
 				dput(existing); /* Yes, twice! */
 				new_dentry(sb, dir, name.name,
@@ -673,7 +665,7 @@ static int ensure_cached(struct dentry *dentry)
 	struct file *ddd_file;
 	int err;
 
-	printk("ensure_cached: %ld\n", dentry->d_inode->i_ino);
+	//printk("ensure_cached: %ld\n", dentry->d_inode->i_ino);
 
 	if (!S_ISDIR(dentry->d_inode->i_mode))
 		BUG();
@@ -706,7 +698,7 @@ static int ensure_cached(struct dentry *dentry)
 	if (list_dentry == info->list_dentry)
 	{
 		/* Already cached... do nothing */
-		printk("Already cached\n");
+		//printk("Already cached\n");
 		dput(list_dentry);
 		return 0;
 	}
@@ -716,9 +708,6 @@ static int ensure_cached(struct dentry *dentry)
 		dput(info->list_dentry);
 	info->list_dentry = dget(list_dentry);
 	
-	printk("ensure_cached: Got dirlist inode %ld\n",
-			list_dentry->d_inode->i_ino);
-
 	/* Open the '...' file */
 	{
 		struct vfsmount *mnt = mntget(sbi->host_file->f_vfsmnt);
@@ -782,7 +771,7 @@ static int ensure_cached(struct dentry *dentry)
 static int
 lazyfs_dir_open(struct inode *inode, struct file *file)
 {
-	printk("lazyfs_opendir: %ld\n", file->f_dentry->d_inode->i_ino);
+	//printk("lazyfs_opendir: %ld\n", file->f_dentry->d_inode->i_ino);
 
 	/* Make sure the dcache contains the correct structure for
 	 * this directory.
@@ -808,7 +797,7 @@ lazyfs_put_super(struct super_block *sb)
 		kfree(sbi);
 	}
 	else
-		printk("Double umount?\n");
+		BUG();
 }
 
 static int
@@ -895,8 +884,8 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 {
 	struct dentry *new;
 
-	printk("lazyfs_lookup: %s : %s\n", dentry->d_parent->d_name.name,
-			dentry->d_name.name);
+	//printk("lazyfs_lookup: %s : %s\n", dentry->d_parent->d_name.name,
+			//dentry->d_name.name);
 
 	if (dir == dir->i_sb->s_root->d_inode &&
 		strcmp(dentry->d_name.name, ".lazyfs-helper") == 0)
@@ -922,7 +911,7 @@ lazyfs_handle_release(struct inode *inode, struct file *file)
 	if (!info)
 		BUG();
 
-	printk("Released handle for '%s'\n", dentry->d_name.name);
+	printk("Helper finished handling '%s'\n", dentry->d_name.name);
 
 	spin_lock(&fetching_lock);
 	if (!info->fetching)
@@ -947,7 +936,7 @@ send_to_helper(char *buffer, size_t count, struct dentry *dentry)
 	int len = dentry->d_name.len;
 	int fd;
 
-	printk("Sending '%s'...\n", dentry->d_name.name);
+	printk("Sending '%s' to helper\n", dentry->d_name.name);
 
 	file = get_empty_filp();
 	if (!file)
@@ -1140,7 +1129,7 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 	inode = file->f_dentry->d_inode;
 	host_inode = host_file->f_dentry->d_inode;
 
-	printk("lazyfs_file_mmap: %ld -> %ld\n", inode->i_ino, host_inode->i_ino);
+	//printk("lazyfs_file_mmap: %ld -> %ld\n", inode->i_ino, host_inode->i_ino);
 
 	if (inode->i_mapping != &inode->i_data &&
 	    inode->i_mapping != host_inode->i_mapping)
@@ -1161,11 +1150,9 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 	/* Make sure the mapping for our inode points to the host file's */
 	if (inode->i_mapping == &inode->i_data)
 	{
-		printk("lazyfs_file_mmap: Forwarding mapping\n");
+		//printk("lazyfs_file_mmap: Forwarding mapping\n");
 		inode->i_mapping = host_inode->i_mapping;
 	}
-	else
-		printk("lazyfs_file_mmap: Already forwarded\n");
 
 	return 0;
 }
@@ -1179,7 +1166,7 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 	struct dentry *host_dentry;
 	struct file *host_file;
 
-	printk("lazyfs_file_open: %ld\n", inode->i_ino);
+	//printk("lazyfs_file_open: %ld\n", inode->i_ino);
 
 	host_dentry = get_host_dentry(dentry);
 	if (IS_ERR(host_dentry))
@@ -1208,7 +1195,7 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 static int
 lazyfs_file_release(struct inode *inode, struct file *file)
 {
-	printk("lazyfs_file_release: %ld\n", inode->i_ino);
+	//printk("lazyfs_file_release: %ld\n", inode->i_ino);
 
 	if (file->private_data)
 		fput((struct file *) file->private_data);

@@ -48,7 +48,12 @@ static void sig_int(int signum)
 	return;
 }
 
-#if 0
+static void child_handle(int fd)
+{
+	sleep(1);
+	close(fd);
+}
+
 static void handle_fd(int fd)
 {
 	printf("Handle request on FD %d\n", fd);
@@ -59,19 +64,16 @@ static void handle_fd(int fd)
 			perror("fork");
 			return;
 		case 0:
-			sleep(1);
-			close(fd);
+			child_handle(fd);
 			_exit(0);
 		default:
 			return;
 	}
 }
-#endif
 
 int main(int argc, char **argv)
 {
 	const char *mount_point = "/uri";
-	int last = -1;
 
 	do_mount("/var/cache/zero-inst/", mount_point);
 
@@ -103,16 +105,12 @@ int main(int argc, char **argv)
 		}
 
 		fd = atoi(number);
-		if (last != -1)
-			close(last);
-		last = fd;
+		handle_fd(fd);
+		close(fd);
 	}
 	
 	if (helper != -1)
 		close(helper);
-
-	if (last != -1)
-		close(last);
 
 	if (mount_point)
 	{
