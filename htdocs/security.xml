@@ -23,6 +23,8 @@ With traditional (non-zero-install) systems, every application, library and
 documentation package is given root-level access to the system.</li>
 <li>Users are at risk only from the software they run, not all software
 installed on the machine.</li>
+<li>Zero Install does not listen for incoming connections, so any attack
+must be initiated by a local user, intentionally or otherwise.</li>
 </ul>
 
 <h3>Core system security key points (implementation)</h3>
@@ -31,8 +33,6 @@ installed on the machine.</li>
 new vector for a possible root-compromise.</li>
 <li>A small helper runs as a special user. If compromised, it would
 allow trojaning of software run via Zero Install.</li>
-<li>Zero Install does not listen for incoming connections, so any attack
-must be initiated by a local user, intentionally or otherwise.</li>
 </ul>
 
 <h3>User security key points</h3>
