@@ -11,19 +11,37 @@ ignored_names = ('CVS', '.svn', '.', '..')
 meta_names = ('.DirIcon', 'AppInfo.xml')
 archive_dir_leaf = '.0inst-archives'
 index_leaf = '.0inst-index.xml'
+saved_build = '.0inst-0build'
 
-if len(sys.argv) != 2:
-	print >>sys.stderr, "Usage: 0build <targetdir>\n\n" \
+target = None
+host = None
+
+if len(sys.argv) == 1:
+	if os.path.exists(saved_build):
+		lines = file(saved_build).readlines()
+		target, = [l[7:-1] for l in lines if l.startswith('target=')]
+		host, = [l[5:-1] for l in lines if l.startswith('host=')]
+elif len(sys.argv) == 3:
+	target = sys.argv[1]
+	host = sys.argv[2]
+
+if not (target and host):
+	print >>sys.stderr, "Usage: 0build <targetdir> <your.host>\n\n" \
 		"The <targetdir>/%s directory will be created/updated,\n" \
-		"along with the index file <targetdir>/%s\n" \
-		"This file should be fetchable as:\n" \
-		"http://your.host/%s\n" \
+		"along with the index file <targetdir>/%s\n\n" \
+		"This file should be fetchable as: http://<your.host>/%s.\n\n" \
 		"Then the file ./<somefile> will be accessable as\n" \
-		"/uri/0http/your.host/<somefile>\n\n" \
-		"Eg: 0build /var/www/" % \
+		"/uri/0http/<your.host>/<somefile>\n\n" \
+		"Eg: 0build /var/www/ /uri/0http/your.host\n\n" \
+		"The values are saved; in future, just run '0build'" % \
 		(archive_dir_leaf, index_leaf, index_leaf)
 	raise SystemExit
-target = sys.argv[1]
+
+print >> file(saved_build, 'w'), 'target=%s\nhost=%s' % (target, host)
+
+print "Building index files for server '%s' in '%s'." % (host, target)
+
+assert '/' not in host
 
 if not os.path.exists(target):
 	print >>sys.stderr, "Target '%s' not found" % target
@@ -260,6 +278,7 @@ doc = minidom.Document()
 site = doc.createElementNS(ZERO_NS, 'site-index')
 site.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
 doc.appendChild(site)
+site.setAttributeNS(None, 'path', '/uri/0http/%s' % host)
 
 root = Dir('.', root = True)
 
@@ -275,7 +294,8 @@ if old_doc:
 	find_archives(old_archives, old_doc.documentElement)
 
 root.add_xml(site)
-doc.writexml(file(index_path, 'w'), addindent='  ', newl='\n')
+doc.writexml(file(index_path + '.new', 'w'), addindent='  ', newl='\n')
+os.rename(index_path + '.new', index_path)
 
 for x in old_tgz:
 	path = os.path.join(archive_dir, x)
