@@ -81,6 +81,11 @@ configure step, add <tt>${UMFLAGS}</tt> to the end of <tt>KERNELFLAGS</tt>
 in the makefile.
 </div>
 
+<div class='note'>
+<strong>06-May-2003:</strong> You may need to edit the Makefile and add -O2 to
+<tt>KERNELFLAGS</tt>. Will be fixed in the next release.
+</div>
+
 <p>
 Then run make and install it (use su to get the root prompt, #):
 </p>
