@@ -182,6 +182,7 @@ OK
 
 <ul>
   <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/641">sudo: command not found</a></li>
+  <li><a href="http://news.gmane.org/gmane.comp.file-systems.zero-install.devel">AssertionError: 'Linux-ix86' != 'Linux-ppc'</a> -- edit tests/check.py for non-x86 systems</li>
 </ul>
 
 <p>
