@@ -270,10 +270,17 @@ steps. For example, this command might present the same configuration boxes as
 $ sudo /uri/0install/apache.org/apache
 </pre>
 
+<h2>Similar systems</h2>
+
 <p>
 It appears the Sun have developed a similar system to Zero Install,
 <a href="http://java.sun.com/products/javawebstart">Java Web Start</a>,
 although this only works for Java applications.
+</p>
+
+<p>
+<a href="http://www.konvalo.org/">Konvalo</a> is a very similar idea
+to Zero Install, implemented using CODA.
 </p>
 
 </html>
