@@ -154,7 +154,7 @@ Once <b>0launch-gui</b> has been fetched, it displays this dialog box:
 </p>
 
 <p>
-The main part of the windows contains a list of all the components needed to run Edit.
+The main part of the window contains a list of all the components needed to run Edit.
 At the top is Edit itself, and shown below is ROX-Lib, which Edit needs in order to function.
 If you are happy with the selected versions, click on <b>Execute</b> to run the
 program.
