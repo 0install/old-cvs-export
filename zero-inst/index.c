@@ -256,7 +256,7 @@ xmlNode *index_find_archive(xmlNode *file)
 {
 	xmlNode *node;
 	
-	assert(file->name[0] == 'f' || file->name[0] == 'x');
+	assert(file->name[0] == 'f' || file->name[0] == 'e');
 
 	for (node = file->parent->children; node; node = node->next) {
 		if (strcmp(node->name, "archive") == 0)

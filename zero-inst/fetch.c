@@ -134,56 +134,76 @@ err:
 /* Called with cwd in directory where files have been extracted.
  * Moves each file in 'group' up if everything is correct.
  */
-#if 0
-static void pull_up_files(Group *group)
+static void pull_up_files(xmlNode *group)
 {
-	Item *item;
+	xmlNode *item;
 	struct stat info;
+	xmlChar *leaf = NULL;
 
 	printf("\t(unpacked OK)\n");
 
-	for (item = group->items; item; item = item->next) {
+	for (item = group->children; item; item = item->next) {
 		char up[MAX_PATH_LEN] = "../";
+		xmlChar *size_s, *mtime_s;
+		long size, mtime;
 
-		if (lstat(item->leafname, &info)) {
+		if (item->type != XML_ELEMENT_NODE)
+			continue;
+
+		if (item->name[0] == 'a')
+			continue;
+		assert(item->name[0] == 'f' || item->name[0] == 'e');
+
+		assert(!leaf);
+		leaf = xmlGetNsProp(item, "name", NULL);
+		assert(leaf);
+
+		size_s = xmlGetNsProp(item, "size", NULL);
+		size = atol(size_s);
+		xmlFree(size_s);
+
+		mtime_s = xmlGetNsProp(item, "mtime", NULL);
+		mtime = atol(mtime_s);
+		xmlFree(mtime_s);
+
+		if (lstat(leaf, &info)) {
 			perror("lstat");
-			fprintf(stderr, "'%s' missing from archive\n",
-					item->leafname);
-			return;
+			fprintf(stderr, "'%s' missing from archive\n", leaf);
+			goto out;
 		}
 
 		if (!S_ISREG(info.st_mode)) {
-			fprintf(stderr, "'%s' is not a regular file!\n",
-					item->leafname);
-			return;
+			fprintf(stderr, "'%s' is not a regular file!\n", leaf);
+			goto out;
 		}
 
-		if (info.st_size != item->size) {
-			fprintf(stderr, "'%s' has wrong size!\n",
-					item->leafname);
-			return;
+		if (info.st_size != size) {
+			fprintf(stderr, "'%s' has wrong size!\n", leaf);
+			goto out;
 		}
 
-		if (info.st_mtime != item->mtime) {
-			fprintf(stderr, "'%s' has wrong mtime!\n",
-					item->leafname);
-			return;
+		if (info.st_mtime != mtime) {
+			fprintf(stderr, "'%s' has wrong mtime!\n", leaf);
+			goto out;
 		}
 
-		if (strlen(item->leafname) > sizeof(up) - 4) {
-			fprintf(stderr, "'%s' way too long\n",
-					item->leafname);
-			return;
+		if (strlen(leaf) > sizeof(up) - 4) {
+			fprintf(stderr, "'%s' way too long\n", leaf);
+			goto out;
 		}
-		strcpy(up + 3, item->leafname);
-		if (rename(item->leafname, up)) {
+		strcpy(up + 3, leaf);
+		if (rename(leaf, up)) {
 			perror("rename");
-			return;
+			goto out;
 		}
-		/* printf("\t(extracted '%s')\n", item->leafname); */
+		/* printf("\t(extracted '%s')\n", leaf); */
+		xmlFree(leaf);
+		leaf = NULL;
 	}
+out:
+	if (leaf)
+		xmlFree(leaf);
 }
-#endif
 
 /* Unpacks the archive. Uses the group to find out what other files should be
  * there and extract them too. Ensures types, sizes and MD5 sums match.
@@ -256,11 +276,11 @@ static void unpack_archive(const char *archive_dir, xmlNode *archive)
 	if (!WIFEXITED(status) || WEXITSTATUS(status)) {
 		printf("\t(error unpacking archive)\n");
 	} else {
-		//pull_up_files(group);
+		pull_up_files(group);
 	}
 
 	chdir("..");
-	//system("rm -r .0inst-tmp");
+	system("rm -rf .0inst-tmp");
 }
 
 /* Begins fetching 'uri', storing the file as 'path'.
