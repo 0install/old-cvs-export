@@ -4,6 +4,7 @@ import gtk, os
 import sys
 import dialog
 from reader import InvalidInterface
+from model import SafeException
 
 # Singleton Policy
 policy = None
@@ -26,7 +27,6 @@ class GUIPolicy(Policy):
 	def monitor_download(self, dl):
 		error_stream = dl.start()
 		def error_ready(src, cond):
-			print src, "ready"
 			got = os.read(src.fileno(), 100)
 			if not got:
 				error_stream.close()
@@ -46,6 +46,10 @@ class GUIPolicy(Policy):
 					dialog.alert(self.window,
 						"Syntax error in downloaded interface '%s':\n\n%s" %
 						(dl.interface.uri, ex))
+				except SafeException, ex:
+					dialog.alert(self.window,
+						"Error updating interface '%s':\n\n%s" %
+						(dl.interface.uri, ex))
 				return False
 			dl.error_stream_data(got)
 			return True
@@ -57,6 +61,10 @@ class GUIPolicy(Policy):
 			progress = self.window.progress
 			self.pulse = gtk.timeout_add(50, lambda: progress.pulse() or True)
 			progress.show()
+	
+	def confirm_trust_keys(self, interface, sigs, iface_xml):
+		import trust_box
+		box = trust_box.trust_box.confirm_trust(interface, sigs, iface_xml)
 
 	def main(self):
 		self.window.show()
