@@ -16,11 +16,14 @@ struct _Client {
 	int socket;
 	int have_uid;
 	uid_t uid;
+	int monitor;
 
 	int need_update;
 
 	int send_offset;
 	char *to_send;
+
+	char command[10 + MAX_PATH_LEN];	/* Command being read */
 
 	Client *next;
 };
@@ -78,6 +81,9 @@ static void client_push_update(Client *client)
 	int i;
 
 	client->need_update = 1;
+
+	if (!client->monitor)
+		return;
 
 	if (client->to_send)
 		return;
@@ -139,9 +145,11 @@ void read_from_control(int control)
 	printf("New client %d\n", fd);
 
 	client->socket = fd;
+	client->monitor = 0;
 	client->have_uid = 0;
 	client->send_offset = 0;
 	client->to_send = NULL;
+	client->command[0] = '\0';
 	client->next = clients;
 	clients = client;
 
@@ -174,11 +182,44 @@ static void client_free(Client *client)
 	free(client);
 }
 
+static int client_do_command(Client *client, const char *command)
+{
+	if (strcmp(command, "MONITOR") == 0) {
+		client->monitor = 1;
+		client_push_update(client);
+		return 0;
+	} else {
+		fprintf(stderr, "Unknown command '%s' from client %d\n",
+				command, client->socket);
+		return -1;
+	}
+}
+
+/* Execute each complete command in client->command, removing them
+ * as we go. Returns 0 on success, or -1 on invalid command.
+ */
+static int client_do_commands(Client *client)
+{
+	char *nl;
+
+	while ((nl = strchr(client->command, '\n'))) {
+		*nl = '\0';
+		if (client_do_command(client, client->command))
+			return -1;
+		memmove(client->command, nl + 1,
+				strlen(nl + 1) + 1);
+	}
+
+	return 0;
+}
+
 static int read_from_client(Client *client)
 {
-	char buffer[256];
+	int got;
+	int current_len;
 
 	if (!client->have_uid) {
+		char buffer[256];
 		struct msghdr msg;
 		struct iovec vec[1];
 		struct cmsghdr *cmsg;
@@ -220,26 +261,27 @@ static int read_from_client(Client *client)
 		printf("Client authenticated as user %ld\n",
 				(long) client->uid);
 
-		client_push_update(client);
-
 		return 0;
 	}
 
-	return -1;
-#if 0
-	got = read(client->socket, buffer, sizeof(buffer) - 1);
+	current_len = strlen(client->command);
+
+	if (current_len >= sizeof(client->command) - 1) {
+		fprintf(stderr, "Command too long from %d\n", client->socket);
+		return -1;
+	}
+
+	got = read(client->socket, client->command + current_len,
+			sizeof(client->command) - 1 - current_len);
 	if (got <= 0) {
 		if (got < 0)
 			perror("Reading from client");
 		return -1;
 	}
 
-	buffer[got] = '\0';
+	client->command[current_len + got] = '\0';
 
-	printf("Got '%s' from %d\n", buffer, client->socket);
-
-	return 0;
-#endif
+	return client_do_commands(client);
 }
 
 static int write_to_client(Client *client)

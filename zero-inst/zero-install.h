@@ -1,5 +1,6 @@
 #define URI "/uri"
 #define ZERO_INST_INDEX ".0inst.xml"
+#define MAX_PATH_LEN 4096
 
 extern char cache_dir[];
 

@@ -54,7 +54,6 @@
 #include "zero-install.h"
 
 #define MAX_URI_LEN 4096
-#define MAX_PATH_LEN 4096
 
 char cache_dir[MAX_PATH_LEN];
 

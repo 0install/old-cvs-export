@@ -1,7 +1,22 @@
 #include <sys/socket.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/un.h>
 #include <unistd.h>
+
+static void send_command(int socket, const char *message)
+{
+	while (*message) {
+		int sent;
+		sent = send(socket, message, strlen(message), 0);
+
+		if (sent <= 0) {
+			perror("send");
+			exit(EXIT_FAILURE);
+		}
+		message += sent;
+	}
+}
 
 int main(int argc, char **argv)
 {
@@ -28,6 +43,9 @@ int main(int argc, char **argv)
 	}
 	if (connect(control, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
 		perror("connect");
+		fprintf(stderr,
+			"Can't connect to Zero Install helper application.\n"
+			"Is it running?\n");
 		return 1;
 	}
 
@@ -59,6 +77,8 @@ int main(int argc, char **argv)
 		perror("sendmsg");
 		return 1;
 	}
+
+	send_command(control, "MONITOR\n");
 
 	while (1) {
 		char buffer[256];
