@@ -2,13 +2,10 @@ import gtk
 import os
 
 from model import SafeException
-from gui import policy
+from gui import policy, pretty_size
 from dialog import Dialog
 import download
 import dialog
-
-def pretty_size(size):
-	return str(size) + ' b'
 
 def download_and_run(mainwindow, prog_args):
 	"""If all downloads are ready, runs the program. Otherwise,
