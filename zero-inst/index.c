@@ -205,15 +205,13 @@ int index_valid(Index *index, const char *site)
 	path = xmlGetNsProp(node, "path", NULL);
 	assert(path);
 	if (strncmp(path, MNT_DIR "/", sizeof(MNT_DIR)) != 0) {
-		fprintf(stderr, "Path attribute must start with '%s'\n",
-				MNT_DIR);
-		return 0;
-	}
-
-	if (strcmp(path + sizeof(MNT_DIR), site) != 0) {
-		fprintf(stderr, "Site '%s' accessed incorrectly as '%s'\n",
-				path + sizeof(MNT_DIR), site);
-		return 0;
+		fprintf(stderr,
+			"WARNING: Path attribute must start with '%s'\n",
+			MNT_DIR);
+	} else if (strcmp(path + sizeof(MNT_DIR), site) != 0) {
+		fprintf(stderr,
+			"WARNING: Site '%s' accessed incorrectly as '%s'\n",
+			path + sizeof(MNT_DIR), site);
 	}
 
 	if (!dir_valid(index_get_root(index)))
