@@ -23,6 +23,9 @@
 
 #define LAZYFS_MAX_LISTING_SIZE (100*1024)
 
+#define GET_HOST_MAY_BLOCK 0x1
+#define GET_HOST_DONT_START 0x2 /* Never issue a new request */
+
 #include "config.h"
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 70)
@@ -275,6 +278,9 @@ static void show_refs(struct dentry *dentry, int indent)
 
 /* Any change to the helper_list queues requires this lock */
 static DECLARE_MUTEX(fetching_lock);
+
+/* Setting finfo->host_file require this */
+static spinlock_t host_file_lock = SPIN_LOCK_UNLOCKED;
 
 /* Any change to an inode's u.generic_ip mapping counter needs this */
 static spinlock_t mapping_lock = SPIN_LOCK_UNLOCKED;
@@ -886,8 +892,10 @@ fetch:
  * returned value will be the dentry of the '...' file. The host_dentry for the
  * directory itself is cached.
  */
-static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
+static struct dentry *get_host_dentry(struct dentry *dentry, int flags)
 {
+	int blocking = (flags & GET_HOST_MAY_BLOCK) != 0;
+	int dont_start = (flags & GET_HOST_DONT_START) != 0;
 	struct super_block *sb = dentry->d_inode->i_sb;
 	struct lazy_sb_info *sbi = SBI(sb);
 	struct dentry *host_dentry;
@@ -919,9 +927,11 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 		down(&fetching_lock);
 
 		if (sbi->helper_mnt) {
-			if (find_user_request(info, current->uid))
+			if (find_user_request(info, current->uid)) {
 				host_dentry = ERR_PTR(0);
-			else if (add_user_request(info, current->uid)) {
+			} else if (dont_start) {
+				host_dentry = ERR_PTR(-EIO);
+			} else if (add_user_request(info, current->uid)) {
 				start_fetching = 1;
 				host_dentry = ERR_PTR(0);
 			} else
@@ -1350,21 +1360,20 @@ static int ensure_cached(struct dentry *dentry)
 	if (!S_ISDIR(dentry->d_inode->i_mode))
 		BUG();
 
-	list_dentry = get_host_dentry(dentry, 1);
+	list_dentry = get_host_dentry(dentry, GET_HOST_MAY_BLOCK);
 
 	down(&update_dir);
 
 	if (IS_ERR(list_dentry)) {
 		// Since ... was missing and couldn't be fetched, this
 		// directory shouldn't exist. Remove it.
-		//printk("Error from ensure_cached(%s): %ld\n",
-		//		dentry->d_name.name, PTR_ERR(list_dentry));
+		//printk("Error from ensure_cached(%s): %ld\n", dentry->d_name.name, PTR_ERR(list_dentry));
 		if (!d_unhashed(dentry)) {
 			//printk("Removing...\n");
 			my_d_genocide(dentry);
 		}
 		else if (!sbi->helper_mnt) {
-			//printk("But no helper\n");
+			//printk("ensure_cached: Error, but no helper\n");
 		} else {
 			//printk("But not yet hashed\n");
 		}
@@ -1855,7 +1864,7 @@ out:
  * If block is 0, this may just start a fetch and return -EAGAIN.
  */
 static int
-get_host_file(struct file *file, int block)
+get_host_file(struct file *file, int flags)
 {
 	struct dentry *dentry = file->f_dentry;
 	struct super_block *sb = dentry->d_inode->i_sb;
@@ -1867,16 +1876,31 @@ get_host_file(struct file *file, int block)
 	if (!finfo)
 		BUG();
 
-	/* XXX: locking */
-	if (finfo->host_file)
-	{
-		printk("get_host_file: already set!\n");
-		return -EIO;
+	//printk("get_host_file(%s): %d\n", dentry->d_name.name, block);
+	/* This is just an optimisation; saves getting and freeing the
+	 * host dentry.
+	 */
+	if (finfo->host_file) {
+		printk("get_host_file: already set\n");
+		return 0;
 	}
 	
-	host_dentry = get_host_dentry(dentry, block);
+	host_dentry = get_host_dentry(dentry, flags);
 	if (IS_ERR(host_dentry))
 		return PTR_ERR(host_dentry);
+
+	/* This is another optimisation; saves opening and closing the host
+	 * file. This is fairly common, since the above get_host_dentry may
+	 * have blocked for a long time.
+	 */
+	if (finfo->host_file) {
+		/* Someone else filled in host_file while we were waiting. */
+		printk("get_host_file(%s): set during get_host_dentry\n",
+				dentry->d_name.name);
+		dput(host_dentry);
+		dec(R_HOST_DENTRY);
+		return 0;
+	}
 
 	/* Open the host file */
 	{
@@ -1890,8 +1914,21 @@ get_host_file(struct file *file, int block)
 	if (IS_ERR(host_file))
 		return PTR_ERR(host_file);
 
+	spin_lock(&host_file_lock);
+	if (finfo->host_file) {
+		/* Someone else filled in host_file while we were opening
+		 * the host file. Unlikely.
+		 */
+		spin_unlock(&host_file_lock);
+		printk("get_host_file: filled in while opening host file\n");
+		fput(host_file);
+		return 0;
+	}
+	//printk("get_host_file(%s): adding\n", dentry->d_name.name);
+
 	finfo->host_file = host_file;
 	inc(R_FILE_HOST_FILE);
+	spin_unlock(&host_file_lock);
 
 	return 0;
 }
@@ -1905,7 +1942,9 @@ lazyfs_file_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	if (!finfo->host_file)
 	{
 		int err;
-		err = get_host_file(file, 1);
+		err = get_host_file(file,
+				    GET_HOST_MAY_BLOCK |
+				    GET_HOST_DONT_START);
 		if (err)
 			return err;
 	}
@@ -1929,7 +1968,9 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 
 	if (!finfo->host_file)
 	{
-		err = get_host_file(file, 1);
+		err = get_host_file(file,
+				    GET_HOST_MAY_BLOCK |
+				    GET_HOST_DONT_START);
 		if (err)
 			return err;
 	}

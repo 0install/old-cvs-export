@@ -1,7 +1,15 @@
+* Only issue new requests when opening a file. A subsequent read() or mmap()
+  may block on the original request, but not create a new one if the first
+  one failed.
+
+* Added checks for concurrent threads setting host_file. Prevents leaking
+  file structures.
+
 * Allow directories to be removed from dynamic directories (requested by
   Karl Bowden).
 
-* Added more unittests (for mmapping and for removing dynamic directories).
+* Added more unittests (for mmapping, concurrent access, and removing
+  dynamic directories).
 
 * Run tests in an order that tests simpler functions first (in case the
   system crashes).
