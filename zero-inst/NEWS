@@ -1,3 +1,7 @@
+Changes since 0.1.24:
+
+* Stricter checking for valid domain names.
+
 Changes since 0.1.23:
 
 * Updated the Technical file (reported by Issac Trotts).

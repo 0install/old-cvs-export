@@ -662,6 +662,73 @@ out:
 	return task;
 }
 
+/* Check that 'site' is a valid site name within /uri.
+ * DNS isn't case sensitive, but Unix is. Therefore, we require all
+ * lower-case names in addition to the usual restrictions.
+ * However, anything after '#' is OK, since it isn't part of the domain.
+ *
+ * This is mainly for efficiency -- don't bother running wget on invalid
+ * names.
+ *
+ * See: RFC 1034
+ *
+ * "The labels must follow the rules for ARPANET host names. They must
+ * start with a letter, end with a letter or digit, and have as interior
+ * characters only letters, digits, and hyphen.  There are also some
+ * restrictions on the length. Labels must be 63 characters or less."
+ */
+static int valid_site_name(const char *site)
+{
+	const char *hash;
+	int domain_len;
+	int i;
+	int label_start = 0;
+
+	assert(site);
+
+	/* Must start with [a-z] */
+	if (site[0] < 'a' || site[0] > 'z')
+		return 0;
+
+	hash = strchr(site, '#');
+	if (hash)
+		domain_len = hash - site;
+	else
+		domain_len = strlen(site);
+
+	/* Domain names are limited to 255 characters */
+	if (domain_len > 255)
+		return 0;
+
+	for (i = 1; i < domain_len; i++) {
+		const char c = site[i];
+
+		if (c == '.') {
+			if (i == label_start)
+				return 0;	/* Zero-length label */
+			label_start = i + 1;
+			continue;
+		}
+
+		if (i - label_start >= 63)
+			return 0;	/* Label part too long */
+
+		if (c >= 'a' && c <= 'z')
+			continue;	/* Lowercase ASCII OK */
+
+		if (c >= '0' && c <= '9')
+			continue;	/* Digits are OK */
+
+		if (c == '-' && i < domain_len - 1)
+			continue;	/* '-' OK except at end */
+
+		/* Unknown character. Reject. */
+		return 0;
+	}
+
+	return 1;	/* OK! */
+}
+
 /* Returns the parsed index for site containing 'path'.
  * If the index needs to be fetched (or force is set), returns NULL and returns
  * the task in 'task'. If task is NULL, never starts a task.
@@ -677,7 +744,7 @@ Index *get_index(const char *path, Task **task, int force)
 	assert(path[0] == '/');
 	path++;
 	
-	if (strcmp(path, "AppRun") == 0 || *path == '.')
+	if (!valid_site_name(path))
 		return NULL;	/* Don't waste time looking for these */
 
 	/* TODO: compare times? */
@@ -777,4 +844,52 @@ out:
 	if (tgz)
 		free(tgz);
 	return task;
+}
+
+static void test_valid_site_name(void)
+{
+	assert(valid_site_name("") == 0);
+	assert(valid_site_name("a") == 1);
+	assert(valid_site_name("z") == 1);
+	assert(valid_site_name("0") == 0);
+	assert(valid_site_name("`") == 0);
+	assert(valid_site_name("{") == 0);
+
+	assert(valid_site_name("AppRun") == 0);
+	assert(valid_site_name(".DirIcon") == 0);
+
+	assert(valid_site_name("a.b") == 1);
+	assert(valid_site_name("a..b") == 0);
+	assert(valid_site_name("a--b") == 1);
+	assert(valid_site_name("a--b-") == 0);
+
+	assert(valid_site_name("zero-install.sourceforge.net") == 1);
+	assert(valid_site_name("rox.sourceforge.net") == 1);
+	assert(valid_site_name("rox.sourceforge.net#~foo.£?") == 1);
+	assert(valid_site_name("rox.sourceforge.net~foo.£?") == 0);
+	assert(valid_site_name("some name.com") == 0);
+
+	assert(valid_site_name("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") == 1);
+	assert(valid_site_name("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") == 0);
+
+	assert(valid_site_name("b.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") == 1);
+	assert(valid_site_name("b.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") == 0);
+
+	assert(valid_site_name("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") == 1);
+	assert(valid_site_name("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+			       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") == 1);
+}
+
+void fetch_run_tests(void)
+{
+	test_valid_site_name();
 }

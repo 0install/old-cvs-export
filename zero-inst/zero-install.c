@@ -391,6 +391,12 @@ int main(int argc, char **argv)
 	char *pid_file;
 	int background = 1;
 
+	if (1)
+	{
+		/* Unit-tests */
+		fetch_run_tests();
+	}
+
 	openlog("zero-install", 0, LOG_DAEMON);
 
 	if (0) {
