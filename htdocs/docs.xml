@@ -235,6 +235,15 @@ Linux ix86 type systems).
 </p>
 
 <p>
+The versions should go inside the platform directories (rather than the
+other way around) so that 'platform/latest-2.2' can be a different version
+for each platform (eg, if the ARM port is a few versions behind the x86 one).
+Note that some of the ROX applications use a different scheme (that predates
+Zero Install), putting the platforms inside the versions and using 'uname'
+to run them. Don't let that confuse you.
+</p>
+
+<p>
 You should also use symlinks to indicate interesting versions (such as the
 current stable release). Thus, a python script might start with:
 </p>
@@ -248,12 +257,6 @@ print "Hello, I need Python 2.2 or later"
 The '2.2-or-later' symlink points to the latest version of python which
 is compatible with version 2.2. Other examples: 'latest-2.2 -> 2.2.3',
 'latest-stable', etc.
-</p>
-
-<p>
-The versions should go inside the platform directories (rather than the
-other way around) so that 'platform/latest-2.2' can be a different version
-for each platform (eg, if the ARM port is a few versions behind the x86 one).
 </p>
 
 <h3>Avoiding glibc version troubles</h3>
