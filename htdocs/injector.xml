@@ -92,6 +92,7 @@ You will be prompted to confirm that you trust my GPG key.
 
 <pre>
 $ <b>0launch http://rox.sourceforge.net/2005/interfaces/Edit</b>
+Need to download; switching to GUI mode
 Currently downloading:
 - http://0install.net/2005/interfaces/injector-gui
 
