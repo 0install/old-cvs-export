@@ -104,6 +104,14 @@ the ownership of the cache directory to the user the helper will run as (either
 your own user, or create a new user specially for the purpose using 'adduser').
 </p>
 <p>
+Note: If you're upgrading from a previous version, you may need to unload
+the lazyfs module at this point:
+</p>
+<pre>
+# <b>umount /uri</b>
+# <b>rmmod lazyfs</b>
+</pre>
+<p>
 Run this command, replacing 'fred' with your login name, then mount /uri
 (the order is important). Since the helper is not yet running, you won't
 be able to access the directory yet, so don't worry about that.
