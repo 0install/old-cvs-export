@@ -272,7 +272,7 @@ static void show_refs(struct dentry *dentry, int indent)
 #endif
 
 /* Any change to the helper_list queues requires this lock */
-static spinlock_t fetching_lock = SPIN_LOCK_UNLOCKED;
+static DECLARE_MUTEX(fetching_lock);
 
 /* Any change to an inode's u.generic_ip mapping counter needs this */
 static spinlock_t mapping_lock = SPIN_LOCK_UNLOCKED;
@@ -280,7 +280,7 @@ static spinlock_t mapping_lock = SPIN_LOCK_UNLOCKED;
 /* Held when modifying the tree in any way. This is held for longer than
  * dcache_lock.
  */
-DECLARE_MUTEX(update_dir);
+static DECLARE_MUTEX(update_dir);
 
 struct lazy_user_request {
 	struct dentry *dentry;
@@ -525,8 +525,8 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 
 /* If parent_dentry is NULL, then this creates a new root dentry,
  * otherwise, refs the parent.
- * Only created during init an when opening a directory. Must put a lock
- * around the whole open_dir operation.
+ * Only created during init and when opening a directory.
+ * Must hold update_dir (except in init).
  */
 static struct dentry *
 new_dentry(struct super_block *sb, struct dentry *parent_dentry,
@@ -896,7 +896,7 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 		first_try = 0;
 
 		/* Start a fetch, if there isn't one already */
-		spin_lock(&fetching_lock);
+		down(&fetching_lock);
 
 		if (sbi->helper_mnt) {
 			if (find_user_request(info, current->uid))
@@ -908,7 +908,7 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 				host_dentry = ERR_PTR(-ENOMEM);
 		} /* else -EIO */
 		
-		spin_unlock(&fetching_lock);
+		up(&fetching_lock);
 		if (host_dentry)
 			goto out;
 		if (start_fetching)
@@ -921,12 +921,12 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 
 		while (1) {
 			current->state = TASK_INTERRUPTIBLE;
-			spin_lock(&fetching_lock);
+			down(&fetching_lock);
 			if (!find_user_request(info, current->uid)) {
-				spin_unlock(&fetching_lock);
+				up(&fetching_lock);
 				break;	/* Fetch request completed */
 			}
-			spin_unlock(&fetching_lock);
+			up(&fetching_lock);
 
 			if (signal_pending(current)) {
 				host_dentry = ERR_PTR(-ERESTARTSYS);
@@ -1534,9 +1534,9 @@ lazyfs_handle_release(struct inode *inode, struct file *file)
 
 	//printk("Helper finished handling '%s'\n", request->dentry->d_name.name);
 
-	spin_lock(&fetching_lock);
+	down(&fetching_lock);
 	destroy_request(request);
-	spin_unlock(&fetching_lock);
+	up(&fetching_lock);
 
 	dec(R_REQUEST);
 
@@ -1689,14 +1689,14 @@ lazyfs_helper_open(struct inode *inode, struct file *file)
 	struct lazy_sb_info *sbi = SBI(sb);
 	int err = 0;
 
-	spin_lock(&fetching_lock);
+	down(&fetching_lock);
 	if (!sbi->helper_mnt) {
 		sbi->helper_mnt = mntget(file->f_vfsmnt);
 		inc(R_HELPER);
 	}
 	else
 		err = -EBUSY;
-	spin_unlock(&fetching_lock);
+	up(&fetching_lock);
 
 	return err;
 }
@@ -1707,7 +1707,7 @@ lazyfs_helper_release(struct inode *inode, struct file *file)
 	struct super_block *sb = inode->i_sb;
 	struct lazy_sb_info *sbi = SBI(sb);
 
-	spin_lock(&fetching_lock);
+	down(&fetching_lock);
 
 	mntput(sbi->helper_mnt);
 	dec(R_HELPER);
@@ -1729,7 +1729,7 @@ lazyfs_helper_release(struct inode *inode, struct file *file)
 
 	//show_refs(sb->s_root, 0);
 
-	spin_unlock(&fetching_lock);
+	up(&fetching_lock);
 
 	wake_up_interruptible(&lazy_wait);
 
@@ -1749,10 +1749,10 @@ lazyfs_helper_poll(struct file *file, poll_table *wait)
 
         poll_wait(file, &helper_wait, wait);
 
-	spin_lock(&fetching_lock);
+	down(&fetching_lock);
 	if (!list_empty(&sbi->to_helper))
 		retval = POLLIN | POLLRDNORM;
-        spin_unlock(&fetching_lock);
+        up(&fetching_lock);
 
         return retval;
 }
@@ -1771,7 +1771,7 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 
 		current->state = TASK_INTERRUPTIBLE;
 
-		spin_lock(&fetching_lock);
+		down(&fetching_lock);
 		if (!list_empty(&sbi->to_helper)) {
 
 			request = list_entry(sbi->to_helper.next,
@@ -1779,7 +1779,7 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 			list_move(&request->helper_list,
 				  &sbi->requests_in_progress);
 		}
-		spin_unlock(&fetching_lock);
+		up(&fetching_lock);
 
 		if (request) {
 			/*
@@ -1791,9 +1791,9 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 
 			if (err < 0) {
 				/* Failed... error */
-				spin_lock(&fetching_lock);
+				down(&fetching_lock);
 				destroy_request(request);
-				spin_unlock(&fetching_lock);
+				up(&fetching_lock);
 				wake_up_interruptible(&lazy_wait);
 			}
 			goto out;
