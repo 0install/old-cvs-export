@@ -49,6 +49,12 @@ this <a href="http://www.ilrt.bris.ac.uk/discovery/chatlogs/rdfig/2004-08-31.htm
 <li><a href="http://sourceforge.net/project/showfiles.php?group_id=76468">SourceForge file releases page</a></li>
 </ul>
 
+<p>Distributions that have Zero Install running by default:</p>
+
+<ul>
+ <li><a href="http://b00t.webstep.net/">b00t Linux</a> (minimal system running Zero Install by default)</li>
+</ul>
+
 <h2>Building from source</h2>
 
 <p>The Zero Install system requires a small Linux kernel module to provide
