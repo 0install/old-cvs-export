@@ -87,7 +87,7 @@ def check_res(path, host, resource):
 		print "Fetch", uri
 		sax.parse(urllib2.urlopen(uri), handler)
 		write_dir(path, handler.dir)
-	elif line[0] == 'f':
+	elif line[0] in "fx":
 		uri = 'http://%s/%s' % (host, resource)
 		import shutil
 		shutil.copyfileobj(urllib2.urlopen(uri),
