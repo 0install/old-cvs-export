@@ -19,6 +19,9 @@ without introducing additional security problems.
 who asked to run it.</li>
 <li>The system is fully protected from software users 'install'.</li>
 <li>Users are fully protected from each other.</li>
+<li>Only the Zero Install software itself is a potential risk to system
+security. With traditional (non-zero-install) systems, every application,
+library and documentation package is a potential root compromise.</li>
 </ul>
 
 <h3>System security key points (implementation)</h3>
