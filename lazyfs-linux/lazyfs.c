@@ -796,11 +796,22 @@ static struct dentry *try_get_host_dentry(struct dentry *dentry)
 	struct super_block *sb = dentry->d_inode->i_sb;
 
 	if (dentry != sb->s_root) {
-		struct lazy_de_info *parent_info = dentry->d_parent->d_fsdata;
+		struct dentry *parent_dentry = dget(dentry->d_parent);
+		struct lazy_de_info *parent_info;
 		struct dentry *parent_host;
 
+		if (parent_dentry == dentry) {
+			/* File no longer exists (unlinked) */
+			dput(parent_dentry);
+			printk("lazyfs: try_get_host_dentry(%s): deleted\n",
+					dentry->d_name.name);
+			return ERR_PTR(-ENOENT);
+		}
+
 		/* parent_host can't be NULL, but it can change under us */
+		parent_info = parent_dentry->d_fsdata;
 		parent_host = dget(parent_info->host_dentry);
+		dput(parent_dentry);
 		if (!parent_host)
 			BUG();
 		inc(R_PARENT_HOST);
@@ -1150,7 +1161,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 
 	/* Check for the magic string */
 	if (size < 7 || strncmp(listing, "LazyFS\n", 7) != 0)
-		return -EIO;
+		goto bad_list;
 	listing += 7;
 
 	mark_children_may_delete(dir);
@@ -1839,6 +1850,7 @@ get_host_file(struct file *file, int block)
 	if (!finfo)
 		BUG();
 
+	/* XXX: locking */
 	if (finfo->host_file)
 	{
 		printk("get_host_file: already set!\n");
@@ -2057,7 +2069,8 @@ lazyfs_dir_open(struct inode *inode, struct file *file)
 {
 	int err;
 
-	if (d_unhashed(file->f_dentry)) {
+	if (file->f_dentry->d_parent != file->f_dentry &&
+	    d_unhashed(file->f_dentry)) {
 		/* Directory no longer exists */
 		return dcache_dir_open(inode, file);
 	}
