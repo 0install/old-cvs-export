@@ -43,11 +43,19 @@ Kernel</a>.
 </p>
 
 <div class='note'>
+<p>
 Joachim Kupke has created
 <a href="http://www-i1.informatik.rwth-aachen.de/~joachimk/debian/">Debian
 packages</a> for Zero Install.
+</p>
+<!--
 Add<br/><tt>deb http://www-i1.informatik.rwth-aachen.de/~joachimk debian/</tt>
 <br/>to<br/><tt>/etc/apt/sources.list</tt><br/>and install using apt-get.
+-->
+<p>
+However, version 0.1.11 is rather old and buggy, so I suggest installing from
+the source tarballs below instead.
+</p>
 </div>
 <!--
 <div class='note'>
