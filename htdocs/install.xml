@@ -44,6 +44,11 @@ specific, despite the name) and
 Kernel</a>.
 </p>
 
+<div class='note'>
+Joachim Kupke has created
+<a href="http://www-i1.informatik.rwth-aachen.de/~joachimk/debian/">Debian
+packages</a> for Zero Install.
+</div>
 <!--
 <div class='note'>
 <strong>RedHat 9 users</strong> who are using the stock RedHat kernel can
