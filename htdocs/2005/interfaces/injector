@@ -2,7 +2,7 @@
 Hash: SHA1
 
 <?xml version="1.0" ?>
-<interface last-modified="1110401472" uri="http://0install.net/2005/interfaces/injector" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch-auto'>
+<interface last-modified="1110924248" uri="http://0install.net/2005/interfaces/injector" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch-auto'>
   <name>Injector</name>
   <summary>Chooses software components to run programs</summary>
   <description>
@@ -22,12 +22,15 @@ buttons). Thus, the injector must choose implementations of each dependancy
   <implementation id="sha1=235cb9dd77ef78ef2a79abe98f1fcc404bba4889" stability="testing" version="0.2">
     <archive size='13575' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.2.tgz' extract='injector-0.2'/>
   </implementation>
-  <!-- <implementation id="/home/talex/Projects/injector/injector/head" stability="developer" version="0.3"/> -->
+
+  <implementation id="sha1=aaeb7112bfe60523d1ea96936a636635f8fa794c" stability="developer" version="0.3">
+    <archive size='21652' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.3.tar.gz' extract='injector-0.3'/>
+  </implementation>
 </interface>
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCNLn+rgeCgFmlPMERAkn1AKChS94SyrNvmzj4ljxzDE0gsKnwJgCcDeRS
-5+Bh0P6mM1E0f4MeXGJ9xNU=
-=TYng
+iD8DBQFCN1zprgeCgFmlPMERAoN3AJ4s+a+yFIPbijta8PPIK3q46RXcWACgp6Ht
+MXUIHRMKV2QtmsO2e8NL7PQ=
+=4csd
 -----END PGP SIGNATURE-----
