@@ -17,9 +17,28 @@
 #include "task.h"
 #include "zero-install.h"
 
-#define ZERO_INSTALL_INDEX "0install-index.xml"
+#define ZERO_INSTALL_INDEX ".0inst-index.xml"
 
-static int build_ddd_from_index(xmlNode *dir_node, const char *dir);
+static int build_ddd_from_index(xmlNode *dir_node, char *dir);
+
+/* Create directory 'path' from 'node' */
+void fetch_create_directory(const char *path, xmlNode *node)
+{
+	char cache_path[MAX_PATH_LEN];
+	
+	assert(node->name[0] == 'd');
+
+	if (snprintf(cache_path, sizeof(cache_path), "%s%s/", cache_dir,
+	    path) > sizeof(cache_path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		return;
+	}
+
+	if (!ensure_dir(cache_path))
+		return;
+
+	build_ddd_from_index(node, cache_path);
+}
 
 static void recurse_ddd(xmlNode *item, void *data)
 {
@@ -74,15 +93,15 @@ static void write_item(xmlNode *item, void *data)
 }
 
 /* Create <dir>/... from the children of dir_node, and recurse.
- * Changes cwd.
+ * Changes dir (MAX_PATH_LEN).
  * 0 on success.
  */
-static int build_ddd_from_index(xmlNode *dir_node, const char *dir)
+static int build_ddd_from_index(xmlNode *dir_node, char *dir)
 {
 	int retval = -1;
 	FILE *ddd = NULL;
 
-	printf("Building ... in %s\n", dir);
+	printf("Building %s/...\n", dir);
 
 	if (chdir(dir))
 		goto err;
@@ -100,7 +119,7 @@ static int build_ddd_from_index(xmlNode *dir_node, const char *dir)
 		goto err;
 
 	retval = 0;
-	index_foreach(dir_node, recurse_ddd, &retval);
+	//index_foreach(dir_node, recurse_ddd, &retval);
 
 	return retval;
 err:
@@ -111,9 +130,9 @@ err:
 /* Called with cwd in directory where files have been extracted.
  * Moves each file in 'group' up if everything is correct.
  */
+#if 0
 static void pull_up_files(Group *group)
 {
-#if 0
 	Item *item;
 	struct stat info;
 
@@ -159,8 +178,8 @@ static void pull_up_files(Group *group)
 		}
 		/* printf("\t(extracted '%s')\n", item->leafname); */
 	}
-#endif
 }
+#endif
 
 /* Unpacks the archive, which should contain the file 'leaf'. Uses the
  * group to find out what other files should be there and extract them
@@ -233,7 +252,7 @@ void unpack_archive(const char *archive_path, Group *group, Item *archive)
 }
 
 /* Begins fetching 'uri', storing the file as 'path'.
- * Sets task->child_pid and task->data to a copy of 'path'.
+ * Sets task->child_pid and makes task->str a copy of 'path'.
  * On error, task->child_pid will still be -1.
  */
 static void wget(Task *task, const char *uri, const char *path, int use_cache)
@@ -241,23 +260,21 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 	const char *argv[] = {"wget", "-q", "-O", NULL, uri,
 			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
-	char *path_copy;
 
 	printf("Fetch '%s'\n", uri);
 
 	assert(task->child_pid == -1);
-	assert(task->data == NULL);
 
-	path_copy = task->data = my_strdup(path);
-	if (!path_copy)
+	task_set_string(task, path);
+	if (!task->str)
 		return;
-	argv[3] = path_copy;
+	argv[3] = task->str;
 
-	slash = strrchr(path_copy, '/');
+	slash = strrchr(task->str, '/');
 	assert(slash);
 
 	*slash = '\0';
-	if (!ensure_dir(path_copy))
+	if (!ensure_dir(task->str))
 		goto err;
 	*slash = '/';
 
@@ -273,14 +290,15 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 	perror("Trying to run wget: execvp");
 	_exit(1);
 err:
-	free(path_copy);
-	task->data = NULL;
+	task_set_string(task, NULL);
 }
 
 void got_site_index(Task *task, int success)
 {
 	Index *index;
 	char *slash;
+	char path[MAX_PATH_LEN];
+	int dir_len;
 
 	assert(task->type == TASK_INDEX);
 	assert(task->child_pid == -1);
@@ -291,39 +309,87 @@ void got_site_index(Task *task, int success)
 		return;
 	}
 
-	printf("[ got '%s' ]\n", (char *) task->data);
-	index = parse_index((char *) task->data);
+	printf("[ got '%s' ]\n", task->str);
+	index = parse_index(task->str);
 
 	if (!index) {
 		task_destroy(task, 0);
 		return;
 	}
 
-	slash = strrchr(task->data, '/');
+	slash = strrchr(task->str, '/');
 	*slash = '\0';
 
-	build_ddd_from_index(index_get_root(index), task->data);
-	chdir("/");
+	dir_len = strlen(task->str) - sizeof(ZERO_INSTALL_INDEX);
+
+	if (dir_len >= MAX_PATH_LEN) {
+		task_destroy(task, 0);
+		return;
+	}
+
+	memcpy(path, task->str, dir_len);
+	path[dir_len] = '\0';
+
+	build_ddd_from_index(index_get_root(index), path);
 
 	task_destroy(task, 1);
 }
 
-/* Fetch the index file for the site 'path'.
- * path must be in the form /http/site[/path].
+/* Fetch the index file 'path' (in the cache).
+ * path must be in the form <cache>/http/site/ZERO_INSTALL_INDEX.
  */
-Task *fetch_site_index(const char *path)
+static Task *fetch_site_index(const char *path)
 {
 	Task *task;
 	char buffer[MAX_URI_LEN];
-	char out[MAX_PATH_LEN];
-	const char *slash;
-	int cache_len;
+
+	assert(strncmp(path, cache_dir, strlen(cache_dir)) == 0);
+	
+	if (!build_uri(buffer, sizeof(buffer),
+			path + strlen(cache_dir), NULL, NULL))
+		return NULL;
+
+	task = task_new(TASK_INDEX);
+	if (!task)
+		return NULL;
+
+	task->step = got_site_index;
+
+	wget(task, buffer, path, 0);
+	if (task->child_pid == -1) {
+		task_destroy(task, 0);
+		task = NULL;
+	}
+
+	return task;
+}
+
+/* Returns the parsed index for site containing 'path'.
+ * If the index needs to be fetched (or force is set), returns NULL and returns
+ * the task in 'task'. If task is NULL, never start a task.
+ * On error, both will be NULL.
+ */
+Index *get_index(const char *path, Task **task, int force)
+{
+	char index_path[MAX_PATH_LEN];
 	int stem_len;
+	char *slash;
+	int cache_len;
 	int needed;
+	struct stat info;
+
+	assert(!task || !*task);
+
+	if (!task)
+		force = 0;
 
 	assert(path[0] == '/');
 	slash = strchr(path + 1, '/');
 	assert(slash);
+	
+	if (strcmp(slash + 1, "AppRun") == 0 || slash[1] == '.')
+		return NULL;	/* Don't waste time looking for these */
+
 	slash = strchr(slash + 1, '/');
 
 	if (slash)
@@ -332,36 +398,34 @@ Task *fetch_site_index(const char *path)
 		stem_len = strlen(path);
 
 	cache_len = strlen(cache_dir);
-	/* <cache><stem>/ZERO_INSTALL_INDEX */
+
 	needed = cache_len + stem_len + 1 + sizeof(ZERO_INSTALL_INDEX);
-	if (needed > sizeof(out))
+	if (needed >= sizeof(index_path))
 		return NULL;
 
-	strcpy(out, cache_dir);
-	out[cache_len] = '/';
+	memcpy(index_path, cache_dir, cache_len);
+	memcpy(index_path + cache_len, path, stem_len);
+	strcpy(index_path + cache_len + stem_len, "/" ZERO_INSTALL_INDEX);
 
-	memcpy(out + cache_len, path, stem_len);
-	out[cache_len + stem_len] = '\0';
+	assert(strlen(index_path) + 1 == needed);
 
-	if (!build_uri(buffer, sizeof(buffer),
-			out + cache_len, ZERO_INSTALL_INDEX, NULL))
-		return NULL;
+	printf("Index for '%s' is '%s'\n", path, index_path);
 
-	strcpy(out + cache_len + stem_len, "/" ZERO_INSTALL_INDEX);
-
-	assert(strlen(out) + 1 == needed);
-
-	task = task_new(TASK_INDEX);
-	if (!task)
-		return NULL;
-
-	task->step = got_site_index;
-
-	wget(task, buffer, out, 0);
-	if (task->child_pid == -1) {
-		task_destroy(task, 0);
-		task = NULL;
+	/* TODO: compare times */
+	if (force == 0 && stat(index_path, &info) == 0) {
+		Index *index;
+		
+		index = parse_index(index_path);
+		if (index) {
+			/* Testing: */
+			index_path[cache_len + stem_len] = '\0';
+			build_ddd_from_index(index_get_root(index), index_path);
+			return index;
+		}
 	}
 
-	return task;
+	if (task)
+		*task = fetch_site_index(index_path);
+
+	return NULL;
 }

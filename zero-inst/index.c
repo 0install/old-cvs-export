@@ -180,6 +180,66 @@ xmlNode *index_get_root(Index *index)
 	return NULL;
 }
 
+typedef struct {
+	const char *name;
+	int name_len;
+	xmlNode *node;
+} Info;
+
+void find_child(xmlNode *child, void *data)
+{
+	Info *info = data;
+	xmlChar *name;
+
+	if (info->node)
+		return;
+
+	name = xmlGetNsProp(child, "name", NULL);
+	assert(name);
+
+	//printf("[ checking '%s' with '%s':%d ]\n",
+	//		name, info->name, info->name_len);
+
+	if (strncmp(info->name, name, info->name_len) == 0 &&
+					name[info->name_len] == '\0')
+		info->node = child;
+
+	xmlFree(name);
+}
+
+xmlNode *index_lookup(Index *index, const char *path)
+{
+	xmlNode *dir;
+
+	dir = index_get_root(index);
+
+	while (*path) {
+		char *slash;
+		Info info;
+
+		printf("Looking for %s\n", path);
+
+		assert(path[0] == '/');
+		path++;
+
+		slash = strchr(path, '/');
+
+		info.name = path;
+		info.name_len = slash ? slash - path : strlen(path);
+		info.node = NULL;
+		index_foreach(dir, find_child, &info);
+
+		if (!info.node)
+			return NULL;	/* Not found */
+
+		dir = info.node;
+		path += info.name_len;
+	}
+
+	return dir;
+}
+
+
 #if 0
 typedef enum {ERROR, DOC, SITE, DIRECTORY, GROUP,
 	      ITEM, GROUP_ITEM, ARCHIVE} ParseState;

@@ -41,6 +41,7 @@ Task *task_new(TaskType type)
 
 	task->step = NULL;
 	task->data = NULL;
+	task->str = NULL;
 
 	task->next = all_tasks;
 	all_tasks = task;
@@ -89,6 +90,7 @@ void task_destroy(Task *task, int success)
 			t = t->next;
 	}
 
+	task_set_string(task, NULL);
 	free(task);
 }
 
@@ -107,4 +109,15 @@ void task_process_done(pid_t pid, int success)
 	}
 
 	printf("No task for process %ld!\n", (long) pid);
+}
+
+/* Stores a copy of 'str' in task->str (freeing any existing one).
+ * If 'str' is NULL, task->str becomes NULL. Otherwise, this indicates
+ * OOM.
+ */
+void task_set_string(Task *task, const char *str)
+{
+	if (task->str)
+		free(task->str);
+	task->str = str ? my_strdup(str) : NULL;
 }

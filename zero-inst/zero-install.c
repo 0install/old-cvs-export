@@ -710,17 +710,61 @@ static void request_next_step(Request *request)
 }
 #endif
 
+/* We have the index to find the item for this task. Start fetching the
+ * item. Free the index and close the request when done.
+ */
+static void kernel_got_index(Task *task, Index *index)
+{
+	xmlNode *item;
+	const char *slash;
+
+	assert(index);
+
+	slash = strchr(task->str + 1, '/');
+	slash = strchr(slash + 1, '/');
+
+	item = index_lookup(index, slash);
+	if (!item) {
+		/* TODO: rebuild index files? */
+		printf("%s not found in index!\n", task->str);
+		index_free(index);
+		close(task->fd);
+		task_destroy(task, 0);
+		return;
+	}
+
+	if (item->name[0] == 'd')
+		fetch_create_directory(task->str, item);
+	else
+		printf("Todo: fetch archive for %s '%s'\n",
+				item->name, task->str);
+
+	index_free(index);
+	close(task->fd);
+	task_destroy(task, 1);
+}
+
 static void kernel_task_step(Task *task, int success)
 {
-	close(task->fd);
-	free(task->data);
-	task_destroy(task, success);
+	Index *index = NULL;
+
+	if (success)
+		index = get_index(task->str, NULL, 0);
+
+	if (index)
+		kernel_got_index(task, index);
+	else {
+		close(task->fd);
+		task_destroy(task, 0);
+		return;
+	}
 }
 
 static void handle_request(int request_fd, uid_t uid, char *path)
 {
-	Task *task, *index;
+	Task *task;
 	char *slash;
+	Index *index;
 
 	if (strcmp(path, "/") == 0) {
 		handle_root_request(request_fd);
@@ -737,8 +781,8 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 		close(request_fd);
 		return;
 	}
-	task->data = my_strdup(path);
-	if (!task->data) {
+	task_set_string(task, path);
+	if (!task->str) {
 		close(request_fd);
 		task_destroy(task, 0);
 		return;
@@ -748,15 +792,18 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	task->uid = uid;
 	task->fd = request_fd;
 
-	index = fetch_site_index(path);
+	index = get_index(path, &task->child_task, 0);
+	if (task->child_task)
+		return;		/* Download in progress */
+
 	if (!index) {
+		/* Error -- give up */
 		close(request_fd);
-		free(task->data);
 		task_destroy(task, 0);
 		return;
 	}
 
-	task->child_task = index;
+	kernel_got_index(task, index);
 }
 
 #if 0

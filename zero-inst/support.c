@@ -144,7 +144,10 @@ int ensure_dir(const char *path)
 {
 	struct stat info;
 
-	assert(strncmp(path, cache_dir, strlen(cache_dir)) == 0);
+	if (strncmp(path, cache_dir, strlen(cache_dir)) != 0) {
+		fprintf(stderr, "'%s' is not in cache directory!\n", path);
+		exit(1);
+	}
 	
 	if (lstat(path, &info) == 0) {
 		if (S_ISDIR(info.st_mode))

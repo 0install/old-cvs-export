@@ -261,6 +261,7 @@ static void client_refresh(Client *client, const char *directory)
 	Task *task;
 	char real[PATH_MAX];
 	char *slash;
+	Index *index;
 
 	if (!realpath(directory, real)) {
 		if (snprintf(real, sizeof(real),
@@ -287,7 +288,8 @@ static void client_refresh(Client *client, const char *directory)
 		return;
 	}
 
-	task = fetch_site_index(real + 4);
+	index = get_index(real + 4, &task, 1);
+	assert(!index);
 
 	if (task)
 		client->task->child_task = task;

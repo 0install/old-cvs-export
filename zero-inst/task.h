@@ -8,6 +8,7 @@ typedef enum {
 Task *task_new(TaskType type);
 void task_destroy(Task *task, int success);
 void task_process_done(pid_t pid, int success);
+void task_set_string(Task *task, const char *str);
 
 struct _Task {
 	TaskType type;
@@ -23,6 +24,7 @@ struct _Task {
 	void *data;
 	uid_t uid;
 	int fd;
+	char *str;		/* Will be free()d */
 
 	Task	*next;		/* In all_tasks */
 };
