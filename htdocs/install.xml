@@ -87,15 +87,10 @@ a bug report</a>.
 Download the kernel module for your operating system:
 
 <ul>
-<li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.23.tgz.gpg?download">lazyfs-linux-0.1.23.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels)</li>
+<li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.23-smp.tgz.gpg?download">lazyfs-linux-0.1.23-smp.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels)</li>
 </ul>
 
-<p>
-<strong>SMP kernels:</strong> The current release will deadlock on kernels
-compiled with SMP support, due to a locking error. This is fixed in CVS, and a
-new release will appear once SourceForge's file release system starts working
-again. Until then, please <a href="https://sourceforge.net/tracker/index.php?func=detail&amp;aid=965741&amp;group_id=76468&amp;atid=547191">apply the patch manually</a>.
-</p>
+<strong>SMP users: If your kernel is compiled with SMP support, versions before 0.1.23-smp would deadlock (easily seen with the unit tests). Make sure you use the latest version! Other users are unaffected -- the 0.1.23 release is identical to 0.1.23-smp for you.</strong>
 
 <p>
 Check the GPG signature, unpack the archive, and move to the new directory
