@@ -1,5 +1,7 @@
 AC_INIT(lazyfs.c)
 
+AC_PROG_CC
+
 dnl Check for directory with kernel source... (from ALSA)
 AC_MSG_CHECKING(for directory with kernel source)
 AC_ARG_WITH(kernel,

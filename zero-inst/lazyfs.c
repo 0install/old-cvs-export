@@ -19,14 +19,10 @@
 
 /* See the 'Technical' file for details. */
 
-/* Locking:
- * After the initial read_super, the virtual directory tree can only be changed
- * from within ensure_cached(), which uses a static lock to prevent races.
- */
-
 #include <linux/module.h>   /* Needed by all modules */
 #include <linux/kernel.h>   /* Needed for KERN_ALERT */
 #include <linux/init.h>     /* Needed for the macros */
+#include <linux/autoconf.h>
 
 #if CONFIG_MODVERSIONS==1
 #define MODVERSIONS
@@ -770,7 +766,6 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		if (size != 15)
 			goto bad_list;
 		info->dynamic = 1;
-		/* TODO: Add all cached directories now! */
 		return 0;
 	}
 	info->dynamic = 0;
@@ -1113,11 +1108,10 @@ out:
 	return count ? count : err;
 }
 
-/* dentry is a negative dentry. Sends a request to the helper to create it.
- * We create a new directory and check to see if it's valid. When the helper
- * does reply, we can delete the directory then if it was a mistake.
- * Other callers can see the directory while this is going on, which is a bit
- * odd.
+/* dentry is a negative dentry. We create a new directory with that name and
+ * check to see if it's valid. When the helper does reply, we can delete the
+ * directory then if it was a mistake. Other callers can see the directory
+ * while this is going on, which is a bit odd.
  */
 static inline struct dentry *
 lookup_via_helper(struct super_block *sb, struct dentry *dentry)
