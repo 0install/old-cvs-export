@@ -3,6 +3,9 @@ Changes since 0.1.25:
 * Removed command to remove 0http and http symlinks. It's been many versions
   since we used those (requested by Peter Prohaska).
 
+* 'make splint' target checks 0refresh.c with splint. Added a couple of checks
+  for unlikely error conditions.
+
 Changes since 0.1.24:
 
 * Stricter checking for valid site names.

@@ -10,12 +10,17 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#define DBUS_API_SUBJECT_TO_CHANGE
-#include <dbus/dbus.h>
+#include "mydbus.h"
 
 #define MAX_PATH_LEN 4096
 
 #include "interface.h"
+
+#ifdef S_SPLINT_S
+extern void gmtime_r(const time_t *time, /*@out@*/ struct tm *date);
+extern /*@exposed@*/ const char *strptime(const char *time,
+					  const char *format, struct tm *date);
+#endif
 
 static time_t parse_date(const char *str)
 {
@@ -29,13 +34,14 @@ static time_t parse_date(const char *str)
 	if (old_tz) {
 		char *tmp = old_tz;
 		old_tz = malloc(strlen(tmp) + 1);
-		if (!old_tz) {
-			fprintf(stderr, "Out of memory\n");
-			exit(EXIT_FAILURE);
-		}
+		if (!old_tz)
+			goto oom;
 		strcpy(old_tz, tmp);
-	}
-	setenv("TZ", "UTC", 1);
+	} else
+		old_tz = NULL;
+
+	if (setenv("TZ", "UTC", 1))
+		goto oom;
 	
 	gmtime_r(&retval, &tm_date);	/* Zero fields */
 
@@ -53,13 +59,17 @@ static time_t parse_date(const char *str)
 	retval = mktime(&tm_date);
 
 	if (old_tz) {
-		setenv("TZ", old_tz, 1);
+		if (setenv("TZ", old_tz, 1))
+			goto oom;
 		free(old_tz);
 	} else {
 		unsetenv("TZ");
 	}
 
 	return retval;
+oom:
+	fprintf(stderr, "Out of memory\n");
+	exit(EXIT_FAILURE);
 }
 
 static void usage(const char *prog, int status)
@@ -123,6 +133,8 @@ static void refresh(const char *site, int force)
 
 	printf("OK\n");
 	dbus_message_unref(reply);
+
+	dbus_connection_unref(connection);
 }
 
 static int uptodate(const char *path, time_t mtime)
@@ -173,7 +185,10 @@ int main(int argc, char **argv)
 		
 		mtime = parse_date(argv[2]);
 
-		snprintf(path, sizeof(path), ZERO_MNT "/%s", argv[1]);
+		if (snprintf(path, sizeof(path), ZERO_MNT "/%s", argv[1]) >= sizeof(path)) {
+			fprintf(stderr, "Path too long\n");
+			return EXIT_FAILURE;
+		}
 
 		if (uptodate(path, mtime))
 			return EXIT_SUCCESS;

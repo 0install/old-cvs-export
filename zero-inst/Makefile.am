@@ -54,4 +54,7 @@ uninstall-real:
 	 sed "s/\@helper_user\@/${HELPER_USER}/" >0install
 	chmod a+x 0install
 
-CFLAGS = -O2 -Wall -Wstrict-prototypes -g -Wmissing-prototypes
+splint:
+	splint 0refresh.c +unixlib -predboolint -boolops +boolint +matchanyintegral `pkg-config --cflags dbus-1` -I.
+
+CFLAGS = -O2 -Wall -Wstrict-prototypes -g -Wmissing-prototypes -Wwrite-strings
