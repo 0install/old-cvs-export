@@ -74,17 +74,17 @@ $ <b>./configure --with-kernel=/home/fred/linux-2.4.20</b>
 </pre>
 
 <div class='note'>
+<strong>06-May-2003:</strong> You may need to edit the Makefile and add -O2 to
+<tt>KERNELFLAGS</tt> (the missing "prefetch" symbol problem).
+Will be fixed in the next release.
+</div>
+
+<div class='note'>
 If you want to test the system under <a
 href="http://user-mode-linux.sf.net">User Mode Linux</a>, you'll need to use
 the above command to tell it where the UML kernel sources are. After the
 configure step, add <tt>${UMFLAGS}</tt> to the end of <tt>KERNELFLAGS</tt>
 in the makefile.
-</div>
-
-<div class='note'>
-<strong>06-May-2003:</strong> You may need to edit the Makefile and add -O2 to
-<tt>KERNELFLAGS</tt> (the missing "prefetch" symbol problem).
-Will be fixed in the next release.
 </div>
 
 <p>
