@@ -44,10 +44,10 @@ below to get a package tailored for your system...
 <li><a href="http://www.mandrakeclub.com/modules.php?op=modload&amp;name=RPM&amp;func=info_page&amp;RID=1825">Mandrake RPM</a> (request)</li>
 </ul>
 
-<h3>Building from source</h3>
+<h2>Building from source</h2>
 
 <p>The Zero Install system requires a small Linux kernel module to provide
-the /uri/0install directory. Like all kernel modules, you must
+the <tt>/uri/0install</tt> directory. Like all kernel modules, you must
 compile this using the actual kernel headers for the kernel you're actually
 running. The easiest way to ensure this is to have compiled your own kernel
 (eg, from <a href="http://kernel.org">kernel.org</a>) and be running that.
@@ -79,47 +79,71 @@ please <a href="support.html">write to us</a> or
 a bug report</a>.
 </p>
 
-<!--
-<div class='note'>
-<p>
-Joachim Kupke has created
-<a href="http://www-i1.informatik.rwth-aachen.de/~joachimk/debian/">Debian
-packages</a> for Zero Install.
-</p>
+<h3>Installing the LazyFS kernel module</h3>
+
+Download the kernel module for your operating system:
+
+<ul>
+<li><a href="http://osdn.dl.sourceforge.net/sourceforge/zero-install/lazyfs-linux-0.1.20.tgz.gpg">lazyfs-linux-0.1.20.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels)</li> 
+</ul>
 
 <p>
-Add<br/><tt>deb http://www-i1.informatik.rwth-aachen.de/~joachimk debian/</tt>
-<br/>to<br/><tt>/etc/apt/sources.list</tt><br/>and install using apt-get.
-</p>
--->
-<!--
-There are some Debian packages at
-<tt>http://www-i1.informatik.rwth-aachen.de/~joachimk/debian/</tt>, but
-the version packaged (0.1.14) is now too old to work with the current index
-format.
-</div>
-<div class='note'>
-<strong>RedHat 9 users</strong> who are using the stock RedHat kernel can
-<a href="http://prdownloads.sourceforge.net/zero-install/zero-install-rh9-0.1.7.tgz?download">download the RedHat 9 binary version</a>, then skip the
-'configure' and 'make' steps below, continuing from the install step.
-</div>
--->
-
-<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.20.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.20.tar.gz.sig">GPG Sig</a> ]
-(note that the links lead to a list of mirrors).
- Extract it, and move to the new directory (things you
-type are shown in bold):
+Check the GPG signature, unpack the archive, and move to the new directory
+(things you type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.20.tar.gz</b>
-$ <b>cd zero-install-0.1.20</b>
+$ <b>gpg lazyfs-linux-0.1.20.tgz.gpg</b>
+gpg: Signature made Sun 15 Feb 2004 12:46:54 GMT using DSA key ID 59A53CC1
+gpg: Can't check signature: public key not found
+$ <b>tar xzf lazyfs-linux-0.1.20.tgz</b>
+$ <b>cd lazyfs-linux-0.1.20</b>
+</pre>
+
+<p>If you have my GPG key (see page header) in your keyring, the first step
+will tell you whether the achive is correctly signed. If not, you'll get the
+message shown above, but you can still continue anyway. The reason for using
+GPG here is partly to increase security, and partly to make sure you've got
+GPG installed (you'll need it later!).
+</p>
+
+<p>
+Now, configure, make and install (use su to get root privileges):
+</p>
+
+<pre>
+$ <b>./configure</b>
+$ <b>make</b>
+$ <b>su -c 'make install'</b>
+*** Testing kernel module ***
+</pre>
+
+<ul>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/349">The file ~/.../include/linux/version.h does not exist</a></li>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/367">QM_MODULES: Function not implemented</a></li>
+</ul>
+
+<h3>Installing Zero Install</h3>
+
+<p>Once you've got LazyFS installed (see above), you can install Zero
+Install. Download latest version:</p>
+
+<ul>
+<li><a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.21.tgz.gpg?download">zero-install-0.1.21.tgz.gpg</a></li> 
+</ul>
+
+<p>
+Check the GPG signature and unpack as before:
+</p>
+
+<pre>
+$ <b>gpg zero-install-0.1.21.tgz.gpg</b>
+$ <b>tar xzf zero-install-0.1.21.tgz</b>
+$ <b>cd zero-install-0.1.21</b>
 </pre>
 
 <p>
-The system has two parts: a kernel module, which handles all cached requests
-itself, and a 'helper' application to fetch uncached stuff from the Internet.
-For security reasons, it's better not to run the helper as root. So you'll
+For security reasons, it's better not to run zero install as root. So you'll
 now need to choose a user to run the helper as. This could be your own user
 name, or (<a href="http://sourceforge.net/mailarchive/message.php?msg_id=6386789">ideally</a>) you could create a new user just for this purpose. Run
 configure with the name of your chosen user (here called 'zeroinst'):
@@ -127,60 +151,23 @@ configure with the name of your chosen user (here called 'zeroinst'):
 
 <pre>
 $ <b>./configure --with-user=zeroinst</b>
-</pre>
-
-<div class='note'>
-<p>
-If it can't find
-<a href="http://freshmeat.net/projects/d-bus/?topic_id=809">D-BUS</a>,
-you may need to do:
-</p>
-<pre>
-$ <b>export PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/local/lib/pkgconfig</b>
-</pre>
-<p>
-first, if that's where you installed libdbus (for the bash shell; replace
-<b>export</b> with <b>setenv</b> and replace '=' with a space if using tcsh).
-</p>
-</div>
-
-<ul>
-<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/349">The file ~/.../include/linux/version.h does not exist</a></li>
-</ul>
-
-<!--
-<div class='note'>
-If you want to test the system under <a
-href="http://user-mode-linux.sf.net">User Mode Linux</a>, you'll need to use
-the above command to tell it where the UML kernel sources are. After the
-configure step, add <tt>${UMFLAGS}</tt> to the end of <tt>KERNELFLAGS</tt>
-in the makefile.
-</div>
--->
-
-<p>
-The build and install it (use su to get root privileges):
-</p>
-<pre>
 $ <b>make</b>
 $ <b>su -c 'make install'</b>
 </pre>
 
-<p>
-This will copy the new lazyfs module under /lib/modules/, and create the
-/uri/0install mount point and the /var/cache/zero-inst cache directory. It will
-also add an entry to /etc/fstab to allow mounting /uri/0install easily. If you
-were already running an older version, this step also remounts /uri/0install
-and loads the new module.
-</p>
-
 <ul>
-<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/73">mount: wrong fs type...</a></li>
-<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/367">QM_MODULES: Function not implemented</a></li>
+<li>Can't find D-BUS? Try setting PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/local/lib/pkgconfig</li>
 </ul>
 
 <p>
-Now, run the helper application (it will just wait, without doing anything).
+This will create the <tt>/uri/0install</tt> mount point and the
+<tt>/var/cache/zero-inst</tt> cache directory. It will also add an entry to
+<tt>/etc/fstab</tt> to allow mounting <tt>/uri/0install</tt> easily. If you
+were already running an older version, this step also unmounts /uri/0install.
+</p>
+
+<p>
+Now, run zero install (it will just wait, without doing anything).
 You can look at <tt>/var/log/daemon.log</tt> (or whatever your system uses)
 to see what it's doing. SuSE uses <tt>/var/log/messages</tt> instead.
 </p>
@@ -188,18 +175,20 @@ to see what it's doing. SuSE uses <tt>/var/log/messages</tt> instead.
 <pre>
 $ <b>su -c '/etc/init.d/0install start'</b>
 Starting zero-install...
+(mounting /uri/0install)
 $ <b>tail /var/log/daemon.log</b>
 Oct  5 16:00:16 everest zero-install: Started: using cache directory '/var/cache/zero-inst'
 </pre>
 
 <ul>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/73">mount: wrong fs type...</a></li>
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/332">error while loading shared libraries: libdbus-1.so.0</a></li>
 </ul>
 
 <h2>Testing the installation</h2>
 
 <p>
-With the helper still running, try the following command:
+With zero install still running, try the following command:
 </p>
 
 <pre>
