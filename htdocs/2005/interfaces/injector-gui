@@ -14,7 +14,9 @@ Hash: SHA1
   
   <group>
     <requires interface='http://0install.net/2005/interfaces/injector'>
+      <!-- Package structure changed between 0.2 and 0.3, so try both paths... -->
       <environment name='PYTHONPATH' insert=''/>
+      <environment name='PYTHONPATH' insert='zeroinstall/injectory'/>
     </requires>
     <implementation version='0.2' id='sha1=efec372a590c092d40c3d8503e5dc3db94f25225' stability='testing'>
       <archive size='9939' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.2.tgz' extract='injector-gui-0.2'/>
@@ -26,7 +28,7 @@ Hash: SHA1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCNL3ergeCgFmlPMERAmIiAKCCngvmpxm/ceKTYehpBA/wflgHdwCgvoBe
-4JfOrqQkgS0rafiy5ZjfIAI=
-=JBEL
+iD8DBQFCN12nrgeCgFmlPMERAh4fAJ90Bwl5SijO14yNDhZpRy7lH7v06gCcDMyY
+2voBp0H0eIGrxpVl9AAjS+0=
+=+iYS
 -----END PGP SIGNATURE-----
