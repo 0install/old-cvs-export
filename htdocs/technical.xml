@@ -46,10 +46,18 @@ are in the DBUS format (but no DBUS daemon is used; only the protocol).
 <h3>The index files and mirrors</h3>
 
 <p>
-When you access a remote site, zero-install downloads four files from the
-remote machine (in one archive): the site's GPG key, the mirrors list, the site
-index, and the site index's signature. See the <a href="security.html">security
-page</a> for information about the key and signature.
+When you access a remote site, zero-install downloads three files from the
+remote machine (in one archive): the site's GPG key, the mirrors list, and the
+site index's signature. See the <a href="security.html">security page</a> for
+information about the key and signature.
+</p>
+
+<p>
+The mirrors file gives a list of possible download locations. The index list is
+then fetched from one of these locations.
+This means that only a very small amount of data has to be fetched from the
+master server, with web caches, peer-to-peer systems and similar being used for
+the (larger) index file.
 </p>
 
 <p>
@@ -60,15 +68,6 @@ of an archive containing each group's files along with the archive's MD5 sum.
 Because MD5 sums for all the archives are provided in the index, group
 archives can be safely downloaded using peer-to-peer systems for greater speed
 and reliability.
-</p>
-
-<p>
-The mirrors file gives a list of possible download locations. In the next
-release, the index list will be fetched from one of these locations rather
-than be included in the initial archive. This will mean that only a very
-small amount of data has to be fetched from the master server, with web
-caches, peer-to-peer systems and similar being used for the (larger) index
-file.
 </p>
 
 <h3>Tasks list</h3>
