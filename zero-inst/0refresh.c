@@ -13,8 +13,9 @@
 #define DBUS_API_SUBJECT_TO_CHANGE
 #include <dbus/dbus.h>
 
-#define ZERO_MNT "/uri/0install"
 #define MAX_PATH_LEN 4096
+
+#include "interface.h"
 
 static time_t parse_date(const char *str)
 {
@@ -78,8 +79,6 @@ static void usage(const char *prog, int status)
 	exit(status);
 }
 
-#define DBUS_CONTROL "unix:path=/uri/0install/.lazyfs-cache/.control"
-
 static void refresh(const char *site, int force)
 {
 	DBusConnection *connection;
@@ -87,7 +86,7 @@ static void refresh(const char *site, int force)
 	DBusError error;
 
 	dbus_error_init(&error);
-	connection = dbus_connection_open(DBUS_CONTROL, &error);
+	connection = dbus_connection_open(DBUS_SERVER_SOCKET, &error);
 	if (dbus_error_is_set(&error)) {
 		fprintf(stderr,
 			"Can't connect to Zero Install helper application:\n"
@@ -96,9 +95,8 @@ static void refresh(const char *site, int force)
 		exit(EXIT_FAILURE);
 	}
 
-	message = dbus_message_new(force
-			? "net.sourceforge.zero-install.Refresh"
-			: "net.sourceforge.zero-install.Rebuild", NULL);
+	message = dbus_message_new_method_call(NULL, "/Main",
+			DBUS_Z_NS, force ? "Refresh" : "Rebuild");
 	if (!message) {
 		fprintf(stderr, "Out of memory\n");
 		exit(EXIT_FAILURE);

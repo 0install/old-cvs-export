@@ -19,12 +19,13 @@
 #include "list.h"
 
 static DBusWatch *dbus_watches = NULL;
-static DBusMessageHandler *handler = NULL;
 static DBusServer *server = NULL;
 
 static DBusWatch *current_watch = NULL;	/* tmp */
 
 static const char *current_error = NULL;
+
+static DBusObjectPathVTable vtable;
 
 static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 			 DBusError *error, int force);
@@ -32,8 +33,7 @@ static void dbus_cancel_download(DBusConnection *connection,
 			DBusMessage *message, DBusError *error);
 
 #define OLD_SOCKET "/uri/0install/.lazyfs-cache/control"
-#define SERVER_SOCKET "unix:path=/uri/0install/.lazyfs-cache/.control"
-#define DBUS_Z_NS "net.sourceforge.zero-install"
+#define OLD_SOCKET2 "/uri/0install/.lazyfs-cache/.control"
 
 static ListHead dispatches = LIST_INIT;
 static ListHead monitors = LIST_INIT;
@@ -91,7 +91,7 @@ static void send_task_update(DBusConnection *connection, Task *task)
 
 	task->notify_on_end = 1;
 
-	message = dbus_message_new(DBUS_Z_NS ".UpdateTask", NULL);
+	message = dbus_message_new_signal("/Main", DBUS_Z_NS, "UpdateTask");
 
 	if (message &&
 	    dbus_message_append_args(message,
@@ -114,7 +114,7 @@ static void send_task_error(DBusConnection *connection, Task *task)
 
 	assert(task->str);
 
-	message = dbus_message_new(DBUS_Z_NS ".Error", NULL);
+	message = dbus_message_new_signal("/Main", DBUS_Z_NS, "Error");
 
 	if (message &&
 	    dbus_message_append_args(message,
@@ -136,7 +136,7 @@ static void send_task_end(DBusConnection *connection, Task *task)
 
 	assert(task->str);
 
-	message = dbus_message_new(DBUS_Z_NS ".EndTask", NULL);
+	message = dbus_message_new_signal("/Main", DBUS_Z_NS, "EndTask");
 
 	if (message &&
 	    dbus_message_append_args(message,
@@ -176,47 +176,32 @@ static void dbus_monitor(DBusConnection *connection, DBusError *error)
 	}
 }
 
-static DBusHandlerResult message_handler(DBusMessageHandler *handler,
-	DBusConnection *connection, DBusMessage *message, void *user_data)
+static DBusHandlerResult message_handler(DBusConnection *connection,
+					 DBusMessage *message, void *user_data)
 {
 	DBusMessage *reply = NULL;
 	DBusError error;
-	const char *name = dbus_message_get_name(message);
 
 	dbus_error_init(&error);
 
-	if (strcmp(name, "org.freedesktop.Local.Disconnect") == 0) {
-		if (list_contains(&monitors, connection))
-			list_remove(&monitors, connection);
-		dbus_connection_unref(connection);
-	} else if (strcmp(name, "org.freedesktop.DBus.Hello") == 0) {
-		reply = dbus_message_new_reply(message);
-		if (!reply)
-			goto err;
-		if (!dbus_message_append_args(reply,
-				DBUS_TYPE_STRING, "Hi",
-				DBUS_TYPE_INVALID))
-			goto err;
-	} else if (strcmp(name, DBUS_Z_NS ".Refresh") == 0) {
+	if (dbus_message_is_method_call(message, DBUS_Z_NS, "Refresh")) {
 		dbus_refresh(connection, message, &error, 1);
 		if (dbus_error_is_set(&error))
 			goto err;
-	} else if (strcmp(name, DBUS_Z_NS ".Rebuild") == 0) {
+	} else if (dbus_message_is_method_call(message, DBUS_Z_NS, "Rebuild")) {
 		dbus_refresh(connection, message, &error, 0);
 		if (dbus_error_is_set(&error))
 			goto err;
-	} else if (strcmp(name, DBUS_Z_NS ".Monitor") == 0) {
+	} else if (dbus_message_is_method_call(message, DBUS_Z_NS, "Monitor")) {
 		dbus_monitor(connection, &error);
 		if (dbus_error_is_set(&error))
 			goto err;
-	} else if (strcmp(name, DBUS_Z_NS ".Cancel") == 0) {
+	} else if (dbus_message_is_method_call(message, DBUS_Z_NS, "Cancel")) {
 		dbus_cancel_download(connection, message, &error);
 		if (dbus_error_is_set(&error))
 			goto err;
-	} else {
-		reply = dbus_message_new_error_reply(message, name,
-					"Unknown message name");
-	}
+	} else
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	if (reply && !dbus_connection_send(connection, reply, NULL))
 		goto err;
@@ -229,8 +214,7 @@ err:
 	}
 
 	if (dbus_error_is_set(&error)) {
-		reply = dbus_message_new_error_reply(message, name,
-							error.message);
+		reply = dbus_message_new_error(message, "Error", error.message);
 		dbus_error_free(&error);
 		if (!reply)
 			goto oom;
@@ -244,7 +228,7 @@ oom:
 out:
 	if (reply)
 		dbus_message_unref(reply);
-	return DBUS_HANDLER_RESULT_REMOVE_MESSAGE;
+	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
 static dbus_bool_t allow_anyone_to_connect(DBusConnection *connection,
@@ -254,18 +238,33 @@ static dbus_bool_t allow_anyone_to_connect(DBusConnection *connection,
 	return 1;
 }
 
+static DBusHandlerResult filter_func(DBusConnection *connection,
+				     DBusMessage    *message,
+				     void           *user_data)
+{
+	if (dbus_message_is_signal(message,
+				DBUS_INTERFACE_ORG_FREEDESKTOP_LOCAL,
+				"Disconnected"))
+	{
+		if (list_contains(&monitors, connection))
+			list_remove(&monitors, connection);
+		dbus_connection_disconnect(connection);
+		return DBUS_HANDLER_RESULT_HANDLED;
+	}
+
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
 static void new_dbus_client(DBusServer *server,
 			    DBusConnection *new_connection,
 			    void *data)
 {
-	/* NB: DBUS 0.12 bug: mem-leak if we don't ref the connection
-	 * (for errors)
-	 */
+	const char *path[] = {"Main", NULL};
 
 	if (!dbus_connection_set_watch_functions(new_connection,
 				add_watch, remove_watch, NULL,
 				NULL, NULL))
-		return;
+		goto err;
 
 	dbus_connection_set_unix_user_function(new_connection,
 			allow_anyone_to_connect, NULL, NULL);
@@ -274,12 +273,27 @@ static void new_dbus_client(DBusServer *server,
 					dispatch_status_function, NULL, NULL);
 
 
-	if (!dbus_connection_add_filter(new_connection, handler)) {
+	if (!dbus_connection_register_object_path(new_connection, path,
+			&vtable, NULL)) {
 		error("new_dbus_client: Out of memory");
-		return;
+		goto err;
 	}
-	
+
+	if (!dbus_connection_add_filter(new_connection,
+				filter_func, NULL, NULL)) {
+		error("new_dbus_client: Out of memory");
+		goto err;
+	}
+
 	dbus_connection_ref(new_connection);
+	return;
+err:
+	/* Comment in bus.c suggests we need to do this; merely not
+	 * taking a ref won't actually close it.
+	 */
+	dbus_connection_disconnect(new_connection);
+	return;
+
 }
 
 void create_control_socket(void)
@@ -290,17 +304,11 @@ void create_control_socket(void)
 	list_init(&dispatches);
 	list_init(&monitors);
 
-	handler = dbus_message_handler_new(message_handler, NULL, NULL);
-	if (!handler) {
-		error("Out of memory for dbus_message_handler_new");
-		exit(EXIT_FAILURE);
-	}
-
 	dbus_error_init(&error);
-	server = dbus_server_listen(SERVER_SOCKET, &error);
+	server = dbus_server_listen(DBUS_SERVER_SOCKET, &error);
 	if (!server) {
 		error("Can't create DBUS server socket (%s): %s",
-				SERVER_SOCKET, error.message);
+				DBUS_SERVER_SOCKET, error.message);
 		dbus_error_free(&error);
 		exit(EXIT_FAILURE);
 	}
@@ -314,6 +322,7 @@ void create_control_socket(void)
 		exit(EXIT_FAILURE);
 	}
 
+	unlink(OLD_SOCKET2);
 	unlink(OLD_SOCKET);
 }
 
@@ -366,7 +375,7 @@ static void send_ok(Task *task)
 {
 	DBusMessage *reply;
 
-	reply = dbus_message_new_reply(task->message);
+	reply = dbus_message_new_method_return(task->message);
 	if (!reply || !dbus_message_append_args(reply,
 				DBUS_TYPE_BOOLEAN, 1,
 				DBUS_TYPE_INVALID))
@@ -385,9 +394,9 @@ static void send_result(Task *task, const char *err)
 		send_ok(task);
 	else {
 		DBusMessage *reply;
-		reply = dbus_message_new_error_reply(task->message,
-				dbus_message_get_name(task->message),
-				"Failed");
+		reply = dbus_message_new_error(task->message,
+				"Failed",
+				err);
 		if (!reply || !dbus_connection_send(task->connection,
 						reply, NULL))
 			err = "Out of memory";
@@ -555,10 +564,14 @@ static void drop_monitors(DBusConnection *connection, Task *unused)
 
 void control_drop_clients(void)
 {
-	dbus_message_handler_unref(handler);
 	dbus_server_disconnect(server);
 	dbus_server_unref(server);
 	list_foreach(&monitors, drop_monitors, 1, NULL);
 	list_destroy(&dispatches);
 	list_destroy(&monitors);
 }
+
+static DBusObjectPathVTable vtable = {
+	NULL,
+	message_handler,
+};

@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#define ZERO_NS "http://zero-install.sourceforge.net"
+#include <interface.h>
 
 /* A task is an activity that may take a while to complete. Tasks may block
  * on other tasks.
