@@ -1,0 +1,149 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<h2>Documentation</h2>
+
+<p>
+The documentation is split into four parts, for the different
+types of reader we have:
+</p>
+
+<dl>
+
+<dt>User</dt>
+<dd>Runs software using Zero Install.</dd>
+
+<dt>Admin</dt>
+<dd>Sets up zero install for users.</dd>
+
+<dt>Packager</dt>
+<dd>Makes software available to others via Zero Install.</dd>
+
+<dt>Zero Install developer</dt>
+<dd>Helps write the core Zero Install system.</dd>
+
+</dl>
+
+<p>Everyone is encouraged to subscribe to the
+<a href="support.html">mailing list</a> and talk about any issues related to
+Zero Install.</p>
+
+<h2>Documentation for users</h2>
+
+<p>
+Generally, you don't have to do anything special to use the system.
+When you find software on the web which is available via zero install, you'll
+be told where it is, and you can run it from there. For example, you can run
+the glib `Hello World' demo like this:
+</p>
+
+<pre>
+$ <b>cd /uri/http/zero-install.sourceforge.net/demo</b>
+$ <b>./hello_glib</b>
+Hello World from glib!
+</pre>
+
+<p>
+To make it easier to find it in future, you should bookmark it somehow.
+Some possibilities are:
+</p>
+
+<ul>
+
+<li>Open a filer window and drag the program onto the pinboard or panel,
+or add a filer bookmark.
+</li>
+
+<li>Add it to a Start menu or other launcher program.</li>
+
+<li>Symlink it into your path, eg (assuming PATH contains ~/bin):
+<pre>
+$ <b>ln -s /uri/http/zero-install.sourceforge.net/demo/hello_glib ~/bin</b>
+$ <b>hello_glib</b>
+Hello World from glib!
+</pre>
+</li>
+
+<li>Make a shell alias:
+<pre>
+$ <b>alias hw='/uri/http/zero-install.sourceforge.net/demo/hello_glib'</b>
+$ <b>hw</b>
+Hello World from glib!
+</pre>
+</li>
+
+</ul>
+
+<p>
+There should never be any need to worry about libraries and supporting
+programs, because they are all accessed automatically through the cache.
+However, you have two further programs to help you interact with the cache:
+</p>
+
+<dl>
+
+<dt>0show</dt>
+<dd>This command displays a list of your current downloads. The display
+updates automatically as the list changes. The idea is to turn this into
+a system tray applet so that if a program suddenly stops responding because
+you've accessed a new feature (such as 'Edit image with Gimp' when Gimp
+isn't cached yet) you can see what's going on.</dd>
+
+<dt>0refresh</dt>
+<dd>For speed reasons, the cache is never automatically updated. If you
+know that gimp2.0 is available, but /uri/http/www.gimp.org only has a gimp1.3
+subdirectory then you can run 0refresh to update it:
+<pre>
+$ <b>cd /uri/http/www.gimp.org</b>
+$ <b>ls</b>
+gimp1.2
+gimp1.3
+$ <b>0refresh</b>
+$ <b>ls</b>
+gimp1.2
+gimp1.3
+gimp2.0
+</pre>
+
+(this command does not exist yet; in the meantime, deleting
+/var/cache/zero-inst/http/www.gimp.org will have the same effect)
+</dd>
+
+</dl>
+
+<h2>Documentation for admins</h2>
+
+<p>Setting up a computer so that it can use Zero Install is covered in
+detail in the <a href="install.html">Install Guide</a>.</p>
+
+<h2>Documentation for packagers</h2>
+
+<p>If you'd like to make software available via Zero Install then you should
+use the 0build program to build the index file. The easiest way to do this
+is to put your programs inside a directory called 'www' and use 0build
+to build the index files in the server directory from there:</p>
+
+<pre>
+$ <b>ls -l ~/www/MyProg</b>
+total 4
+-rwxr-xr-x    1 tal00r   tal00r         18 2003-05-23 15:21 foo
+$ <b>~/www/MyProg/foo</b>
+42
+$ <b>0build /var/www</b>
+Building index file in www
+Listing www ...
+Building index file in www/MyProg
+Listing www/MyProg ...
+$ <b>/uri/http/localhost/MyProg/foo</b>
+42
+</pre>
+
+<p>And that's it! Of course, when giving the address to other people, you'll
+have to replace 'localhost' with your webserver's host name.</p>
+
+<h2>Documentation for Zero Install developers</h2>
+
+See the <a href="technical.html">Technical details</a> page for more
+information.
+
+</html>

@@ -41,6 +41,10 @@
         <xsl:with-param name='label'>FAQ</xsl:with-param>
       </xsl:call-template>
       <xsl:call-template name='page'>
+        <xsl:with-param name='href'>docs.html</xsl:with-param>
+        <xsl:with-param name='label'>Documentation</xsl:with-param>
+      </xsl:call-template>
+      <xsl:call-template name='page'>
         <xsl:with-param name='href'>support.html</xsl:with-param>
         <xsl:with-param name='label'>Support</xsl:with-param>
       </xsl:call-template>
