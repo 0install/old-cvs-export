@@ -184,7 +184,7 @@ Oct  5 16:00:16 everest zero-install: Started: using cache directory '/var/cache
 </pre>
 
 <ul>
-<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/73">mount: wrong fs type...</a></li>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/73">mount: wrong fs type...</a> (run 'dmesg' for hints)</li>
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/332">error while loading shared libraries: libdbus-1.so.0</a></li>
 </ul>
 
