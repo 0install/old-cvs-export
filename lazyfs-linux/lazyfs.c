@@ -1154,6 +1154,9 @@ has_changed(struct inode *i, mode_t mode, size_t size, TIME_T time,
 	if (i->i_size != size || !TIMES_EQUAL(i->i_mtime, time))
 		return 1;
 
+	if (i->i_mode != mode)
+		return 1;
+
 	if (S_ISLNK(mode)) {
 		char *old = i->u.generic_ip;
 		return strncmp(old, link_target->name, link_target->len) ||

@@ -9,7 +9,7 @@ import stat
 
 # You can edit these four lines to suit...
 test_dir = os.path.expanduser('~/lazyfs-test')	# Where to put test files
-version = '0.1.26'				# Version of lazyfs to test
+version = '0.1.27'				# Version of lazyfs to test
 verbose = False					# Give extra debug information
 platform = 'Linux-ix86'
 
@@ -741,7 +741,7 @@ class Test2WithHelper(WithHelper):
 		self.put_file('/fred', 'fred', 0)
 		os.close(fd)
 		
-	test24Chmod = cstest('Chmod')
+	test25Chmod = cstest('Chmod')
 
 # Run the tests
 sys.argv.append('-v')
