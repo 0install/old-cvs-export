@@ -1,7 +1,7 @@
 #define URI "/uri"
 #define ZERO_INST_INDEX ".0inst.xml"
 
-extern const char *cache_dir;
+extern char cache_dir[];
 
 typedef struct _Request Request;
 typedef struct _UserRequest UserRequest;

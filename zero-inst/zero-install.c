@@ -56,7 +56,7 @@
 #define MAX_URI_LEN 4096
 #define MAX_PATH_LEN 4096
 
-const char *cache_dir = "/var/cache/zero-inst";
+char cache_dir[MAX_PATH_LEN];
 
 static const char *prog; /* argv[0] */
 
@@ -636,6 +636,8 @@ static void read_from_wakeup(int wakeup)
 	}
 }
 
+#define CACHE_LINK "/uri/.lazyfs-cache"
+
 int main(int argc, char **argv)
 {
 	int wakeup_pipe[2];
@@ -643,10 +645,23 @@ int main(int argc, char **argv)
 	int helper;
 	int control_socket;
 	int max_fd;
+	int len;
 
 	umask(0022);
 	
 	prog = argv[0];
+
+	len = readlink(CACHE_LINK, cache_dir, sizeof(cache_dir));
+	if (len == -1) {
+		perror("readlink(" CACHE_LINK ")");
+		fprintf(stderr, "\nCan't find location of cache directory.\n"
+				"Make sure /uri is mounted and that you are running\n"
+				"the latest version of the lazyfs kernel module.\n");
+		return EXIT_FAILURE;
+	}
+	assert(len >= 1 && len < sizeof(cache_dir));
+	cache_dir[len] = '\0';
+	printf("Zero Install started: using cache directory '%s'\n", cache_dir);
 
 	helper = open_helper();
 

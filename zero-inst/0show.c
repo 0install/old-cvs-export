@@ -3,8 +3,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-static const char *cache_dir = "/var/cache/zero-inst";
-
 int main(int argc, char **argv)
 {
 	int control;
@@ -18,7 +16,7 @@ int main(int argc, char **argv)
 
 	addr.sun_family = AF_UNIX;
 	if (snprintf(addr.sun_path, sizeof(addr.sun_path),
-		     "%s/control", cache_dir) >= sizeof(addr.sun_path)) {
+		     "/uri/.lazyfs-cache/control") >= sizeof(addr.sun_path)) {
 		fprintf(stderr, "Control socket path too long!\n");
 		return 1;
 	}
