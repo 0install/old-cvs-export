@@ -177,20 +177,14 @@ Zero Install, so you need to have that installed by traditional methods.
 
 <p>
 You can open the <a href="http://rox.sf.net/rox_filer.html">ROX-Filer</a>
-window shown on the main page using this command:
+window shown on the main page using these commands (which also fetches the
+filer itself through Zero Install):
 </p>
 
 <pre>
+$ <b>alias rox=/uri/0install/rox.sourceforge.net/rox</b>
 $ <b>rox /uri/0install/rox.sourceforge.net/apps</b>
 </pre>
-
-<div class='note' style='text-align: left'>
-<p>If you don't have ROX-Filer, try this instead:</p>
-<pre>
-$ <b>cd /uri/0install/rox.sourceforge.net/apps</b>
-$ <b>./Edit/AppRun</b>
-</pre>
-</div>
 
 <!--
 <p>
