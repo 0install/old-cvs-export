@@ -1,0 +1,23 @@
+Changes since 0.1.6:
+
+* 0build script now creates the output in a different directory, and gives
+  the size and MD5 sum of each archive.
+
+* LazyFS kernel modules:
+
+  - Sends one request per user per file, so the helper can track who wants each
+    file and cancel requests on a per-user basis.
+
+  - Fixed a potentially nasty referencing problem with mmapped files.
+
+  - Support poll() for helper pipe.
+
+* Helper:
+
+  - Complete rewrite in C.
+
+  - Now handles multiple downloads in parallel.
+
+  - Clients can connect to helper to check on current downloads.
+
+* New 0show connects to helper and keeps user updated on current downloads.
