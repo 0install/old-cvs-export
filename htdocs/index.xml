@@ -40,7 +40,7 @@ title-bar):
 Click on Memo to run it, and it will run. Now, Memo depends on ROX-Lib2,
 which requires pygtk, which needs python2.2 and GTK+-2, which needs glib,
 pango and AKT. But that's OK; Memo runs everything it
-needs directly from the remote machines where they're stored.
+needs directly from the remote machines where they're stored:
 </p>
 
 <p style='text-align: center'>
@@ -49,9 +49,16 @@ needs directly from the remote machines where they're stored.
 </p>
 
 <p>
-The first time you ran Memo, a progress indicator appeared showing the
-download progress. If you quit Memo and run it again, it will start instantly,
-because the Zero Install system has cached everything locally.
+When you ran Memo, a progress indicator appeared briefly, showing the download
+progress. If you quit Memo and run it again, it will start instantly, because
+the Zero Install system has cached everything locally.
+</p>
+
+<p>
+Note that the progress display and downloading are <i>not</i> performed by the
+file manager; the filer sees this as an ordinary directory. The Zero Install
+system automatically cached the remote resources when they were accessed. You
+could have run Memo from a shell prompt, and it would have worked just as well.
 </p>
 
 <p class='q'>What about package management systems like APT?</p>
