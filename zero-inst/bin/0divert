@@ -87,6 +87,8 @@ def links_for(site):
 		print >>sys.stderr, "Site '%s' is not cached yet! " \
 			"Use -f to force." % site
 		raise SystemExit(1)
+	if not os.access(meta_dir, os.X_OK):
+		print >>sys.stderr, "Permission denied on %s" % meta_dir
 	path =  os.path.join(meta_dir, 'override.xml')
 	links = {}
 	if os.path.exists(path):
