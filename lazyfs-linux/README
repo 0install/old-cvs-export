@@ -18,3 +18,6 @@ Then install zero install from:
 
 More detailed instructions for installing Lazyfs can be found on the same
 site.
+
+Technical details about the design of the system can be found in the
+zero-install package (see the 'Technical' file).

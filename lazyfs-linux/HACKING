@@ -1,0 +1,88 @@
+Thomas Leonard
+19-May-2004
+
+This document describes the design and implementation of LazyFS. You should
+first read the 'Technical' file from the zero-install package, which explains
+the interface the system presents to user-space. This document describes the
+Linux implementation details.
+
+If you're here because something went wrong, try running the unit tests in
+the 'tests' directory. You need python and sudo installed for this. The tests
+check each aspect of the kernel module. If all tests pass, your problem
+probably isn't with the kernel module.
+
+If a test fails, please report it. It should be fairly easy to track down.
+You could go bug hunting yourself, by adding a few 'printk's around lazyfs.c
+(it works much like printf(); use 'dmesg' to see the logs). Reports to:
+
+	http://zero-install.sourceforge.net/support.html
+
+If you're trying to port lazyfs to another kernel, the unit-tests are also a
+good place to start. If you can get all the tests to pass on the new kernel,
+there's a good chance the whole zero-install system will work correctly too!
+
+
+Kernel implementation details
+
+Like tmpfs, we use the kernel's dcache (directory cache) to hold the current
+state of the tree. When a directory is opened for the first time (or a lookup
+done) we read the '...' file inside the host directory and d_add() everything
+we find, making up new inodes as we go.
+
+(an inode corresponds to a file, a dentry to a directory entry; zero or more
+dentries may point to a single inode)
+
+We have to rebuild the directory list if the '...' file is replaced.
+
+We keep links to the host filesystem at the dcache layer. There may be
+host inodes that we don't know about, or virtual inodes with no
+corresponding host.
+
+We only keep references to host directories, not to regular files.
+This means that deleting a file in the cache will actually free the space
+right away.
+
+	Host directory		    LazyFS mirror
+   (eg: /var/cache/zero-inst)	(eg: /uri/0install)
+
+host_inode <-- host_dentry <---- dentry --> inode
+    		      |		    |
+      hi2 <--------- hd2 <--------- d2 -----> i2
+	 	      |		    |
+      hi3 <--------- hd3	    |
+			     	    |
+   				    d4 -----> i4
+      hi5
+
+When a regular file dentry is opened, we pair up the file structures:
+
+	   host_file <----------- file
+	        |		   |
+	        V		   V
+host_inode <-- host_dentry       dentry ----> inode
+
+When directories are opened, we assert their contents into the dcache.
+Regular files are only linked at the 'file' level, while directories are only
+linked at the 'dentry' level. Except for the '...' files, which we do hold, but
+only so we know when they've changed. Got it? Good.
+
+We do not have any files with nlinks > 1. Therefore, each dentry in the lazyfs
+filesystem has exactly one inode, and vice versa, and so we do not track inodes
+directly.
+
+When a file or directory which doesn't exist in the cache is opened we
+create a request object (virtual_dentry, user_id) and put it in a queue
+to be delivered to the helper. If we already have a request for that user
+for that dentry, we just block. This allows users to see and cancel their own
+requests without affecting other users.
+
+We keep a count of how many times each open file has been mmapped, and
+how many times each inode has been mmapped (these are incremented together).
+The first time the inode is mmapped, we take a pointer to the host inode's
+mapping information. When a file is closed, we decrement the inode count by
+the file count, and reset the mapping if it is now zero. A single source
+inode cannot be mmapped to two different host inodes. This could cause a
+problem if the host inode is deleted and then replaced with an identical
+file (users will get -EBUSY). The helper application could solve this by
+updating the mtime in the ... file, causing LazyFS to create a new virtual
+inode for the file.
