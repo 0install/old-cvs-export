@@ -195,7 +195,7 @@ the design can still be bettered.
 <p>
 I should also point out that APT does some things not covered by Zero Install:
 configuration and automatic running. That is, when you install Apache, APT
-will asks some questions to get it ready and then actually run it for you
+will ask some questions to get it ready and then actually run it for you
 (which, of course, requires root permissions). In Zero Install, these
 functions would be handled by a separate system. Since the actual installation
 is automatic, this means that such tasks take the same number of steps. For

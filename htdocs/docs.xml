@@ -133,7 +133,7 @@ total 4
 $ <b>./MyProg/foo</b>
 42
 $ <b>0build /var/www myhost.com</b>
-Building index files for server 'localhost' in '/var/www'.
+Building index files for server 'myhost.com' in '/var/www'.
 Creating new directory for archives '/var/www/.0inst-archives'
 Skipping .0inst-0build
 Creating new archive for /MyProg
