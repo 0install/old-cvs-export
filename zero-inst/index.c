@@ -102,13 +102,16 @@ static void start_item(Index *index, const XML_Char *type,
 	long size = -1;
 	long mtime = -1;
 
+	size = get_long_attr(atts, "size");
 	if (type[0] != 'a') {
-		size = get_long_attr(atts, "size");
 		mtime = get_long_attr(atts, "mtime");
 		if (size < 0 || mtime < 0) {
 			index->state = ERROR;
 			return;
 		}
+	} else if (size == 0) {
+		index->state = ERROR;
+		return;		/* -1 is OK, though, for compatibility */
 	}
 
 	new = my_malloc(sizeof(Item));
@@ -425,10 +428,11 @@ void index_dump(Index *index)
 				ctime(&item->mtime));
 		}
 		for (item = group->archives; item; item = item->next) {
-			fprintf(stderr, "\t\t%c : %s (%s)\n",
+			fprintf(stderr, "\t\t%c : %s (%s) [ %ld ]\n",
 				item->type,
 				item->leafname ? item->leafname : "(null)",
-				item->md5 ? item->md5 : "(no MD5)");
+				item->md5 ? item->md5 : "(no MD5)",
+				item->size);
 		}
 	}
 

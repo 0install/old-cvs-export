@@ -1,4 +1,3 @@
-typedef struct _Item Item;
 struct _Item {
 	char type;	/* Dir, File, Link, eXec, Archive */
 	char *leafname;

@@ -133,6 +133,8 @@ static void finish_request(Request *request)
 
 	if (request->index)
 		index_free(request->index);
+	if (request->current_download_path)
+		free(request->current_download_path);
 	free(request->users);
 	free(request->path);
 	free(request);
@@ -158,6 +160,9 @@ static Request *request_new(const char *path)
 	request->users = NULL;
 	request->state = READY;
 	request->index = NULL;
+
+	request->current_download_archive = NULL;
+	request->current_download_path = NULL;
 
 	request->path = my_strdup(path);
 	if (!request->path)
@@ -199,8 +204,6 @@ static void request_add_user(Request *request, int fd, uid_t uid,
 	new[request->n_users].leaf = leaf;
 
 	request->n_users++;
-
-	control_notify_user(uid);
 }
 
 static Request *find_request(const char *path)
@@ -284,35 +287,43 @@ out:
 	fprintf(stderr, "Done\n");
 }
 
-static void wget(Request *request, const char *uri, char *path,
+/* Begins fetching 'uri', storing the file as 'path'.
+ * Sets request->child_pid and request->current_download_path.
+ * Clears request->current_download_archive.
+ * On error, request->child_pid will still be -1.
+ */
+static void wget(Request *request, const char *uri, const char *path,
 		 int use_cache)
 {
-	const char *argv[] = {"wget", "-q", "-O", path, uri,
+	const char *argv[] = {"wget", "-q", "-O", NULL, uri,
 			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
 
-	printf("Fetch '%s'\n", uri);
+	printf("\t(fetch '%s')\n", uri);
 
-	if (request->child_pid != -1) {
-		fprintf(stderr, "calling wget: Internal error\n");
-		exit(EXIT_FAILURE);
-	}
+	assert(request->child_pid == -1);
 
-	slash = strrchr(path, '/');
-	if (!slash) {
-		fprintf(stderr, "calling wget: Internal error II\n");
-		exit(EXIT_FAILURE);
-	}
+	request->current_download_archive = NULL;
+
+	if (request->current_download_path)
+		free(request->current_download_path);
+	request->current_download_path = my_strdup(path);
+	if (!request->current_download_path)
+		return;
+	argv[3] = request->current_download_path;
+
+	slash = strrchr(request->current_download_path, '/');
+	assert(slash);
 
 	*slash = '\0';
-	if (!ensure_dir(path))
-		return;
+	if (!ensure_dir(request->current_download_path))
+		goto err;
 	*slash = '/';
 
 	request->child_pid = fork();
 	if (request->child_pid == -1) {
 		perror("fork");
-		return;
+		goto err;
 	} else if (request->child_pid)
 		return;
 
@@ -320,8 +331,14 @@ static void wget(Request *request, const char *uri, char *path,
 
 	perror("Trying to run wget: execvp");
 	_exit(1);
+err:
+	if (request->current_download_path) {
+		free(request->current_download_path);
+		request->current_download_path = NULL;
+	}
 }
 
+/* Note: ensure that control_notify_user() is called after this */
 static void request_done_head(Request *request)
 {
 	uid_t uid;
@@ -339,8 +356,6 @@ static void request_done_head(Request *request)
 	request->n_users--;
 	for (i = 0; i < request->n_users; i++)
 		request->users[i] = request->users[i + 1];
-
-	control_notify_user(uid);
 }
 
 static void fetched_subindex(Request *request)
@@ -409,17 +424,47 @@ static void begin_fetch_index(Request *request)
 	wget(request, uri, path, 0);
 }
 
+/* Start a new fetch. Sets child->pid on success. */
+static void begin_fetch_toplevel(Request *request)
+{
+	UserRequest *first_rq = request->users;
+	char uri[MAX_URI_LEN];
+	char path[MAX_PATH_LEN];
+
+	/* This is just to save time on some common bogus lookups.
+	 * Hostname mustn't start with '.'.
+	 */
+	if (first_rq->leaf[0] == '.' || strcmp(first_rq->leaf, "AppRun") == 0)
+		return;
+
+	if (snprintf(uri, sizeof(uri), "%s://%s/" ZERO_INST_INDEX,
+	    request->path + 1, first_rq->leaf) > sizeof(uri) - 1) {
+		fprintf(stderr, "URI too long\n");
+		return;
+	}
+	if (snprintf(path, sizeof(path), "%s%s/%s/" ZERO_INST_INDEX,
+	    cache_dir, request->path, first_rq->leaf) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		return;
+	}
+
+	request->state = FETCHING_SUBINDEX;
+	wget(request, uri, path, 0);
+}
+
 /* Start a new fetch. Sets child->pid on success.
  * Modifies uri.
  */
-static void begin_fetch_archive(Request *request, char *uri, int uri_len)
+static void begin_fetch_archive(Request *request, Item *archive)
 {
+	char uri[MAX_URI_LEN];
 	char base[MAX_URI_LEN];
 	char path[MAX_PATH_LEN];
 
 	assert(request->child_pid == -1);
+	assert(archive->type == 'a');
 
-	printf("\t(fetch archive '%s')\n", uri);
+	printf("\t(fetch archive '%s')\n", archive->leafname);
 
 	request->state = FETCHING_ARCHIVE;
 	if (snprintf(path, sizeof(path), "%s%s/archive.tgz",
@@ -431,10 +476,11 @@ static void begin_fetch_archive(Request *request, char *uri, int uri_len)
 	if (!build_uri(base, sizeof(base), request->path, NULL, NULL))
 		return;
 
-	if (!uri_ensure_absolute(uri, uri_len, base))
+	if (!uri_ensure_absolute(archive->leafname, base, uri, sizeof(uri)))
 		return;
 
 	wget(request, uri, path, 0);
+	request->current_download_archive = archive;
 }
 
 /* Start a new fetch. Sets child->pid on success. */
@@ -478,9 +524,8 @@ static void begin_fetch_subindex(Request *request)
 static void begin_fetch(Request *request)
 {
 	UserRequest *first_rq = request->users;
-	char uri[MAX_URI_LEN];
-	char path[MAX_PATH_LEN];
-	int err;
+	Group *group = NULL;
+	Item *item = NULL;
 
 	assert(request->child_pid == -1);
 	assert(request->n_users);
@@ -489,26 +534,7 @@ static void begin_fetch(Request *request)
 
 	if (!strchr(request->path + 1, '/')) {
 		/* The root of a site (eg, /http/zero-install.sf.net) */
-
-		if (strcmp(first_rq->leaf, "AppRun") == 0 ||
-		    strcmp(first_rq->leaf, ".DirIcon") == 0)
-			return;
-		
-		if (snprintf(uri, sizeof(uri),
-			"%s://%s/" ZERO_INST_INDEX, request->path + 1,
-			first_rq->leaf) > sizeof(uri) - 1) {
-			fprintf(stderr, "URI too long\n");
-			return;
-		}
-		if (snprintf(path, sizeof(path),
-			"%s%s/%s/" ZERO_INST_INDEX, cache_dir, request->path,
-			first_rq->leaf) > sizeof(path) - 1) {
-			fprintf(stderr, "Path too long\n");
-			return;
-		}
-
-		request->state = FETCHING_SUBINDEX;
-		wget(request, uri, path, 0);
+		begin_fetch_toplevel(request);
 		return;
 	}
 
@@ -519,12 +545,30 @@ static void begin_fetch(Request *request)
 	 * it.
 	 */
 
-	err = get_item_info(request->index, first_rq->leaf, uri, sizeof(uri));
-	if (!err)
-		begin_fetch_archive(request, uri, sizeof(uri));
-	else if (err == EISDIR)
+	index_lookup(request->index, first_rq->leaf, &group, &item);
+	if (!item) {
+		fprintf(stderr, "Item '%s' not in index\n", first_rq->leaf);
+		return;
+	}
+
+	if (item->type == 'd') {
 		begin_fetch_subindex(request);
-	/* (else error) */
+		return;
+	}
+
+	if (!group) {
+		fprintf(stderr, "Item '%s' has no group!\n", first_rq->leaf);
+		return;
+	}
+
+	if (!group->archives) {
+		fprintf(stderr, "No archives for '%s'\n", first_rq->leaf);
+		return;
+	}
+
+	assert(item->type == 'f' || item->type == 'x');
+
+	begin_fetch_archive(request, group->archives);
 }
 
 /* Called whenever there is no child process running for this request.
@@ -557,9 +601,17 @@ static void request_next_step(Request *request)
 		 * it, or we've just finished fetching it.
 		 */
 		if (request->state == READY) {
+			/* Must get here before adding more users */
+			assert(request->n_users == 1);
+
 			printf("\t(fetching index)\n");
 			begin_fetch_index(request);
-			request->state = FETCHING_INDEX;
+			if (request->child_pid == -1) {
+				finish_request(request);
+			} else {
+				request->state = FETCHING_INDEX;
+				control_notify_user(request->users->uid);
+			}
 			return;
 		} else if (request->state == FETCHING_INDEX) {
 			printf("\t(processing index)\n");
@@ -594,12 +646,17 @@ static void request_next_step(Request *request)
 	}
 
 	while (request->n_users) {
+		uid_t uid = request->users->uid;
+
 		begin_fetch(request);
-		if (request->child_pid != -1)
+		if (request->child_pid != -1) {
+			control_notify_user(uid);
 			break;
+		}
 		/* Couldn't start request... skip to next */
 		printf("\t(skipping)\n");
 		request_done_head(request);
+		control_notify_user(uid);
 	}
 
 	/* Either we have begun a new request, or there is nothing left to do */
@@ -660,6 +717,8 @@ int queue_request(const char *path, const char *leaf, uid_t uid, int fd)
 
 	if (request->n_users == 1)
 		request_next_step(request);
+	else
+		control_notify_user(uid);
 
 	return 0;
 err:
@@ -871,6 +930,8 @@ int main(int argc, char **argv)
 
 	/* Doing a clean shutdown is mainly for valgrind's benefit */
 	printf("%s: Got SIGINT... terminating...\n", prog);
+
+	control_drop_clients();
 
 	close(helper);
 

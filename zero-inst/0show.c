@@ -83,12 +83,16 @@ int main(int argc, char **argv)
 	while (1) {
 		char buffer[256];
 		int got;
+		int i;
 
 		got = recv(control, buffer, sizeof(buffer) - 1, 0);
 		if (got < 0)
 			perror("recv");
 		if (got <= 0)
 			break;
+		for (i = 0; i < got; i++)
+			if (buffer[i] == '\0')
+				buffer[i] = '\n';
 		write(1, buffer, got);
 	}
 

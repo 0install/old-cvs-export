@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <signal.h>
 #include <sys/un.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -25,6 +26,7 @@ struct _Client {
 
 	int send_offset;
 	char *to_send;
+	int send_len;
 
 	char command[10 + MAX_PATH_LEN];	/* Command being read */
 
@@ -88,16 +90,25 @@ static void client_push_update(Client *client)
 	if (client->terminate || !client->monitor)
 		return;
 
-	if (client->to_send)
+	if (client->to_send) {
+		printf("\t(update already in progress; deferring)\n");
 		return;
+	}
 
-	len += sizeof("UPDATE\nEND\n");	/* (final \0 at end) */
+	len += sizeof("UPDATE_END");	/* (final \0 at end) */
 	for (request = open_requests; request; request = request->next) {
 		for (i = 0; i < request->n_users; i++) {
 			if (request->users[i].uid != client->uid)
 				continue;
+		
+			/* The path of the request */
 			len += strlen(request->path) + 1 +
 				strlen(request->users[i].leaf) + 1;
+
+			/* The current download (even if not head) */
+			if (request->current_download_path)
+				len += strlen(request->current_download_path);
+			len++;
 		}
 	}
 	client->to_send = my_malloc(len);
@@ -105,18 +116,19 @@ static void client_push_update(Client *client)
 		return;
 
 	buf = client->to_send;
-	buf += sprintf(buf, "UPDATE\n");
+	buf += sprintf(buf, "UPDATE%c", 0);
 	for (request = open_requests; request; request = request->next) {
 		for (i = 0; i < request->n_users; i++) {
 			if (request->users[i].uid != client->uid)
 				continue;
-			buf += sprintf(buf, "%s/%s\n", request->path,
-					request->users[i].leaf);
+			buf += sprintf(buf, "%s/%s%c%s%c", request->path,
+				request->users[i].leaf, 0,
+				request->current_download_path
+					? request->current_download_path : "",
+				0);
 		}
 	}
-	buf += sprintf(buf, "END\n");
-	*buf = '\0';
-	buf++;
+	buf += sprintf(buf, "END") + 1;	/* (includes \0) */
 	if (buf - client->to_send != len) {
 		fprintf(stderr, "client_push_update: Internal error (%d,%d)\n",
 				buf - client->to_send, len);
@@ -124,6 +136,7 @@ static void client_push_update(Client *client)
 	}
 
 	client->send_offset = 0;
+	client->send_len = len;
 	client->need_update = 0;
 }
 
@@ -193,18 +206,20 @@ static void client_free(Client *client)
 /* Add 'message' to the client's output buffer. On OOM, terminate connection */
 static void client_send_reply(Client *client, const char *message)
 {
-	int old_len = client->to_send ? strlen(client->to_send) : 0;
+	int old_len = client->to_send ? client->send_len : 0;
+	int message_len = strlen(message) + 1;
 	char *new;
 
-	new = my_realloc(client->to_send, old_len + strlen(message) + 1);
+	new = my_realloc(client->to_send, old_len + message_len);
 	if (!new) {
 		client->terminate = 1;
 		return;
 	}
 	
 	client->to_send = new;
+	client->send_len += message_len;
 	
-	strcpy(new + old_len, message);
+	memcpy(new + old_len, message, message_len);
 }
 
 /* Client requests the 'directory' be refetched */
@@ -359,12 +374,15 @@ static int write_to_client(Client *client)
 		return -1;
 	}
 
-	sent = write(client->socket, data, strlen(data));
+	sent = write(client->socket, data,
+			client->send_len - client->send_offset);
 	if (sent <= 0)
 		return -1;
 
 	client->send_offset += sent;
-	if (client->to_send[client->send_offset] == '\0') {
+	assert(client->send_offset <= client->send_len);
+
+	if (client->send_offset == client->send_len) {
 		free(client->to_send);
 		client->to_send = NULL;
 
@@ -409,5 +427,16 @@ void control_notify_user(uid_t uid)
 	for (client = clients; client; client = client->next) {
 		if (client->have_uid && client->uid == uid)
 			client_push_update(client);
+	}
+}
+
+void control_drop_clients(void)
+{
+	Client *client = clients;
+	while (client) {
+		Client *old = client;
+		client = client->next;
+
+		client_free(old);
 	}
 }

@@ -63,14 +63,21 @@ void set_blocking(int fd, int blocking)
  *
  * 0 on success.
  */
-int uri_ensure_absolute(char *uri, int len, const char *base)
+int uri_ensure_absolute(const char *uri, const char *base,
+			char *result, int result_len)
 {
 	int base_len, uri_len;
 
 	if (strncmp(uri, "ftp://", 6) == 0 ||
 	    strncmp(uri, "http://", 7) == 0 ||
-	   strncmp(uri, "https://", 8) == 0) {
+	    strncmp(uri, "https://", 8) == 0) {
 		printf("Absolute path\n");
+		int len = strlen(uri) + 1;
+		if (len > result_len) {
+			fprintf(stderr, "URI too long\n");
+			return 0;
+		}
+		memcpy(result, uri, len);
 		return 1;
 	}
 
@@ -80,14 +87,14 @@ int uri_ensure_absolute(char *uri, int len, const char *base)
 	uri_len = strlen(uri);
 	base_len = strlen(base);
 
-	if (uri_len + base_len + 2 > len) {
+	if (uri_len + base_len + 2 > result_len) {
 		fprintf(stderr, "URI too long\n");
 		return 0;
 	}
 
-	memmove(uri + base_len + 1, uri, uri_len + 1);
-	uri[base_len] = '/';
-	memcpy(uri, base, base_len);
+	memcpy(result, base, base_len);
+	result[base_len] = '/';
+	memcpy(result + base_len + 1, uri, uri_len + 1);
 
 	return 1;
 }

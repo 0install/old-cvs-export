@@ -29,6 +29,12 @@ struct _Request {
 	Request *next;	/* link in open_requests */
 
 	State state;
+
+	/* This is the location of the file that wget is currently
+	 * fetching. Also used by 0show to measure progress.
+	 */
+	char *current_download_path;
+	Item *current_download_archive; /* Pointer into ->index */
 };
 
 struct _UserRequest {
