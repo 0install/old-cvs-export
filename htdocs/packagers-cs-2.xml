@@ -21,7 +21,7 @@ $ mkdir scons.org/export
 <p>
 We fetch the release we want to make available and unpack it into a temporary directory. This
 is because, unlike Contacts in the previous study, scons needs an explicit install step, which
-copies of the files from the unpacked archive to their final locations on the system.
+copies files from the unpacked archive to their final locations on the system.
 </p>
 
 <pre>
@@ -32,10 +32,10 @@ scons-0.96.1
 </pre>
 
 <p>
-We will now tell scons to install to out site directory, using the --prefix
-option. We include the version number so that we can make multiple versions of
-scons available. We don't need a separate directory for each platform, because
-scons is pure Python code.
+We will now tell scons to install to our site directory, using the
+<b>--prefix</b> option. We include the version number so that we can make
+multiple versions of scons available. We don't need a separate directory for
+each platform, because scons is pure Python code.
 </p>
 
 <pre>
@@ -46,11 +46,11 @@ Installed SCons script into ../scons.org/site/0.96.1/bin
 </pre>
 
 <p>
-Note that some software will include hard-coded paths to the 'site' directory
-if you do this, but Python's distutils uses the prefix we give it only to decide
-where to put the files, not to affect the build itself. When packaging software
-which actually stores the prefix in the created program more care must be taken
-(the same tricks used by 'make distcheck' and similar).
+Note that some software will include hard-coded paths to the <b>site</b>
+directory if you do this, but Python's distutils uses the prefix we give it
+only to decide where to put the files, not to affect the build itself. When
+packaging software which actually stores the prefix inside the created program,
+more care must be taken.
 </p>
 
 <p>
