@@ -127,9 +127,11 @@ doesn't make any
 difference.
 </p><p>
 As with the regular web, people can leave redirections to the new
-site. Users will also be able to specify a list of redirections
+site. The system administrator can also specify a list of redirections
 manually if required (this also allows all access to a particular
-library to use the user's modified version, for example).
+library to use a modified version, for example). See the
+<a href="docs.html">documentation page</a> for details of the 0divert
+command.
 </p>
 
 <h3>How secure is this?</h3>

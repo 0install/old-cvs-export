@@ -232,7 +232,7 @@ run it for you (which, of course, requires root permissions). In Zero Install,
 these functions would be handled by a separate system. Since the actual
 installation is automatic, this means that such tasks take the same number of
 steps. For example, this command might present the same configuration boxes as
-'apt-get install apache' does on Debian:
+'sudo apt-get install apache' does on Debian:
 </p>
 <pre>
 $ sudo /uri/0install/apache.org/apache
