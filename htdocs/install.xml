@@ -48,7 +48,7 @@ Supported kernels are:
 </p>
 <ul>
 <li> Linux 2.4 series</li>
-<li> Linux 2.6 (tested with 2.6.0-pre7) - <strong>Experimental!</strong></li>
+<li> Linux 2.6 (tested with 2.6.0-pre7) - <strong>Experimental</strong> (may crash; try the <a href="http://cvs.sourceforge.net/viewcvs.py/*checkout*/zero-install/zero-inst/Linux/lazyfs.c">CVS lazyfs.c</a> if you have problems)</li>
 </ul>
 <p>
 If you want to port the (small) module to that or to other kernels (BSD, MacOS
