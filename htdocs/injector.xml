@@ -3,6 +3,16 @@
 
 <h2>The Injector</h2>
 
+<div class='note'>
+<h3>Warning: DRAFT!</h3>
+
+<p>
+This document is an <strong>UNFINISHED DRAFT</strong> of the design for the
+injector component.  It is not yet finalised. The prototype injector is not yet
+available (as of 2004-12-26).
+</p>
+</div>
+
 <p>
 A running process is created by combining many different libraries (and other components).
 In the Zero Install world, we have all versions of each library available at
@@ -195,7 +205,7 @@ Using groups is simply a short-hand notation. Eg:
  
 <pre><![CDATA[
 <?xml version='1.0'?>
-<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'/>
+<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'>
   <group path='/uri/0install/rox.sourceforge.net/apps/Memo/'>
     <implementation version='1.9.3' path='Memo-1.9.3'/>
     <implementation version='1.9.4' path='Memo-1.9.4'/>
@@ -214,7 +224,7 @@ example gets the injector to find an implementation of ROX-Lib too:
 <pre><![CDATA[
 <?xml version='1.0'?>
 <interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
-	   xmlns:python='http://zero-install.sourceforge.net/2004/injector/python'/>
+	   xmlns:python='http://zero-install.sourceforge.net/2004/injector/python'>
   <group path='/uri/0install/rox.sourceforge.net/apps/Memo/'>
     <requires interface='/uri/0install/rox.sourceforge.net/lib/ROX-Lib2/interface.xml'>
       <version min='1.9.6'/>
@@ -227,9 +237,9 @@ example gets the injector to find an implementation of ROX-Lib too:
 ]]></pre>
 
 <p>
-The &lt;requires&gt; element takes an interface name and locates an
-implementation of it. The &lt;version&gt; element inside gives the minimum acceptable version,
-and the &lt;environment&gt; element tells the injector how to make its
+The &lt;requires&gt; element names an interface which is required by all the implementations
+in this group. The &lt;version&gt; element inside gives the minimum acceptable
+version, and the &lt;environment&gt; element tells the injector how to make its
 choice known to Memo. In this case, it is by inserting
 <b>/path/of/ROX-Lib/python</b> to the beginning of PYTHONPATH.
 </p>
