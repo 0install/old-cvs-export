@@ -24,6 +24,8 @@ static DBusServer *server = NULL;
 
 static DBusWatch *current_watch = NULL;	/* tmp */
 
+static const char *current_error = NULL;
+
 static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 			 DBusError *error, int force);
 
@@ -104,6 +106,28 @@ static void send_task_update(DBusConnection *connection, Task *task)
 		dbus_message_unref(message);
 }
 
+static void send_task_error(DBusConnection *connection, Task *task)
+{
+	DBusMessage *message;
+
+	assert(task->str);
+
+	message = dbus_message_new(DBUS_Z_NS ".Error", NULL);
+
+	if (message &&
+	    dbus_message_append_args(message,
+			DBUS_TYPE_STRING, task->str,
+			DBUS_TYPE_STRING, current_error,
+			DBUS_TYPE_INVALID) &&
+	    dbus_connection_send(connection, message, NULL)) {
+	} else {
+		error("Out of memory");
+	}
+
+	if (message)
+		dbus_message_unref(message);
+}
+	
 static void send_task_end(DBusConnection *connection, Task *task)
 {
 	DBusMessage *message;
@@ -460,37 +484,22 @@ void control_check_select(fd_set *rfds, fd_set *wfds)
 	current_watch = NULL;
 }
 
-static void may_notify(DBusConnection *connection, Task *task)
-{
-	unsigned long uid;
-
-	if (!dbus_connection_get_unix_user(connection, &uid))
-		return;
-	if (uid != task->uid)
-		return;
-
-	send_task_update(connection, task);
-}
-
-static void may_notify_end(DBusConnection *connection, Task *task)
-{
-	unsigned long uid;
-
-	if (!dbus_connection_get_unix_user(connection, &uid))
-		return;
-	if (uid != task->uid)
-		return;
-
-	send_task_end(connection, task);
-}
-
 void control_notify_update(Task *task)
 {
-	list_foreach(&monitors, may_notify, 0, task);
+	list_foreach(&monitors, send_task_update, 0, task);
 }
+
 void control_notify_end(Task *task)
 {
-	list_foreach(&monitors, may_notify_end, 0, task);
+	list_foreach(&monitors, send_task_end, 0, task);
+}
+
+void control_notify_error(Task *task, const char *message)
+{
+	assert(!current_error);
+	current_error = message;
+	list_foreach(&monitors, send_task_error, 0, task);
+	current_error = NULL;
 }
 
 void control_drop_clients(void)

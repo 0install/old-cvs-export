@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "support.h"
+#include "task.h"
 #include "list.h"
 
 void list_init(ListHead *head)
@@ -71,6 +72,7 @@ out:
 
 /* Call 'callback(connection, task)' for each connection in the list.
  * If empty is 1, the list will be empty at the end.
+ * If task is given, the UID must match.
  */
 void list_foreach(ListHead *head,
 		void (*callback)(DBusConnection *connection, Task *task),
@@ -88,7 +90,15 @@ void list_foreach(ListHead *head,
 	while (next) {
 		DBusConnection *this = next;
 
-		callback(this, task);
+		if (task) {
+			unsigned long uid;
+
+			if (dbus_connection_get_unix_user(this, &uid) &&
+			    uid == task->uid)
+				callback(this, task);
+		} else {
+			callback(this, NULL);
+		}
 
 		next = dbus_connection_get_data(this, slot);
 

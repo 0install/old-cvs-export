@@ -125,14 +125,6 @@ static void refresh(const char *site, int force)
 
 	printf("OK\n");
 	dbus_message_unref(reply);
-#if 0
-	send_command(control, force ? "REFRESH " : "REBUILD ");
-
-	send_command(control, site);
-	send_command(control, "\n");
-
-	read_reply(control);
-#endif
 }
 
 static int uptodate(const char *path, time_t mtime)

@@ -6,3 +6,4 @@ void control_push_updates(void);
 
 void control_notify_update(Task *task);
 void control_notify_end(Task *task);
+void control_notify_error(Task *task, const char *message);
