@@ -38,7 +38,7 @@ the glib `Hello World' demo like this:
 </p>
 
 <pre>
-$ <b>cd /uri/http/zero-install.sourceforge.net/demo</b>
+$ <b>cd /uri/0http/zero-install.sourceforge.net/demo</b>
 $ <b>./hello_glib</b>
 Hello World from glib!
 </pre>
@@ -58,7 +58,7 @@ or add a filer bookmark.
 
 <li>Symlink it into your path, eg (assuming PATH contains ~/bin):
 <pre>
-$ <b>ln -s /uri/http/zero-install.sourceforge.net/demo/hello_glib ~/bin</b>
+$ <b>ln -s /uri/0http/zero-install.sourceforge.net/demo/hello_glib ~/bin</b>
 $ <b>hello_glib</b>
 Hello World from glib!
 </pre>
@@ -66,7 +66,7 @@ Hello World from glib!
 
 <li>Make a shell alias:
 <pre>
-$ <b>alias hw='/uri/http/zero-install.sourceforge.net/demo/hello_glib'</b>
+$ <b>alias hw='/uri/0http/zero-install.sourceforge.net/demo/hello_glib'</b>
 $ <b>hw</b>
 Hello World from glib!
 </pre>
@@ -84,17 +84,17 @@ However, you have two further programs to help you interact with the cache:
 
 <dt>0show</dt>
 <dd>This command displays a list of your current downloads. The display
-updates automatically as the list changes. The idea is to turn this into
-a system tray applet so that if a program suddenly stops responding because
-you've accessed a new feature (such as 'Edit image with Gimp' when Gimp
-isn't cached yet) you can see what's going on.</dd>
+updates automatically as the list changes. There is also a graphical GTK
+version; just run
+<b>/uri/0http/zero-install.sourceforge.net/apps/ZeroProgress/AppRun</b>. A
+progress box will popup whenever a download is in progress.</dd>
 
 <dt>0refresh</dt>
 <dd>For speed reasons, the cache is never automatically updated. If you
-know that gimp2.0 is available, but /uri/http/www.gimp.org only has a gimp1.3
+know that gimp2.0 is available, but /uri/0http/www.gimp.org only has a gimp1.3
 subdirectory then you can run 0refresh to update it:
 <pre>
-$ <b>cd /uri/http/www.gimp.org</b>
+$ <b>cd /uri/0http/www.gimp.org</b>
 $ <b>ls</b>
 gimp1.2
 gimp1.3
@@ -114,31 +114,34 @@ gimp2.0
 <p>Setting up a computer so that it can use Zero Install is covered in
 detail in the <a href="install.html">Install Guide</a>.</p>
 
+<p>You may also be interested in the <a href="security.html">security model</a>
+essay.</p>
+
 <h2>Documentation for packagers</h2>
 
 <p>If you'd like to make software available via Zero Install then you should
 use the 0build program to build the index file. The easiest way to do this
-is to put your programs inside a directory called 'www' and use 0build
+is to 'cd' into the directory you want to make available and run '0build'
 to build the index files in the server directory from there:</p>
 
 <pre>
-$ <b>alias 0build=/uri/http/zero-install.sourceforge.net/bin/0build</b>
-$ <b>ls -l ~/www/MyProg</b>
+$ <b>alias 0build=/uri/0http/zero-install.sourceforge.net/bin/0build</b>
+$ <b>cd ~/www</b>
+$ <b>ls -l MyProg/</b>
 total 4
 -rwxr-xr-x    1 tal00r   tal00r         18 2003-05-23 15:21 foo
-$ <b>~/www/MyProg/foo</b>
+$ <b>./MyProg/foo</b>
 42
-$ <b>0build /var/www</b>
-Building index file in www
-Listing www ...
-Building index file in www/MyProg
-Listing www/MyProg ...
-$ <b>/uri/http/localhost/MyProg/foo</b>
+$ <b>0build /var/www myhost.com</b>
+Building index files for server 'localhost' in '/var/www'.
+Creating new directory for archives '/var/www/.0inst-archives'
+Skipping .0inst-0build
+Creating new archive for /MyProg
+$ <b>/uri/0http/myhost.com/MyProg/foo</b>
 42
 </pre>
 
-<p>And that's it! Of course, when giving the address to other people, you'll
-have to replace 'localhost' with your webserver's host name.</p>
+<p>And that's it!</p>
 
 <h3>Suggested directory layout</h3>
 
@@ -150,7 +153,7 @@ version, so the program will be run as:
 </p>
 
 <pre>
-$ <b>/uri/http/.../MyProg/Linux-ix86/1.0.2/MyProg</b>
+$ <b>/uri/0http/.../MyProg/Linux-ix86/1.0.2/MyProg</b>
 </pre>
 
 <p>
@@ -169,7 +172,7 @@ Other programs can then access it as:
 </p>
 
 <pre>
-$ <b>/uri/http/.../MyProg/platform/1.0.2/MyProg</b>
+$ <b>/uri/0http/.../MyProg/platform/1.0.2/MyProg</b>
 </pre>
 
 <p>
@@ -184,7 +187,7 @@ current stable release). Thus, a python script might start with:
 </p>
 
 <pre>
-#!/uri/http/www.python.org/platform/2.2-or-later
+#!/uri/0http/www.python.org/platform/2.2-or-later
 print "Hello, I need Python 2.2 or later"
 </pre>
 
@@ -217,9 +220,9 @@ to catch the installed files:
 </p>
 
 <pre>
-$ <b>./configure --prefix=/uri/http/www.gtk.org/glib/Linux-ix86/2.2.1</b>
+$ <b>./configure --prefix=/uri/0http/www.gtk.org/glib/Linux-ix86/2.2.1</b>
 $ <b>make</b>
-# <b>mount -t tmpfs tmpfs /uri/http/www.gtk.org/</b>
+# <b>mount -t tmpfs tmpfs /uri/0http/www.gtk.org/</b>
 $ <b>make install</b>
 </pre>
 
