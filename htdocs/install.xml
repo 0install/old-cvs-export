@@ -189,8 +189,8 @@ $ <b>rox /uri/http/zero-install.sourceforge.net/demo</b>
 <p>
 The GTK progress indicator will pop up a progress box (as shown on the
 <a href="index.html">title page</a>) wheneven a download is in progess. It can
-be run like this (the refresh is only needed if the 'apps' directory isn't in
-the cache yet):
+be run like this (the refresh is only needed if you've already cached an
+old version of this directory):
 </p>
 
 <pre>
