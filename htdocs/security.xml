@@ -185,9 +185,10 @@ system itself must be audited for correctness and security. When a package
 is 'installed' using Zero Install, none of the code within the package is
 run at all, it is simply copied from the remote machine to a local disk cache
 (for speed reasons).
-If Zero Install is secure, any other software may be installed and upgraded
-using it without risking the system. Trust in the software is only needed when
-the software is run, and only the user running the software needs to trust it.
+If Zero Install (and Linux, etc) is secure, any other software may be installed
+and upgraded using it without risking the system. Trust in the software is only
+needed when the software is run, and only the user running the software needs
+to trust it.
 </p>
 
 <p>
