@@ -27,7 +27,7 @@ buttons). Thus, the injector must choose implementations of each dependancy
     <archive size='21652' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.3.tar.gz' extract='injector-0.3'/>
   </implementation>
 
-  <implementation id="sha1=645bebcd1439ef44c15b362efe221bcb8126426a" stability="stable" version="0.4">
+  <implementation id="sha1=645bebcd1439ef44c15b362efe221bcb8126426a" stability="testing" version="0.4">
     <archive size='21808' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.4.tar.gz' extract='injector-0.4'/>
   </implementation>
 
@@ -38,7 +38,7 @@ buttons). Thus, the injector must choose implementations of each dependancy
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCPDvjrgeCgFmlPMERAsQPAJ9+YXEd2OHGGoEwZ9GeZpJnw2qJ1wCgwKJR
-aCRCppy0FjkDuwj/uypgQ+c=
-=LfUN
+iD8DBQFCPD3prgeCgFmlPMERAj/0AKC7OgeMxXq+5J7wt+wEno4FiBUJ9QCg1GBS
+2rGcjcVxqOEAioF/1Y0/cLA=
+=9GHO
 -----END PGP SIGNATURE-----
