@@ -91,7 +91,7 @@ The system has two parts: a kernel module, which handles all cached requests
 itself, and a 'helper' application to fetch uncached stuff from the Internet.
 For security reasons, it's better not to run the helper as root. So you'll
 now need to choose a user to run the helper as. This could be your own user
-name, or (ideally) you could create a new user just for this purpose. Run
+name, or (<a href="http://sourceforge.net/mailarchive/message.php?msg_id=6386789">ideally</a>) you could create a new user just for this purpose. Run
 configure with the name of your chosen user (here called 'zeroinst'):
 </p>
 
