@@ -1,0 +1,245 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<h2>The Injector</h2>
+
+<p>
+A running process is created by combining many different libraries (and other components).
+In the Zero Install world, we have all versions of each library available at
+all times. The problem then is how to choose which versions to use.
+Some examples of ways to choose:
+</p>
+<ul>
+<li>The very latest version.</li>
+<li>The latest version in the cache (eg, when off-line).</li>
+<li>The latest stable version.</li>
+<li>The version recommended by your distribution.</li>
+<li>A version not affected by a known security flaw.</li>
+<li>The version you've always used in the past.</li>
+<li>A development version you are working on yourself.</li>
+</ul>
+<p>
+One way to organise things is to have a component link directly to particular
+versions of the components on which it depends. So, running Memo 2.0.0 might
+always use pygtk-2.0.0 and python 2.2.0. But we often want to use the same component
+with different versions of its dependancies. For example, when Python 2.2.1
+comes out with bug-fixes, we will want Memo to use it automatically. 
+</p>
+
+<p>
+Zero Install solved this in the past by means of the <b>latest</b> symlinks. Here,
+Memo 2.0.0 uses <b>python.org/latest</b>, which is always a symlink to the latest
+version. But this isn't flexible enough to cope with the list of cases above.
+What if python 2.2.1 is available, but we'd rather continue with 2.0.0 than
+download it? The 0divert command allows the root user to redirect these
+symlinks, but a major goal of Zero Install is to make software use easy without
+involving an administrator. Also, 0divert affects all users, whereas we only
+wish to affect one user, or maybe even only one program.
+</p>
+
+<p>
+The injector solves this problem by selecting components to meet a program's requirements,
+according to rules specified by the user.
+</p>
+
+<p style='text-align: center'>
+<img width="552" height="333" src="inject.png"
+     alt="The injector selects versions according to the user's policy" />
+</p>
+
+<h2>Interfaces and Implementations</h2>
+
+<dl>
+<dt>An interface</dt>
+<dd>describes what something does (eg, "Can display a web page").</dd>
+
+<dt>An implementation</dt>
+<dd>is something that does it (eg, Firefox-1.0 or Galeon 2.0.0).</dd>
+</dl>
+<p>
+In Zero Install, both interfaces and implementations are named by
+globally unique paths. For these examples, we will use the convention that the
+interface names a file in the directory containing the implementations. So:
+</p>
+<ul>
+<li>/uri/0install/rox.sourceforge.net/lib/ROX-Lib/interface.xml (the interface)</li>
+<li>/uri/0install/rox.sourceforge.net/lib/ROX-Lib/ROX-Lib-1.9.0 (an implementation)</li>
+<li>/uri/0install/rox.sourceforge.net/lib/ROX-Lib/ROX-Lib-1.9.1 (another implementation)</li>
+</ul>
+<p>
+However, the interface could have implementations in other places, eg:
+</p>
+<ul>
+<li>/home/fred/lib/ROX-Lib-devel</li>
+</ul>
+
+<p class='note'>
+Question: is 'interface.xml' really a good name? It doesn't actually describe
+the interface at all, only links to and requirements of its implementations.
+</p>
+
+<p style='text-align: center'>
+<img width="554" height="345" src="depend.png"
+     alt='Interface files give implementations and dependancies' />
+</p>
+
+<p>
+When we run a program (like Memo) we need to choose an implementation of every
+interface on which it depends, and tell it where to find them. This process is
+known as <i>Dependancy Injection</i> (or <i>Inversion of Control</i>). It (will be)
+handled by the program
+<b>/uri/0install/zero-install.sourceforge.net/bin/injector</b>. This takes
+as input an interface (and possibly a set of restrictions) and chooses an
+implementation based on the user's policy. It then runs the program. For
+example, this script runs any version of Memo (running the script <b>AppRun</b>
+inside the implementation it chooses):
+</p>
+<pre>
+#!/bin/sh
+/uri/zero-install.sourceforge.net/bin/injector AppRun /uri/0install/rox.sourceforge.net/apps/Memo/interface.xml
+</pre>
+<p>
+The interface path
+(<b>/uri/0install/rox.sourceforge.net/apps/Memo/interface.xml</b>) is used to
+get the default list of implementations. This is an XML file. Here is a very simple
+example, listing two implementations of the interface:
+</p>
+
+<pre><![CDATA[
+<?xml version='1.0'?>
+<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'>
+    <implementation version='1.9.3' path='/uri/0install/rox.sourceforge.net/apps/Memo/Memo-1.9.3'/>
+    <implementation version='1.9.4' path='/uri/0install/rox.sourceforge.net/apps/Memo/Memo-1.9.4'/>
+</interface>
+]]></pre>
+
+<p>
+An implementation (in the Zero Install sense) is always some particular
+version*. Interfaces can be quite general (like the one above) or more
+specific. For example, the Firefox interface "displays a web page using
+firefox" and is implemented by all versions of firefox (but not by any version
+of Galeon). In the diagram below, the innermost rectangular boxes are implementations,
+and the other boxes are interfaces.
+</p>
+<p class='note'>
+* In future, we will identify versions with a crypographic hash of their
+contents in addition to their version number. Therefore, two releases with
+the same version number are still considered as separate implementations if
+they differ in any way.
+</p>
+<p style='text-align: center'>
+<img width="422" height="542" src="interfaces.png"
+     alt='General interfaces are specialised into other interfaces, and finally implementations.' />
+</p>
+<p>
+Interfaces can be futher specialised by other interfaces. For example, the
+firefox interface is a specialisation of the more generic web-browser
+interface. You can also view particular versions of firefox as specialisations
+of the generic firefox interface, and particular implementations (builds) as
+specialisations of the version.
+</p>
+<p>
+However, versions are a little different than other types of specialisation,
+because the implication is that higher-numbered versions are better. Thus, if
+the injector is faced with a choice of firefox 0.9 or firefox 1.0, it would be
+able to choose a sensible default without prompting. However, it can't choose
+automatically between firefox and galeon when trying to find an implementation
+of a web browser.
+</p>
+
+<p>
+A versions is a dot-separated list of integers. Eg "1.2.3". They can be just a
+single number ("1") or a sequence of any number of components ("1.4.2.3"). They
+are ordered like this:
+</p>
+
+<ul>
+<li>1</li>
+<li>1.1</li>
+<li>1.2</li>
+<li>1.2.1</li>
+<li>1.2.1.4</li>
+<li>1.2.2</li>
+<li>3</li>
+</ul>
+
+<p>
+The injector doesn't care about anything other than the sort order (ie, whether
+one version comes before or after another). It is assumed that an
+implementation can be safely replaced by one with a later version number, but
+not with an earlier one. So, if you ask for "1.2.1" then you might get "1.2.2"
+or "1.3" or even "5.7", but not "1.2.0". This is a little different to some
+other systems, where numbers in different places have different meanings.
+</p>
+<p>
+Since some versions may be buggy, it is possible to specify that a particular
+range of versions must or must not be used. However, incompatible changes (where
+a newer version cannot be used in place of an older version) to an interface
+should be handled by creating a new interface. Eg:
+</p>
+
+<ul>
+<li>/uri/0install/gtk.org/gtk/interface-1.2.xml  (contains 1.2.0, 1.2.1, 1.2.2, ...)</li>
+<li>/uri/0install/gtk.org/gtk/interface-2.0.xml  (contains 2.0.0, 2.0.1, 2.2.0, 2.4.0, 2.4.1, ...)</li>
+</ul>
+ 
+<h2>Groups</h2>
+ 
+<p>
+To avoid specifying the same information multiple times, the &lt;group&gt;
+element can be used. Attributes set on a group are inherited by its child
+elements. 'path' attributes may be relative, in which case they are relative
+to the parent's path. Group may be nested inside other groups to any depth.
+Using groups is simply a short-hand notation. Eg:
+</p>
+ 
+<pre><![CDATA[
+<?xml version='1.0'?>
+<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'/>
+  <group path='/uri/0install/rox.sourceforge.net/apps/Memo/'>
+    <implementation version='1.9.3' path='Memo-1.9.3'/>
+    <implementation version='1.9.4' path='Memo-1.9.4'/>
+  </group>
+</interface>
+]]></pre>
+ 
+<h2>Dependancies</h2>
+
+<p>
+Our example interface for Memo above doesn't mention that Memo needs ROX-Lib
+(Memo will have to find ROX-Lib itself in this case). This more complete
+example gets the injector to find an implementation of ROX-Lib too:
+</p>
+
+<pre><![CDATA[
+<?xml version='1.0'?>
+<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
+	   xmlns:python='http://zero-install.sourceforge.net/2004/injector/python'/>
+  <group path='/uri/0install/rox.sourceforge.net/apps/Memo/'>
+    <requires interface='/uri/0install/rox.sourceforge.net/lib/ROX-Lib2/interface.xml'>
+      <version min='1.9.6'/>
+      <environment name='PYTHONPATH' insert='python'/>
+    </requires>
+    <implementation version='1.9.3' path='Memo-1.9.3'/>
+    <implementation version='1.9.4' path='Memo-1.9.4'/>
+  </group>
+</interface>
+]]></pre>
+
+<p>
+The &lt;requires&gt; element takes an interface name and locates an
+implementation of it. The &lt;version&gt; element inside gives the minimum acceptable version,
+and the &lt;environment&gt; element tells the injector how to make its
+choice known to Memo. In this case, it is by inserting
+<b>/path/of/ROX-Lib/python</b> to the beginning of PYTHONPATH.
+</p>
+
+<p>
+The injector will also examine the dependancies of ROX-Lib, and so on recursively.
+Depending on the user's policy, it may try to download newer versions, or it
+may prefer to use older cached versions. It may display a dialog box asking the
+user what they want to do.
+</p>
+
+
+</html>

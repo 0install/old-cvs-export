@@ -103,6 +103,12 @@ div.note {
 	margin: 2px 4em 2px 4em;
 }
 
+p.note {
+	font-size: smaller;
+	padding-left: 1cm;
+	padding-right: 1cm;
+}
+
 div.note h3 {
 	text-align: center;
 }
