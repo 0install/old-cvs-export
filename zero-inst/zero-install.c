@@ -274,7 +274,7 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 		return;		/* Download in progress */
 	}
 
-	if (!index) {
+	if (!task->index) {
 		/* Error -- give up */
 		close(request_fd);
 		task_destroy(task, 0);
