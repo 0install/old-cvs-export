@@ -7,6 +7,8 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
+ *
+ * Code and ideas copied from various other places in the kernel.
  */
 
 
@@ -130,6 +132,7 @@ struct lazy_sb_info
 struct lazy_de_info
 {
 	struct dentry *dentry;	/* dentry->d_fsdata == self */
+	int may_delete;		/* Used during mark-and-sweep (XXX:lock) */
 
 	/* Only for directories... */
 	struct dentry *host_dentry;
@@ -163,6 +166,16 @@ lazyfs_put_inode(struct inode *inode)
 	printk("Putting inode %ld\n", inode->i_ino);
 
 	return;
+}
+
+static int
+lazyfs_delete_dentry(struct dentry *dentry)
+{
+	/* XXX: Are we supposed to do something here?
+	 * If this method is missing, dentries can't be unhashed.
+	 */
+	printk("Deleting dentry %ld\n", dentry->d_inode->i_ino);
+	return 0;
 }
 
 static void
@@ -258,6 +271,7 @@ static struct dentry *new_dentry(struct super_block *sb,
 	info->host_dentry = NULL;
 	info->list_dentry = NULL;
 	info->fetching = 0;
+	info->may_delete = 0;
 	INIT_LIST_HEAD(&info->to_helper);
 
 	if (parent_dentry)
@@ -491,6 +505,67 @@ out:
         return host_dentry;
 }
 
+#define isdigit(c) ((c) >= '0' && (c) <= '9')
+__inline static int atoi(const char **s) 
+{
+int i = 0;
+while (isdigit(**s))
+  i = i*10 + *((*s)++) - '0';
+return i;
+}
+
+static void mark_children_may_delete(struct dentry *dentry)
+{
+	struct list_head *head, *next;
+
+	spin_lock(&dcache_lock);
+	head = &dentry->d_subdirs;
+	next = head->next;
+
+	while (next != head) {
+		struct dentry *child = list_entry(next, struct dentry, d_child);
+		struct lazy_de_info *info = (struct lazy_de_info *)
+						child->d_fsdata;
+		next = next->next;
+
+		if (d_unhashed(child)||!child->d_inode)
+			continue;
+
+		info->may_delete = 1;
+	}
+
+	spin_unlock(&dcache_lock);
+}
+
+static void sweep_marked_children(struct dentry *dentry)
+{
+	struct list_head *head, *next;
+
+restart:
+	spin_lock(&dcache_lock);
+	head = &dentry->d_subdirs;
+	next = head->next;
+
+	while (next != head) {
+		struct dentry *child = list_entry(next, struct dentry, d_child);
+		struct lazy_de_info *info = (struct lazy_de_info *)
+						child->d_fsdata;
+		next = next->next;
+
+		if (d_unhashed(child)||!child->d_inode)
+			continue;
+
+		if (!info->may_delete)
+			continue;
+
+		spin_unlock(&dcache_lock);
+		d_delete(child);
+		goto restart;
+	}
+
+	spin_unlock(&dcache_lock);
+}
+
 /* The file list for a directory has changed.
  * Update it by parsing the new list of contents read from '...'.
  */
@@ -498,7 +573,7 @@ static int
 add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 {
 	struct super_block *sb = dir->d_inode->i_sb;
-	off_t offset;
+	const char *end = listing + size;
 
 	/* Wipe the dcache below this point and reassert this directory's new
 	 * contents into it. The rest of the tree will be rebuilt on demand, as
@@ -509,15 +584,19 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 	/* Check for the magic string */
 	if (size < 7 || strncmp(listing, "LazyFS\n", 7) != 0)
 		return -EIO;
-	offset = 7;
+	listing += 7;
 
-	while (offset < size)
+	mark_children_may_delete(dir);
+
+	while (listing < end)
 	{
 		struct dentry *existing;
 		mode_t mode = 0444;
 		struct qstr name;
+		off_t size;
+		time_t time;
 
-		switch (listing[offset])
+		switch (*(listing++))
 		{
 			case 'f': mode |= S_IFREG; break;
 			case 'x': mode |= S_IFREG | 0111; break;
@@ -525,30 +604,58 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 			case 'l': mode |= S_IFLNK; break;
 			default: goto bad_list;
 		}
-		offset += 1;
+		if (*(listing++) != ' ')
+			goto bad_list;
+		
+		if (!isdigit(*listing))
+			goto bad_list;
+		size = atoi(&listing);
+		if (*(listing++) != ' ')
+			goto bad_list;
 
-		name.name = listing + offset;
+		if (!isdigit(*listing))
+			goto bad_list;
+		time = atoi(&listing);
+		if (*(listing++) != ' ')
+			goto bad_list;
+
+		name.name = listing;
 		name.len = strlen(name.name);
-		offset += name.len + 1;
-		if (offset == size + 1)
+		listing += name.len + 1;
+		if (listing == end + 1)
 			goto bad_list;	/* Last line not terminated */
 
 		name.hash = full_name_hash(name.name, name.len);
 		existing = d_lookup(dir, &name);
-		if (existing)
+		if (existing && existing->d_inode)
 		{
-			/* TODO: remove if changed */
-			printk("lazyfs: '%s' already exists (TODO)\n",
+			struct inode *i = existing->d_inode;
+			printk("lazyfs: '%s' already exists\n",
 					name.name);
-			dput(existing);
+			if (i->i_mode != mode || i->i_size != size ||
+			    i->i_mtime != time)
+			{
+				printk("It's changed!\n");
+				d_delete(existing);
+				new_dentry(sb, dir, name.name,
+					   mode, size, time);
+			}
+			else
+			{
+				struct lazy_de_info *info =
+					(struct lazy_de_info *)
+						existing->d_fsdata;
+				info->may_delete = 0;
+				dput(existing);	/* Same */
+			}
 		}
 		else
-			new_dentry(sb, dir, name.name, mode, 0, 0);
+			new_dentry(sb, dir, name.name, mode, size, time);
 	}
 
-	/* TODO: remove deleted entries */
+	sweep_marked_children(dir);
 
-	if (offset != size)
+	if (listing != end)
 		BUG();
 	
 	return 0;
@@ -1154,6 +1261,7 @@ static struct file_operations lazyfs_dir_operations = {
 };
 
 static struct dentry_operations lazyfs_dentry_ops = {
+	d_delete:	lazyfs_delete_dentry,
 	d_release:	lazyfs_release_dentry,
 };
 
