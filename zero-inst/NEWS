@@ -1,4 +1,8 @@
+* Updated the Technical file (reported by Issac Trotts).
+
 Changes since 0.1.22:
+
+* Use new version of lazyfs.
 
 * Check for libtrash and print a warning if running (reported by Tristan
   McLeay).
