@@ -3,6 +3,16 @@
 
 <h2 id="study1">Case study #1: packaging Contacts for Zero Install</h2>
 
+<p>This tutorial / case-study covers the following topics:</p>
+
+<ul>
+  <li>Setting up a new Zero Install site.</li>
+  <li>Building the archives to export with 0build.</li>
+  <li>Uploading the archives to a web-server.</li>
+  <li>Testing the site with Zero Install.</li>
+  <li>Making updates to the site.</li>
+</ul>
+
 <p><a href="http://roxos.sunsite.dk/dev-contrib/guido/Contacts/">Contacts</a>
 is simple address-book application. In this case study, we go though the
 process of making it available via Zero Install step-by-step. Contacts is

@@ -30,6 +30,7 @@ case studies in order:
 
 <ul>
   <li><a href="packagers-cs-1.html">Case Study #1</a> shows how to make a simple Python application available via Zero Install, and how to make updates available. Read this first.</li>
+  <li><a href="packagers-cs-2.html">Case Study #2</a> shows how to make the scons build system available.</li>
 </ul>
 
 <p>
