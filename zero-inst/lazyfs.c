@@ -116,16 +116,14 @@ static DECLARE_WAIT_QUEUE_HEAD(lazy_wait);
 
 static DECLARE_WAIT_QUEUE_HEAD(helper_wait);
 
-static spinlock_t to_helper_lock = SPIN_LOCK_UNLOCKED;
-static LIST_HEAD(to_helper);
+static LIST_HEAD(to_helper);	/* Protected by fetching_lock */
 
 struct lazy_sb_info
 {
 	struct file *host_file;
 	struct qstr dirlist_qname;
 	struct dentry *helper_dentry;
-	int have_helper;
-	spinlock_t have_helper_lock;
+	int have_helper;	/* Protected by fetching_lock */
 	struct vfsmount *helper_mnt;
 };
 
@@ -345,7 +343,6 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 			S_IFREG | 0600, 0, CURRENT_TIME);
 	sbi->helper_dentry->d_inode->i_fop = &lazyfs_helper_operations;
 	sbi->have_helper = 0;
-	sbi->have_helper_lock = SPIN_LOCK_UNLOCKED;
 	sbi->helper_mnt = NULL;
 
 	printk("Done\n");
@@ -369,94 +366,6 @@ err:
 	return NULL;
 }
 
-#if 0
-/* If parent_host/name has a positive host dentry, return it.
- * If it does not, and is not being fetched, fetch it.
- * Sleep until it is ready, or we get an error.
- */
-static struct dentry *sleep_on_helper(struct dentry *parent_host,
-				      struct qstr *leafname)
-{
-	struct dentry *host_dentry;
-
-	lock_kernel();
-
-
-	if (IS_ERR(host_dentry))
-		goto out;		/* Actual error, not just missing */
-
-	if (host_dentry->d_inode)
-		goto out; 		/* Valid inode! */
-
-
-
-	/* OK, it doesn't exist */
-	host_dentry = ERR_PTR(-EIO);
-out:
-	unlock_kernel();
-	return host_dentry;	
-}
-
-/* Return the host_dentry for this dentry. Tries the dcache first, then
- * the fscache. If neither has it, it starts a fetch operation and returns
- * -EAGAIN. Called with the kernel lock held.
- */
-static struct dentry *get_cached(struct dentry *dentry)
-{
-	
-
-	if (IS_ERR(host_dentry))
-		return host_dentry;
-
-	if (host_dentry->d_inode)
-	{
-		/* From the host FS */
-		if (valid(dentry, host_dentry))
-			return host_dentry;
-		dput(host_dentry);
-		host_dentry = NULL;
-		/* Broken, so invoke the helper */
-	}
-
-	printk("lazyfs: Invoke helper for '%s'\n", dentry->d_name);
-
-	return ERR_PTR(-EIO);
-}
-#endif
-
-/* Called only after changing 'fetching' from 0 to 1.
- * The fetching operation gets a ref, freed when fetching goes 1->0 again.
- */
-static void helper_fetch(struct dentry *dentry)
-{
-	struct lazy_de_info *info = (struct lazy_de_info *) dentry->d_fsdata;
-
-	if (!info->fetching)
-		BUG();
-
-	if (info->dentry != dentry)
-		BUG();
-
-	dget(dentry);
-	spin_lock(&fetching_lock);
-	list_add(&info->to_helper, &to_helper);
-	spin_unlock(&fetching_lock);
-
-	wake_up_interruptible(&helper_wait);
-}
-
-#if 0
-static void fetched(void)
-{
-	spin_lock(&fetching_lock);
-	info->fetching = 0;
-	dput(dentry);
-	spin_unlock(&fetching_lock);
-
-	printk("lazyfs: fetch complete\n");
-}
-#endif
-
 /* Return the dentry for this host. It's parent directory must already have one.
  * If 'dentry' is a directory, then the returned value will also be cached.
  * If the host inode does not yet exist, it sleeps until the helper creates
@@ -464,6 +373,8 @@ static void fetched(void)
  */
 static struct dentry *get_host_dentry(struct dentry *dentry)
 {
+	struct super_block *sb = dentry->d_inode->i_sb;
+	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
 	struct dentry *parent;
 	struct dentry *host_dentry;
 	struct lazy_de_info *parent_info;
@@ -490,9 +401,9 @@ static struct dentry *get_host_dentry(struct dentry *dentry)
 		BUG();
 
 	add_wait_queue(&lazy_wait, &wait);
-	current->state = TASK_INTERRUPTIBLE;
 	do {
 		int start_fetching = 0;
+		int had_helper = 0;
 
 		host_dentry = info->host_dentry;
 		if (host_dentry)
@@ -515,14 +426,20 @@ static struct dentry *get_host_dentry(struct dentry *dentry)
 
 		/* Start a fetch, if there isn't one already */
 		spin_lock(&fetching_lock);
-		if (!info->fetching)
+		had_helper = sbi->have_helper;
+		if (!info->fetching && sbi->have_helper)
 		{
 			info->fetching = 1;
+			dget(dentry);
+			list_add(&info->to_helper, &to_helper);
 			start_fetching = 1;
 		}
 		spin_unlock(&fetching_lock);
+		host_dentry = ERR_PTR(-EIO);
+		if (!had_helper)
+			goto out;
 		if (start_fetching)
-			helper_fetch(dentry);
+			wake_up_interruptible(&helper_wait);
 		/* else someone else is already fetching it */
 
 #if 0
@@ -531,7 +448,17 @@ static struct dentry *get_host_dentry(struct dentry *dentry)
                         goto out;
                 }
 #endif
-		while (info->fetching) {
+		while (1)
+		{
+			current->state = TASK_INTERRUPTIBLE;
+			spin_lock(&fetching_lock);
+			if (!info->fetching)
+			{
+				spin_unlock(&fetching_lock);
+				break;
+			}
+			spin_unlock(&fetching_lock);
+
 			if (signal_pending(current)) {
 				host_dentry = ERR_PTR(-ERESTARTSYS);
 				goto out;
@@ -579,9 +506,6 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 	 * if the new information is the same as before.
 	 */
 
-	/* Drop the usage count on each descendant */
-	/* TODO */
-
 	/* Check for the magic string */
 	if (size < 7 || strncmp(listing, "LazyFS\n", 7) != 0)
 		return -EIO;
@@ -613,6 +537,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		existing = d_lookup(dir, &name);
 		if (existing)
 		{
+			/* TODO: remove if changed */
 			printk("lazyfs: '%s' already exists (TODO)\n",
 					name.name);
 			dput(existing);
@@ -790,8 +715,8 @@ lazyfs_statfs(struct super_block *sb, struct statfs *buf)
 	buf->f_type = LAZYFS_MAGIC;
 	buf->f_bsize = 1024;
 	buf->f_bfree = buf->f_bavail = buf->f_ffree;
-	buf->f_blocks = 100; //(sb->u.lazyfs_sb.s_maxsize+LAZYBSIZE-1)>>LAZYBSBITS;
-	buf->f_namelen = 1024; //LAZYFS_MAXFN;
+	buf->f_blocks = 100;
+	buf->f_namelen = 1024;
 	return 0;
 }
 
@@ -961,12 +886,12 @@ lazyfs_helper_open(struct inode *inode, struct file *file)
 	if (!sbi)
 		BUG();
 
-	spin_lock(&sbi->have_helper_lock);
+	spin_lock(&fetching_lock);
 	if (sbi->have_helper)
 		err = -EBUSY;
 	else
 		sbi->have_helper = 1;
-	spin_unlock(&sbi->have_helper_lock);
+	spin_unlock(&fetching_lock);
 
 	if (!err)
 	{
@@ -989,11 +914,29 @@ lazyfs_helper_release(struct inode *inode, struct file *file)
 		BUG();
 
 	mntput(sbi->helper_mnt);
-	spin_lock(&sbi->have_helper_lock);
+	sbi->helper_mnt = NULL;
+
+	spin_lock(&fetching_lock);
+	while (!list_empty(&to_helper)) {
+		struct lazy_de_info *info;
+		info = list_entry(to_helper.next,
+				struct lazy_de_info, to_helper);
+
+		list_del_init(&info->to_helper);
+
+		printk("Discarding '%s'\n", info->dentry->d_name.name);
+		if (info->fetching != 1)
+			BUG();
+		info->fetching = 0;
+	}
+
 	if (sbi->have_helper != 1)
 		BUG();
 	sbi->have_helper = 0;
-	spin_unlock(&sbi->have_helper_lock);
+
+	spin_unlock(&fetching_lock);
+
+	wake_up_interruptible(&lazy_wait);
 
 	return 0;
 }
@@ -1004,7 +947,7 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	int err = 0;
 	DECLARE_WAITQUEUE(wait, current);
 
-	if (count < 256)
+	if (count < 20)
 		return -EINVAL;
 
 	printk("Helper reading...\n");
@@ -1015,7 +958,7 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 		struct lazy_de_info *info = NULL;
 
 		printk("Handle list entries...\n");
-		spin_lock(&to_helper_lock);
+		spin_lock(&fetching_lock);
 		if (!list_empty(&to_helper)) {
 
 			info = list_entry(to_helper.next,
@@ -1023,7 +966,7 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 			printk("Info = %p\n", info);
 			list_del_init(&info->to_helper);
 		}
-		spin_unlock(&to_helper_lock);
+		spin_unlock(&fetching_lock);
 
 		if (info)
 		{
@@ -1036,6 +979,8 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 			{
 				/* Failed... error */
 				spin_lock(&fetching_lock);
+				if (info->fetching != 1)
+					BUG();
 				info->fetching = 0;
 				spin_unlock(&fetching_lock);
 				wake_up_interruptible(&lazy_wait);

@@ -36,21 +36,42 @@ static void do_mount(const char *cache_dir, const char *mount_dir)
 
 #define ERR(m) write(2, m, sizeof(m))
 
-static int coda = -1;
+static int helper = -1;
 
 static void sig_int(int signum)
 {
-	if (coda == -1)
+	if (helper == -1)
 		_exit(1);
-	ERR("Interrupt: closing CODA connection...\n");
-	close(coda);
-	coda = -1;
+	ERR("Interrupt: closing helper connection...\n");
+	close(helper);
+	helper = -1;
 	return;
 }
+
+#if 0
+static void handle_fd(int fd)
+{
+	printf("Handle request on FD %d\n", fd);
+	
+	switch (fork())
+	{
+		case -1:
+			perror("fork");
+			return;
+		case 0:
+			sleep(1);
+			close(fd);
+			_exit(0);
+		default:
+			return;
+	}
+}
+#endif
 
 int main(int argc, char **argv)
 {
 	const char *mount_point = "/uri";
+	int last = -1;
 
 	do_mount("/var/cache/zero-inst/", mount_point);
 
@@ -64,17 +85,34 @@ int main(int argc, char **argv)
 		sigaction(SIGINT, &act, NULL);
 	}
 	
-	coda = 0;
+	helper = open("/uri/.lazyfs-helper", O_RDONLY);
 
-	while (coda != -1)
+	while (helper != -1)
 	{
+		int got;
+		int fd;
+		char number[30];
 		printf("waiting\n");
-		system("cat /uri/.lazyfs-helper");
-		break;
+
+		got = read(helper, &number, sizeof(number));
+		if (got <= 0)
+		{
+			if (got < 0)
+				perror("read");
+			break;
+		}
+
+		fd = atoi(number);
+		if (last != -1)
+			close(last);
+		last = fd;
 	}
 	
-	if (coda != -1)
-		close(coda);
+	if (helper != -1)
+		close(helper);
+
+	if (last != -1)
+		close(last);
 
 	if (mount_point)
 	{
