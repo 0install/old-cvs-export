@@ -1,5 +1,5 @@
-AC_INIT(lazyfs.c)
-AC_CONFIG_HEADER(config.h)
+AC_INIT(zero-install.c)
+AC_CONFIG_HEADER(Linux/config.h)
 
 AC_PROG_CC
 
@@ -59,13 +59,12 @@ AC_MSG_RESULT(OK)
 
 AC_MSG_CHECKING(for kernel series)
 if [[ -f "$KERNELDIR/include/linux/compat.h" ]]; then
-  AC_MSG_RESULT(Linux-2.5 or later)
-  LINUX_2_5_SERIES=yes
-  AC_DEFINE(LINUX_2_5_SERIES)
+  KERNEL_TYPE=Linux_2_5
 else
-  AC_MSG_RESULT(Linux-2.4 series)
+  KERNEL_TYPE=Linux_2_4
 fi
-AC_SUBST(LINUX_2_5_SERIES)
+AC_MSG_RESULT($KERNEL_TYPE)
+AC_SUBST(KERNEL_TYPE)
 
 AC_MSG_CHECKING(for platform type)
 ARCH=`uname -m`
@@ -76,4 +75,5 @@ PLATFORM=`uname -s`-$ARCH
 AC_MSG_RESULT($PLATFORM)
 AC_DEFINE_UNQUOTED(LAZYFS_PLATFORM, "$PLATFORM")
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile \
+	  Linux/Makefile)
