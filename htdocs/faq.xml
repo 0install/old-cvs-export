@@ -20,13 +20,13 @@ must, on startup:
 <ol>
  <li>Load /etc/ld.so.cache and find the full path of each library from
 that.</li>
- <li>Load the actual library by it's path.</li>
+ <li>Load the actual library by its path.</li>
 </ol>
 
 <p>With Zero-installation, this becomes:</p>
 
 <ol>
- <li>Load the actual library by it's path.</li>
+ <li>Load the actual library by its path.</li>
 </ol>
 <p>
 It also removes the need to run ldconfig at install time (handy,
@@ -74,7 +74,7 @@ normally.</p>
 <p>
 For example, having opened the ROX-Filer directory showing Memo in
 <a href="install.html">the installation instructions</a>, you can drag Memo
-from the window onto your panel. Now you access it by clicking on it's panel
+from the window onto your panel. Now you access it by clicking on its panel
 icon; no URIs.
 </p><p>
 You could also put it on the pinboard, bookmark the directory, set
