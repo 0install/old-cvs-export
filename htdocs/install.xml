@@ -31,6 +31,17 @@ the last few versions. -->
 </p>
 </div>
 
+<h3>Packages</h3>
+<p>
+If you don't want to build from source, choose your platform from the list
+below to get a package tailored for your system...
+</p>
+<ul>
+<li><a href="http://www.vectorlinux.com/forum/viewtopic.php?t=1380">Vector Linux package</a></li>
+</ul>
+
+<h3>Building from source</h3>
+
 <p>The Zero Install system requires a small Linux kernel module to provide
 the /uri/0install directory. Like all kernel modules, you must
 compile this using the actual kernel headers for the kernel you're actually
