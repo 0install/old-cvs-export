@@ -395,6 +395,13 @@ static Task *fetch_site_index(const char *path)
 	char buffer[MAX_URI_LEN];
 
 	assert(strncmp(path, cache_dir, strlen(cache_dir)) == 0);
+
+	for (task = all_tasks; task; task = task->next) {
+		if (task->type == TASK_INDEX && strcmp(task->str, path) == 0) {
+			fprintf(stderr, "Merging with task %d\n", task->n);
+			return task;
+		}
+	}
 	
 	if (!build_uri(buffer, sizeof(buffer),
 			path + strlen(cache_dir), NULL, NULL))
@@ -467,14 +474,8 @@ Index *get_index(const char *path, Task **task, int force)
 		Index *index;
 		
 		index = parse_index(index_path);
-		if (index) {
-#if 0
-			index_path[cache_len + stem_len] = '\0';
-			build_ddd_from_index(index_get_root(index), index_path);
-			chdir("/");
-#endif
+		if (index)
 			return index;
-		}
 	}
 
 	if (task)
@@ -494,6 +495,7 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	int stem_len;
 	char *relative_uri;
 	const char *abs_uri = NULL;
+	xmlChar *size_s;
 
 	cache_len = strlen(cache_dir);
 	slash = strrchr(file, '/');
@@ -529,15 +531,27 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	strcpy(path + cache_len + stem_len, "/" TMP_NAME);
 
 	printf("Fetch archive as '%s'\n", path);
+	
+	for (task = all_tasks; task; task = task->next) {
+		if (task->type == TASK_ARCHIVE &&
+				strcmp(task->str, path) == 0) {
+			fprintf(stderr, "Merging with task %d\n", task->n);
+			goto out;
+		}
+	}
 
 	task = task_new(TASK_ARCHIVE);
 	if (!task)
-		return NULL;
+		goto out;
 	task_set_index(task, index);
 
 	task->step = got_archive;
 	wget(task, abs_uri, path, 1);
 	task->data = archive;
+
+	size_s = xmlGetNsProp(archive->parent, "size", NULL);
+	task->size = atol(size_s);
+	xmlFree(size_s);
 
 	if (task->child_pid == -1) {
 		task_destroy(task, 0);

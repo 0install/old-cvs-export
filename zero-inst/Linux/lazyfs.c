@@ -223,8 +223,9 @@ static void show_resources(void)
 		struct lazy_de_info *info = 
 			list_entry(pos, struct lazy_de_info, all_dinfo);
 
-		printk("Dentry still allocated: '%s'\n",
-				info->dentry->d_name.name);
+		printk("Dentry still allocated: '%s' (%s)\n",
+				info->dentry->d_name.name,
+				info->dentry->d_inode ? "real" : "negative");
 	}
 }
 
@@ -811,11 +812,11 @@ fetch:
 	return NULL;
 }
 
-/* Return the dentry for this host. It's parent directory must already have
- * one. If the host inode does not yet exist, it sleeps until the helper
- * creates it (if blocking is 1).
- * If 'dentry' is a directory, then the returned value will be the dentry
- * of the '...' file. The host_dentry for the directory itself is cached.
+/* Return the host dentry for this /uri dentry. Its parent directory must
+ * already have one. If the host inode does not yet exist, it sleeps until the
+ * helper creates it (if blocking is 1).  If 'dentry' is a directory, then the
+ * returned value will be the dentry of the '...' file. The host_dentry for the
+ * directory itself is cached.
  */
 static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 {
@@ -1150,9 +1151,11 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 				struct lazy_de_info *info = existing->d_fsdata;
 				info->may_delete = 0;
 			}
-		} else
+		} else {
+			/* XXX: do we need to remove a negative dentry? */
 			new_dentry(sb, dir, name.name, mode, size, time,
 					&link_target);
+		}
 		if (existing)
 			dput(existing);
 	}
@@ -1409,6 +1412,9 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 	struct dentry *new;
 	int err;
 
+	/* The root "..." file might not exist, but these two still need to be
+	 * accessible...
+	 */
 	if (dir == dir->i_sb->s_root->d_inode) {
 		struct lazy_sb_info *sbi = SBI(dir->i_sb);
 

@@ -30,6 +30,7 @@ struct _Task {
 	int fd;
 	char *str;		/* Will be free()d */
 	Index *index;		/* Will be unref'd */
+	long size;
 
 	Task	*next;		/* In all_tasks */
 };

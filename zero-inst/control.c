@@ -93,8 +93,7 @@ static void client_push_update(Client *client)
 	Task *task;
 	size_t len = 0;
 	char *buf;
-	//int i;
-	//char buffer[20];
+	char buffer[20];
 
 	assert(client->task);
 
@@ -119,18 +118,8 @@ static void client_push_update(Client *client)
 			/* The path of the request */
 			len += strlen(task->str) + 1;
 			len += strlen(task->child_task->str) + 1;
-			len += 3;
-
-#if 0
-			/* The current download (even if not head) */
-			if (request->current_download_path)
-				len += strlen(request->current_download_path);
-			len++;
-			if (request->current_download_archive)
-				len += snprintf(buffer, sizeof(buffer), "%ld",
-				       request->current_download_archive->size);
-			len++;
-#endif
+			len += snprintf(buffer, sizeof(buffer), "%ld",
+					task->child_task->size) + 1;
 		}
 	}
 
@@ -148,7 +137,7 @@ static void client_push_update(Client *client)
 			buf += sprintf(buf, "%s%c%s%c%ld%c",
 					task->str, 0,
 					task->child_task->str, 0,
-				      	(long) -1, 0);
+				      	task->child_task->size, 0);
 		}
 	}
 

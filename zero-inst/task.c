@@ -44,6 +44,7 @@ Task *task_new(TaskType type)
 	task->data = NULL;
 	task->str = NULL;
 	task->index = NULL;
+	task->size = -1;
 
 	task->next = all_tasks;
 	all_tasks = task;
