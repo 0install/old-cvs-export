@@ -54,7 +54,7 @@ int gpg_trusted(const char *site, const char *leafname)
 	assert(strchr(site, '\\') == NULL);
 	
 	if (system("gpg " GPG_OPTIONS " --import keyring.pub")) {
-		error("Failed to merge new keys!");
+		error("Failed to merge new keys! Is GPG installed?");
 		return 0;
 	}
 
