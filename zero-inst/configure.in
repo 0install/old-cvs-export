@@ -140,5 +140,10 @@ AC_DEFINE_UNQUOTED(LAZYFS_PLATFORM, "$PLATFORM", [The canonical name for @PLATFO
 dnl PKG_REQUIRE(libxml-2.0, 2.0.0)
 PKG_REQUIRE(dbus-1, 0.12)
 
+AC_CHECK_HEADER(expat.h, [], [
+  echo 'You need to install the expat headers (libexpat-dev)' >&2
+  exit 1
+])
+
 AC_OUTPUT(Makefile \
 	  Linux/Makefile)
