@@ -128,6 +128,7 @@ def save_links(site, links):
 	stream = file(path + '.new', 'w')
 	doc.writexml(stream)
 	stream.write('\n')
+	stream.close()
 	os.rename(path + '.new', path)
 	if os.spawnlp(os.P_WAIT, '0refresh', '0refresh', '-l', site):
 		print >>sys.stderr, "0refresh failed"
