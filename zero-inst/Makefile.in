@@ -31,7 +31,7 @@ lazyfs.o: lazyfs.c
 	${CC} -c ${KERNELFLAGS} ${MODFLAGS} -o $@ $<
 
 zero-install: ${ZERO_OBJECTS}
-	${CC} -o $@ ${ZERO_OBJECTS}
+	${CC} -o $@ ${ZERO_OBJECTS} -lexpat
 
 # Test program using glib
 

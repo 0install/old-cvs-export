@@ -1,8 +1,11 @@
 #define URI "/uri"
+#define ZERO_INST_INDEX ".0inst.xml"
+
 extern const char *cache_dir;
 
 typedef struct _Request Request;
 typedef struct _UserRequest UserRequest;
+typedef enum {READY, FETCHING_INDEX} State;
 
 struct _Request {
 	char *path;
@@ -13,6 +16,8 @@ struct _Request {
 	pid_t child_pid;
 
 	Request *next;	/* link in open_requests */
+
+	State state;
 };
 
 struct _UserRequest {

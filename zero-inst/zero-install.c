@@ -46,11 +46,15 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <assert.h>
 
 #include "support.h"
 #include "control.h"
 #include "child.h"
 #include "zero-install.h"
+
+#define MAX_URI_LEN 4096
+#define MAX_PATH_LEN 4096
 
 const char *cache_dir = "/var/cache/zero-inst";
 
@@ -139,6 +143,7 @@ static Request *request_new(const char *path)
 	request->child_pid = -1;
 	request->path = NULL;
 	request->users = NULL;
+	request->state = READY;
 
 	request->path = my_strdup(path);
 	if (!request->path)
@@ -265,6 +270,7 @@ out:
 	fprintf(stderr, "Done\n");
 }
 
+#if 0
 static void close_all_fds(void)
 {
 	Request *next;
@@ -277,29 +283,118 @@ static void close_all_fds(void)
 		}
 	}
 }
+#endif
 
+static int ensure_dir(const char *path)
+{
+	struct stat info;
+
+	assert(strncmp(path, cache_dir, strlen(cache_dir)) == 0);
+	
+	if (lstat(path, &info) == 0) {
+		if (S_ISDIR(info.st_mode))
+			return 1;	/* Already exists */
+		fprintf(stderr, "%s should be a directory... unlinking!\n",
+				path);
+		unlink(path);
+	}
+
+	if (mkdir(path, 0755)) {
+		perror("mkdir");
+		fprintf(stderr, "(while creating %s)\n", path);
+		return 0;
+	}
+
+	return 1;
+}
+
+static void wget(Request *request, const char *uri, char *path,
+		 int use_cache)
+{
+	const char *argv[] = {"wget", "-q", "-O", path, uri, NULL};
+	char *slash;
+
+	printf("Fetch '%s'\n", uri);
+
+	if (request->child_pid != -1) {
+		fprintf(stderr, "calling wget: Internal error\n");
+		exit(EXIT_FAILURE);
+	}
+
+	slash = strrchr(path, '/');
+	if (!slash) {
+		fprintf(stderr, "calling wget: Internal error II\n");
+		exit(EXIT_FAILURE);
+	}
+
+	*slash = '\0';
+	if (!ensure_dir(path))
+		return;
+	*slash = '/';
+
+	request->child_pid = fork();
+	if (request->child_pid == -1) {
+		perror("fork");
+		return;
+	} else if (request->child_pid)
+		return;
+
+	execvp(argv[0], (char **) argv);
+
+	perror("Trying to run wget: execvp");
+	_exit(1);
+}
+
+/* Either do finish_request or start a child process and advance state */
 static void request_ensure_running(Request *request)
 {
+	UserRequest *first_rq = request->users;
+	char uri[MAX_URI_LEN];
+	char path[MAX_PATH_LEN];
+	
 	if (request->child_pid != -1)
-		return;
+		goto err;
 
 	if (request->n_users == 0) {
 		fprintf(stderr, "request_ensure_running: Internal error\n");
 		exit(EXIT_FAILURE);
 	}
 
-	request->child_pid = fork();
-	if (request->child_pid == -1) {
-		perror("fork");
-		finish_request(request);
+	if (request->state == FETCHING_INDEX) {
+		printf("[ process index ]\n");
+		if (snprintf(path, sizeof(path),
+			"%s%s/%s/", cache_dir, request->path,
+			first_rq->leaf) > sizeof(path) - 1) {
+			fprintf(stderr, "Path too long\n");
+			goto err;
+		}
+		build_ddd_from_index(path);
+		goto err;
+	}
+
+	if (!strchr(request->path + 1, '/')) {
+		if (snprintf(uri, sizeof(uri),
+			"%s://%s/" ZERO_INST_INDEX, request->path + 1,
+			first_rq->leaf) > sizeof(uri) - 1) {
+			fprintf(stderr, "URI too long\n");
+			goto err;
+		}
+		if (snprintf(path, sizeof(path),
+			"%s%s/%s/" ZERO_INST_INDEX, cache_dir, request->path,
+			first_rq->leaf) > sizeof(path) - 1) {
+			fprintf(stderr, "Path too long\n");
+			goto err;
+		}
+
+		request->state = FETCHING_INDEX;
+		wget(request, uri, path, 0);
+		if (!request->child_pid)
+			goto err;
 		return;
 	}
 
-	if (request->child_pid == 0) {
-		close_all_fds();
-		child_run_request(request->path, request->users[0].leaf);
-		_exit(0);
-	}
+err:
+	finish_request(request);
 }
 
 static void handle_request(int request_fd, uid_t uid, char *path)
@@ -409,7 +504,8 @@ static void request_child_finished(Request *request)
 {
 	request->child_pid = -1;
 
-	finish_request(request); /* XXX */
+	printf("[ process completed - continue with request ]\n");
+	request_ensure_running(request);
 }
 
 static void read_from_wakeup(int wakeup)
