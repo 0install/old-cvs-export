@@ -140,7 +140,6 @@ $ <b>./MyProg/foo</b>
 $ <b>0build /var/www myhost.com</b>
 Building index files for server 'myhost.com' in '/var/www'.
 Creating new directory for archives '/var/www/.0inst-archives'
-Skipping .0inst-0build
 Creating new archive for /MyProg
 $ <b>/uri/0install/myhost.com/MyProg/foo</b>
 42

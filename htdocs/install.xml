@@ -216,7 +216,8 @@ Release Date: 27 February 2003
 <p>
 Lots more software, including Mozilla, Python, Acrobat reader, pkg-config,
 GTK, Java and NEdit, can be found in the directory
-<tt>/uri/0install/www-i1.informatik.rwth-aachen.de</tt>.
+<tt>/uri/0install/www-i1.informatik.rwth-aachen.de</tt>. Some ROX applications
+can be found in <tt>/uri/0install/rox.sourceforge.net/</tt>.
 </p>
 
 <h2>Further reading</h2>
