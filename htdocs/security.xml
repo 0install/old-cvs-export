@@ -197,7 +197,7 @@ trust-worthy in the past is from the same people as before.
 <h3>Protecting users from themselves</h3>
 
 <p>
-What if a user wants to try some software, but doesn't fully trust it. Zero
+What if a user wants to try some software, but doesn't fully trust it? Zero
 Install will protect the rest of the system from that user, but not the user
 from himself. However, users have a number of options independent of Zero
 Install for running software in safety.
@@ -297,6 +297,71 @@ program, and getting past the kernel module).
 However, since Zero Install is small and will be infrequently changing, any
 bugs found can be quickly corrected and new bugs should be very rare. After
 the 1.0 release, hopefully many programmers will help us check it.
+</p>
+
+<h3>Future security possibilities</h3>
+
+<p>
+Zero Install moves security threats from system-wide to per-user; a big
+step forward. However, it may also make possible future security improvements,
+too. We can imagine that when running a program it should not get write
+access to the filesystem at all (even as the user who ran it). Dragging a
+private file to a word processor could give it permission to read it, and
+dragging the file back to the filer could grant it write permission to save
+it.
+</p>
+
+<p>
+This would finally allow users to run random email attachments and other
+untrusted programs they find lying around in safety. However, there is the
+problem of preferences. OpenOffice should be able to save user preferences
+and a list of recently edited documents without having to ask the user
+for permission. Zero Install makes this easy; when the user runs
+`.../openoffice.org/writer' in the filer, the filer could automatically grant it
+write permission on `~/.choices/openoffice.org', without any risk that it
+could mess up another application's preferences.
+</p>
+
+<h3>Conclusions</h3>
+
+<p>
+We have seen that Zero Install can provide a much more secure environment
+that traditional systems. Because every resource a program may ever require
+is already at a fixed location in the file system, there is no need for
+installers to move things around and update index files recording what is
+available on the system. By removing the need for complex installers, we remove
+the need to run untrusted code with system-level privileges. In this safer
+environment, we can allow users to run whatever software they require,
+allowing us to create a system that is both simpler and safer.
+</p>
+
+<p>
+This creates a system where only individual user accounts can be compromised.
+We can now create a `guest' user to safely test out new software, or a
+`backup' UID to keep copies (regular off-site backups are still required to
+guard against hardware failures, of course).
+</p>
+
+<p>
+By separating installation from trust, we allow better recommendation services
+to appear. By automatically checking GPG signatures as software is upgraded,
+we are able to perform better security checking than the majority of users
+currently do, with no extra effort.
+</p>
+
+<p>
+Having a URI-based naming scheme, shared by all platforms and distributions,
+we can share a single Zero Install downloader amoung any number of virtual
+machines, making running `sandboxed' applications much easier. By referring
+to each application by it's full URI, we can grant an application write access
+to it's own private configuration area with no additional user interaction.
+</p>
+
+<p>
+Although the Zero Install system is not finished, and still requires auditing
+itself, this document has hopefully served to suggest that the final system
+will be a considerable improvement on current systems, not just in
+user-friendliness, but in security too.
 </p>
 
 </html>
