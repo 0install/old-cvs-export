@@ -70,6 +70,8 @@ any software, and nothing is run as root.</li>
 software.</li>
 <li>Zero Install is both simpler and more secure than traditional packaging
 systems.</li>
+<li>Software can be removed from the cache to free space without affecting
+the behaviour of the system (it will be recached on demand).</li>
 </ul>
 </div>
 
