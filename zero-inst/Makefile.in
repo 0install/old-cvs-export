@@ -5,18 +5,18 @@ TESTS := hello_glib
 GLIB := /uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386
 PKG_CONFIG_PATH=${GLIB}/lib/pkgconfig
 
-all: lazyfs.o #${TESTS}
+all: lazyfs.o zero #${TESTS}
 
-CC=gcc
-CFLAGS   := -O2 -Wall -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -g
-MODFLAGS := -DMODULE -D__KERNEL__
+CC	 := @CC@
+CFLAGS   := -O2 -Wall -Wstrict-prototypes -g
 
 UMFLAGS := -I${KERNEL}/arch/um/include -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
 
 clean:
 	rm -f *.o hello_glib
 
-KERNELFLAGS := -I${KERNEL}/include
+KERNELFLAGS := -I${KERNEL}/include -Wno-trigraphs -fno-strict-aliasing -fno-common
+MODFLAGS := -DMODULE -D__KERNEL__
 
 install:
 	mkdir -p ${MODULEDIR}

@@ -160,3 +160,23 @@ hold, but only so we know when they've changed. Got it? Good.
 We do not have any files with nlinks > 1. Therefore, each dentry has exactly
 one inode, and vice versa, and so we do not track inodes directly.
 
+When a file or directory which doesn't exist in the cache is opened we
+create a request object (virtual_dentry, user_id) and put it in a queue
+to be delivered to the helper. If we already have a request for that user
+for that dentry, we just block. This allows users to see and cancel their own
+requests without affecting other users.
+
+Notes on possible kernel DoS attacks:
+ 
+When a user opens a non-cached file, we create a request object.
+The request is not freed until the file is fetched (or the fetch aborted),
+but the user can close the file and open an unlimited number of uncached
+files, creating a new request for each without being limited by the number
+of open files limit. There should be some form of resource limiting to stop
+users having too many open requests at once.
+
+Also, we assign a new inode number (creating inode and dentry structs) to
+each virtual inode. These can never be freed (unless we actually discover
+that the remote object has been deleted) because we'd get a different inode
+number when we next looked it up. There should be some way to prune the
+tree if we run low on memory, even if that means the inode numbers change.

@@ -139,13 +139,12 @@ struct lazy_de_info
 	 */
 	struct dentry *list_dentry;
 
-	/* An info block may be in three states:
-	 * - to_helper empty : file is not being fetched.
-	 * - in sbi->to_helper : about to be sent to helper.
-	 * - in sbi->requests_in_progress: being handled by helper.
+	/* This is a list of requests for this item being processed, one
+	 * per requesting user. If a user requests a file and there is no
+	 * request for that user, add one. See struct lazy_user_request.
 	 * Protected by fetching_lock.
 	 */
-	struct list_head helper_list;
+	struct list_head request_list;
 };
 
 /* Any change to the helper_list queues requires this lock */
@@ -155,6 +154,19 @@ static spinlock_t fetching_lock = SPIN_LOCK_UNLOCKED;
  * dcache_lock.
  */
 static spinlock_t update_dir = SPIN_LOCK_UNLOCKED;
+
+struct lazy_user_request {
+	struct dentry *dentry;
+	uid_t uid;
+	struct list_head request_list;	/* Link in lazy_de_info->request_list */
+
+	/* An lazy_user_request may be in one of two states:
+	 * - in sbi->to_helper : about to be sent to helper.
+	 * - in sbi->requests_in_progress: being handled by helper.
+	 * Protected by fetching_lock.
+	 */
+	struct list_head helper_list; /* Link in one of lazy_sb_info's lists */
+};
 
 static struct super_operations lazyfs_ops;
 static struct file_operations lazyfs_dir_operations;
@@ -166,6 +178,91 @@ static struct file_operations lazyfs_handle_operations;
 static struct inode_operations lazyfs_link_operations;
 
 static int ensure_cached(struct dentry *dentry);
+
+/* Returns NULL if no such request is present.
+ * Caller must hold fetching_lock.
+ */
+static struct lazy_user_request *
+find_user_request(struct lazy_de_info *info, uid_t uid)
+{
+	struct list_head *head, *next;
+
+	head = &info->request_list;
+	next = head->next;
+
+	while (next != head) {
+		struct lazy_user_request *request = list_entry(next,
+					struct lazy_user_request, request_list);
+
+		if (request->uid == uid)
+			return request;
+
+		next = next->next;
+	}
+
+	return NULL;
+}
+
+/* Add a request for this user and dentry info.
+ * There must not already be such a request.
+ * Caller must hold fetching_lock.
+ * 1 on success.
+ */
+static int
+add_user_request(struct lazy_de_info *info, uid_t uid)
+{
+	struct dentry *dentry = info->dentry;
+	struct super_block *sb = dentry->d_inode->i_sb;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_user_request *request;
+
+	request = kmalloc(sizeof(struct lazy_user_request), GFP_KERNEL);
+
+	if (!request)
+		return 0;
+
+	inc("user_request");
+	request->dentry = dget(dentry);
+	request->uid = uid;
+	INIT_LIST_HEAD(&request->request_list);
+	INIT_LIST_HEAD(&request->helper_list);
+	
+	list_add_tail(&request->helper_list, &sbi->to_helper);
+	list_add(&request->request_list, &info->request_list);
+
+	return 1;
+}
+
+/* Requests can be destroyed when:
+ * - On to_helper and helper closes connection.
+ * - Error sending to helper (on pending list at this point).
+ * - Helper closes request handle (normal case; on pending list).
+ *
+ * Therefore, a request cannot be destroyed by two independant events at once.
+ *
+ * Caller must hold fetching_lock.
+ */
+static void
+destroy_request(struct lazy_user_request *request)
+{
+	if (!request)
+		BUG();
+
+	printk("Removing request by user %d for '%s'\n",
+			request->uid, request->dentry->d_name.name);
+
+	if (list_empty(&request->request_list))
+		BUG();
+	if (list_empty(&request->helper_list))
+		BUG();
+
+	dput(request->dentry);
+	list_del(&request->helper_list);
+	list_del(&request->request_list);
+
+	kfree(request);
+	dec("user_request");
+}
 
 /* Symlinks store their target in the inode. Free that here. */
 static void
@@ -186,7 +283,7 @@ lazyfs_release_dentry(struct dentry *dentry)
 		BUG();
 	if (!info)
 		BUG();
-	if (!list_empty(&info->helper_list))
+	if (!list_empty(&info->request_list))
 		BUG();
 
 	if (info->host_dentry) {
@@ -298,7 +395,7 @@ new_dentry(struct super_block *sb, struct dentry *parent_dentry,
 	info->list_dentry = NULL;
 	info->may_delete = 0;
 	info->dynamic = 0;
-	INIT_LIST_HEAD(&info->helper_list);
+	INIT_LIST_HEAD(&info->request_list);
 
 	if (parent_dentry)
 		d_add(new, inode);
@@ -550,7 +647,6 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 	add_wait_queue(&lazy_wait, &wait);
 	do {
 		int start_fetching = 0;
-		int had_helper = 0;
 
 		host_dentry = try_get_host_dentry(dentry, parent_host);
 		if (host_dentry)
@@ -567,15 +663,19 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 
 		/* Start a fetch, if there isn't one already */
 		spin_lock(&fetching_lock);
-		had_helper = sbi->helper_mnt != NULL;
-		if (had_helper && list_empty(&info->helper_list)) {
-			dget(dentry);
-			list_add_tail(&info->helper_list, &sbi->to_helper);
-			start_fetching = 1;
-		}
+
+		if (sbi->helper_mnt) {
+			if (find_user_request(info, current->uid))
+				host_dentry = ERR_PTR(0);
+			else if (add_user_request(info, current->uid)) {
+				start_fetching = 1;
+				host_dentry = ERR_PTR(0);
+			} else
+				host_dentry = ERR_PTR(-ENOMEM);
+		} /* else -EIO */
+		
 		spin_unlock(&fetching_lock);
-		host_dentry = ERR_PTR(-EIO);
-		if (!had_helper)
+		if (host_dentry)
 			goto out;
 		if (start_fetching)
 			wake_up_interruptible(&helper_wait);
@@ -588,7 +688,7 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 		while (1) {
 			current->state = TASK_INTERRUPTIBLE;
 			spin_lock(&fetching_lock);
-			if (list_empty(&info->helper_list)) {
+			if (!find_user_request(info, current->uid)) {
 				spin_unlock(&fetching_lock);
 				break;	/* Fetch request completed */
 			}
@@ -1191,18 +1291,12 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 static int
 lazyfs_handle_release(struct inode *inode, struct file *file)
 {
-	struct dentry *dentry = file->f_dentry;
-	struct lazy_de_info *info = dentry->d_fsdata;
+	struct lazy_user_request *request = file->private_data;
 
-	if (!info)
-		BUG();
-
-	//printk("Helper finished handling '%s'\n", dentry->d_name.name);
+	//printk("Helper finished handling '%s'\n", request->dentry->d_name.name);
 
 	spin_lock(&fetching_lock);
-	if (list_empty(&info->helper_list))
-		BUG();
-	list_del_init(&info->helper_list);
+	destroy_request(request);
 	spin_unlock(&fetching_lock);
 
 	dec("request");
@@ -1289,12 +1383,13 @@ lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
  * then lazyfs_handle_release will get called eventually for this dentry...
  */
 static ssize_t
-send_to_helper(char *buffer, size_t count, struct dentry *dentry)
+send_to_helper(char *buffer, size_t count, struct lazy_user_request *request)
 {
+	struct dentry *dentry = request->dentry;
 	struct super_block *sb = dentry->d_inode->i_sb;
 	struct lazy_sb_info *sbi = sb->u.generic_sbp;
 	struct file *file;
-	char number[20];
+	char number[40];
 	int len = dentry->d_name.len;
 	int fd;
 	int err = 0;
@@ -1305,17 +1400,35 @@ send_to_helper(char *buffer, size_t count, struct dentry *dentry)
 	if (!file)
 		return -ENOMEM;
 	inc("request");
+	file->private_data = NULL;
+
 	fd = get_unused_fd();
 	if (fd < 0) {
-		fput(file);
+		put_filp(file);
 		return fd;
 	}
-	len = snprintf(number, sizeof(number), "%d", fd);
+	len = snprintf(number, sizeof(number), "%d uid=%d", fd, request->uid);
 	if (len < 0)
 		BUG();
+	if (len >= count)
+		err = -E2BIG;
+	else
+		err = copy_to_user(buffer, number, len + 1);
+	if (err)
+	{
+		put_filp(file);
+		put_unused_fd(fd);
+		return err;
+	}
 
 	file->f_vfsmnt = mntget(sbi->helper_mnt);
 	file->f_dentry = dget(dentry);
+
+	/* At this point, the only way for the request object to be destroyed
+	 * is if we return an error, or the helper closes the handle. Either
+	 * way, the file dies first, so no need for a ref count.
+	 */
+	file->private_data = request;
 
 	file->f_pos = 0;
 	file->f_flags = O_RDONLY;
@@ -1325,9 +1438,7 @@ send_to_helper(char *buffer, size_t count, struct dentry *dentry)
 
 	fd_install(fd, file);
 
-	err = copy_to_user(buffer, number, len + 1);
-
-	return err ? err : len + 1;
+	return len + 1;
 }
 
 static int
@@ -1361,14 +1472,17 @@ lazyfs_helper_release(struct inode *inode, struct file *file)
 	dec("helper");
 	sbi->helper_mnt = NULL;	/* Prevents any new requests arriving */
 
+	/* Requests on the pending list will get closed when the handles
+	 * are closed, but we have to close requests that haven't been
+	 * delivered to the helper yet here...
+	 */
+
 	while (!list_empty(&sbi->to_helper)) {
-		struct lazy_de_info *info;
-		info = list_entry(sbi->to_helper.next,
-				struct lazy_de_info, helper_list);
+		struct lazy_user_request *request;
+		request = list_entry(sbi->to_helper.next,
+				     struct lazy_user_request, helper_list);
 
-		list_del_init(&info->helper_list);
-
-		printk("Discarding '%s'\n", info->dentry->d_name.name);
+		destroy_request(request);
 		/* TODO: delete temp directories (lookup) */
 	}
 
@@ -1408,40 +1522,37 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	int err = 0;
 	DECLARE_WAITQUEUE(wait, current);
 
-	if (count < 4)
-		return -EINVAL;
-
 	add_wait_queue(&helper_wait, &wait);
 	do {
-		struct lazy_de_info *info = NULL;
+		struct lazy_user_request *request = NULL;
 
 		current->state = TASK_INTERRUPTIBLE;
 
 		spin_lock(&fetching_lock);
 		if (!list_empty(&sbi->to_helper)) {
 
-			info = list_entry(sbi->to_helper.next,
-					struct lazy_de_info, helper_list);
-			list_move(&info->helper_list,
+			request = list_entry(sbi->to_helper.next,
+					struct lazy_user_request, helper_list);
+			list_move(&request->helper_list,
 				  &sbi->requests_in_progress);
 		}
 		spin_unlock(&fetching_lock);
 
-		if (info) {
-			struct dentry *dentry = info->dentry;
+		if (request) {
+			/*
+			if (!find_user_request(request->dentry->d_fsdata,
+					  request->uid))
+				BUG(); */
 
-			err = send_to_helper(buffer, count, dentry);
+			err = send_to_helper(buffer, count, request);
 
 			if (err < 0) {
 				/* Failed... error */
 				spin_lock(&fetching_lock);
-				if (list_empty(&info->helper_list))
-					BUG();
-				list_del_init(&info->helper_list);
+				destroy_request(request);
 				spin_unlock(&fetching_lock);
 				wake_up_interruptible(&lazy_wait);
 			}
-			dput(dentry);
 			goto out;
 		}
 
