@@ -11,7 +11,14 @@ You can find detailed design details in the
 in CVS.
 </p>
 
-<h3>Latest news</h3>
+<h3>Tasks list</h3>
+
+There is a list of current TODO items on the <a
+href="http://sourceforge.net/pm/?group_id=76468">Task List</a>. Please 
+<a href="support.html">let us know</a> if you want to help out with any of
+these.
+
+<h3>The glib library</h3>
 
 <p>
 Thought you might like to know that I now have a glib program compiling
