@@ -10,7 +10,6 @@ struct _Item {
 	Item *next;
 };
 
-typedef struct _Group Group;
 struct _Group {
 	Item	*archives;
 	Item	*items;

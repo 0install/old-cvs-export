@@ -21,7 +21,9 @@ static void send_command(int socket, const char *message)
 /* Display output from socket until next newline (may overread) */
 static void read_reply(int socket)
 {
-	while (1) {
+	int done = 0;
+
+	while (!done) {
 		char buffer[256];
 		int got;
 		int i;
@@ -31,11 +33,12 @@ static void read_reply(int socket)
 			perror("recv");
 		if (got <= 0)
 			break;
-		write(1, buffer, got);
-
 		for (i = 0; i < got; i++)
-			if (buffer[i] == '\n')
-				return;
+			if (buffer[i] == '\0') {
+				done = 1;
+				buffer[i] = '\n';
+			}
+		write(1, buffer, got);
 	}
 }
 

@@ -376,7 +376,7 @@ static void fetched_subindex(Request *request)
 	if (!subindex)
 		return;
 	path[strlen(path) - sizeof(ZERO_INST_INDEX)] = '\0';
-	printf("[ build index in %s ]\n", path);
+	/* printf("[ build index in %s ]\n", path); */
 
 	build_ddd_from_index(subindex, path);
 	index_free(subindex);
@@ -386,10 +386,13 @@ static void fetched_archive(Request *request)
 {
 	UserRequest *first_rq = request->users;
 	char path[MAX_PATH_LEN];
-
+	Group *group = NULL;
+	Item *item = NULL;
+	
 	assert(request->state == FETCHING_ARCHIVE);
+	assert(request->current_download_path);
+	assert(request->current_download_archive);
 
-	fprintf(stderr, "Got archive!\n");
 	if (snprintf(path, sizeof(path), "%s%s/", cache_dir,
 	    request->path) > sizeof(path) - 1) {
 		fprintf(stderr, "Path too long\n");
@@ -399,7 +402,16 @@ static void fetched_archive(Request *request)
 		perror("chdir");
 		return;
 	}
-	unpack_archive(first_rq->leaf);
+
+	index_lookup(request->index, first_rq->leaf, &group, &item);
+
+	assert(item);
+	assert(group);
+	
+	unpack_archive(request->current_download_path, group,
+			request->current_download_archive);
+	if (unlink(request->current_download_path))
+		perror("fetched_archive: unlink");
 	chdir("/");
 }
 

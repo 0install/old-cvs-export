@@ -300,6 +300,7 @@ static int index_valid(Index *index)
 	int i = 0;
 	int n = 0;
 	Item *item;
+	Group *group;
 	Item **array;
 	
 	if (index->state == ERROR)
@@ -312,7 +313,20 @@ static int index_valid(Index *index)
 			return 0;
 		if (item->type == 'l' && !item->target)
 			return 0;
+		if (strchr(item->leafname, '/'))
+			return 0;
 		n++;
+	}
+	for (group = index->groups; group; group = group->next) {
+		for (item = group->items; item; item = item->next) {
+			if (!item->leafname)
+				return 0;
+			if (item->type != 'f' && item->type != 'x')
+				return 0;
+			if (strchr(item->leafname, '/'))
+				return 0;
+			n++;
+		}
 	}
 
 	array = my_malloc(sizeof(Item *) * n);
@@ -322,6 +336,12 @@ static int index_valid(Index *index)
 	for (item = index->no_data; item; item = item->next) {
 		array[i] = item;
 		i++;
+	}
+	for (group = index->groups; group; group = group->next) {
+		for (item = group->items; item; item = item->next) {
+			array[i] = item;
+			i++;
+		}
 	}
 
 	assert(i == n);

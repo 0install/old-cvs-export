@@ -11,6 +11,7 @@
 #include "global.h"
 #include "control.h"
 #include "support.h"
+#include "index.h"
 #include "zero-install.h"
 
 typedef struct _Client Client;
@@ -84,6 +85,7 @@ static void client_push_update(Client *client)
 	size_t len = 0;
 	char *buf;
 	int i;
+	char buffer[20];
 
 	client->need_update = 1;
 
@@ -109,6 +111,10 @@ static void client_push_update(Client *client)
 			if (request->current_download_path)
 				len += strlen(request->current_download_path);
 			len++;
+			if (request->current_download_archive)
+				len += snprintf(buffer, sizeof(buffer), "%ld",
+				       request->current_download_archive->size);
+			len++;
 		}
 	}
 	client->to_send = my_malloc(len);
@@ -126,6 +132,10 @@ static void client_push_update(Client *client)
 				request->current_download_path
 					? request->current_download_path : "",
 				0);
+			if (request->current_download_archive)
+				buf += sprintf(buf, "%ld",
+				       request->current_download_archive->size);
+			*(buf++) = '\0';
 		}
 	}
 	buf += sprintf(buf, "END") + 1;	/* (includes \0) */
@@ -203,7 +213,9 @@ static void client_free(Client *client)
 	free(client);
 }
 
-/* Add 'message' to the client's output buffer. On OOM, terminate connection */
+/* Add 'message' to the client's output buffer. On OOM, terminate connection.
+ * A '\0' will be added to the end of the message.
+ */
 static void client_send_reply(Client *client, const char *message)
 {
 	int old_len = client->to_send ? client->send_len : 0;
@@ -217,9 +229,10 @@ static void client_send_reply(Client *client, const char *message)
 	}
 	
 	client->to_send = new;
-	client->send_len += message_len;
+	client->send_len = old_len + message_len;
 	
-	memcpy(new + old_len, message, message_len);
+	memcpy(new + old_len, message, message_len - 1);
+	new[client->send_len - 1] = '\0';
 }
 
 /* Client requests the 'directory' be refetched */
@@ -230,28 +243,28 @@ static void client_refresh(Client *client, const char *directory)
 
 	if (!realpath(directory, real)) {
 		if (snprintf(real, sizeof(real),
-				"Bad path: %s\n", strerror(errno)) > 0)
+				"Bad path: %s", strerror(errno)) > 0)
 			client_send_reply(client, real);
 		return;
 	}
 	
 	if (strncmp(real, "/uri/", 5) != 0) {
-		client_send_reply(client, "Not under Zero Install's control\n");
+		client_send_reply(client, "Not under Zero Install's control");
 		return;
 	}
 
 	slash = strrchr(real + 4, '/');
 	if (slash == real + 4 || !slash) {
-		client_send_reply(client, "Can't refresh top-levels!\n");
+		client_send_reply(client, "Can't refresh top-levels!");
 		return;
 	}
 
 	*slash = '\0';
 
 	if (queue_request(real + 4, slash + 1, client->uid, -1))
-		client_send_reply(client, "Error\n");
+		client_send_reply(client, "Error");
 	else
-		client_send_reply(client, "Request queued\n");
+		client_send_reply(client, "Request queued");
 }
 
 static void client_do_command(Client *client, const char *command)
@@ -267,7 +280,7 @@ static void client_do_command(Client *client, const char *command)
 	} else {
 		fprintf(stderr, "Unknown command '%s' from client %d\n",
 				command, client->socket);
-		client_send_reply(client, "Bad command\n");
+		client_send_reply(client, "Bad command");
 		client->terminate = 1;
 	}
 }
