@@ -15,29 +15,43 @@ saved_build = '.0inst-0build'
 
 target = None
 host = None
+key = None
 
 if len(sys.argv) == 1:
 	if os.path.exists(saved_build):
 		lines = file(saved_build).readlines()
 		target, = [l[7:-1] for l in lines if l.startswith('target=')]
 		host, = [l[5:-1] for l in lines if l.startswith('host=')]
-elif len(sys.argv) == 3:
+		try:
+			key, = [l[4:-1] for l in lines if l.startswith('key=')]
+		except:
+			key = None
+elif len(sys.argv) == 4:
 	target = sys.argv[1]
 	host = sys.argv[2]
+	key = sys.argv[3]
 
-if not (target and host):
-	print >>sys.stderr, "Usage: 0build <targetdir> <your.host>\n\n" \
+if not (target and host and key):
+	print >>sys.stderr, "Usage: 0build <targetdir> <your.host> <GPG key>\n\n" \
 		"The <targetdir>/%s directory will be created/updated,\n" \
 		"along with the index file <targetdir>/%s\n\n" \
 		"This file should be fetchable as: http://<your.host>/%s.\n\n" \
 		"Then the file ./<somefile> will be accessable as\n" \
 		"/uri/0install/<your.host>/<somefile>\n\n" \
-		"Eg: 0build /var/www/ your.host\n\n" \
+		"Eg: 0build /var/www/ your.host 'John Smith'\n\n" \
 		"The values are saved; in future, just run '0build'" % \
 		(archive_dir_leaf, index_leaf, index_leaf)
 	raise SystemExit(1)
 
-print >> file(saved_build, 'w'), 'target=%s\nhost=%s' % (target, host)
+print >> file(saved_build, 'w'), \
+	'target=%s\nhost=%s\nkey=%s' % (target, host, key)
+
+assert "'" not in key
+assert "\\" not in key
+
+if os.system("gpg --list-secret-keys '%s' >/dev/null" % key):
+	print "\nFailed to find the GPG key '%s'... aborting" % key
+	raise SystemExit
 
 print "Building index files for server '%s' in '%s'." % (host, target)
 
@@ -146,8 +160,10 @@ class Archive:
 
 		print "Creating new archive for", rel_path
 		archive_path, self.tgz = make_archive_path()
-		os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive_path,
+		r = os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive_path,
 			'-C', self.dir, '--'] + [f.name for f in self.kids])
+		if r:
+			raise Exception('Failed to build archive for %s', self.kids)
 
 	def add_xml(self, parent):
 		self.build_tgz()
@@ -287,8 +303,9 @@ index_tgz = os.path.join(target, index_leaf)
 index_xml = os.path.join(target, '.0inst-index.xml')
 old_doc = None
 if os.path.exists(index_tgz):
-	os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzf', index_tgz,
-			'-C', target, '.0inst-index.xml'])
+	if os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzf', index_tgz,
+			'-C', target, '.0inst-index.xml']):
+		print "WARNING: old index archive corrupted!"
 
 if os.path.exists(index_xml):
 	old_doc = dom.minidom.parse(index_xml)
@@ -302,11 +319,17 @@ if old_doc:
 root.add_xml(site)
 doc.writexml(file(index_xml, 'w'), addindent='  ', newl='\n')
 
-assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz,
-			'-C', target, '.0inst-index.xml']) == 0
+new_key = os.popen("gpg --export '%s'" % key).read()
+if not new_key:
+	raise Exception("Failed to export public key for '%s'" % key)
+pub_key = os.path.join(target, '.0inst-key.pub')
+file(pub_key, 'w').write(new_key)
 
-# Keep for backwards compat for now...
-#os.unlink(index_xml)
+assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz,
+			'-C', target, '.0inst-index.xml', '.0inst-key.pub']) == 0
+
+os.unlink(index_xml)
+os.unlink(pub_key)
 
 for x in old_tgz:
 	path = os.path.join(archive_dir, x)
