@@ -87,6 +87,13 @@ def check_res(path, host, resource):
 		print "Fetch", uri
 		sax.parse(urllib2.urlopen(uri), handler)
 		write_dir(path, handler.dir)
+	elif line[0] == 'f':
+		uri = 'http://%s/%s' % (host, resource)
+		import shutil
+		shutil.copyfileobj(urllib2.urlopen(uri),
+			    file(os.path.join(cache, path[1:]), 'w'))
+	else:
+		raise Exception("Shouldn't be asked for '%s'" % path)
 
 def handle(path):
 	if path == '/':
