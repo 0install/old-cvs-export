@@ -216,7 +216,7 @@ stores a copy of it in <tt>/var/cache/zero-inst/abiword.org/abiword</tt>. The ne
 time you try to run it, Zero Install sees that it's already got a copy, and runs
 that. If you delete the copy in the cache, it will be refetched next time it's needed.
 It's really hard to mess up the cache, because if anything is missing it gets refetched.
-You could even delete the entire cache directory, and it will just repopulate itself
+You could even delete everything inside the cache directory, and it will just repopulate itself
 as you access things.
 </p>
 
