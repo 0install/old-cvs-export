@@ -35,7 +35,7 @@ if not (target and host):
 		"Eg: 0build /var/www/ your.host\n\n" \
 		"The values are saved; in future, just run '0build'" % \
 		(archive_dir_leaf, index_leaf, index_leaf)
-	raise SystemExit
+	raise SystemExit(1)
 
 print >> file(saved_build, 'w'), 'target=%s\nhost=%s' % (target, host)
 
