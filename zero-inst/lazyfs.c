@@ -1766,6 +1766,7 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 
 	finfo->host_file = NULL;
 	finfo->n_mappings = 0;
+	file->private_data = finfo;
 	
 	err = get_host_file(file, 0);
 	if (err == -EAGAIN)
@@ -1773,8 +1774,6 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 
 	if (err)
 		kfree(finfo);
-	else
-		file->private_data = finfo;
 
 	return err;
 }
