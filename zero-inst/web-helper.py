@@ -135,7 +135,7 @@ def check_res(path, host, resource):
 
 def handle(path):
 	if path == '/':
-		write_dir(path, ['d 0 0 http'])
+		write_ddd(cache, 'LazyFS\nd 0 0 http\0')
 	elif path == '/http':
 		write_ddd(os.path.join(cache, 'http'), 'LazyFS Dynamic\n')
 	elif path.startswith('/http/'):
