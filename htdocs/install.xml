@@ -81,15 +81,15 @@ format.
 </div>
 -->
 
-<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.17.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.17.tar.gz.sig">GPG Sig</a> ]
+<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.18.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.18.tar.gz.sig">GPG Sig</a> ]
 (note that the links lead to a list of mirrors).
  Extract it, and move to the new directory (things you
 type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.17.tar.gz</b>
-$ <b>cd zero-install-0.1.17</b>
+$ <b>tar xzf zero-install-0.1.18.tar.gz</b>
+$ <b>cd zero-install-0.1.18</b>
 </pre>
 
 <p>
