@@ -1,5 +1,5 @@
 * When running configure with --with-distcheck, don't check that the supplied
-  user name exists (for packagers).
+  user name and init.d directories exist (for packagers).
 
 * Test for bzip2, tar, gzip, wget and gpg on startup.
 

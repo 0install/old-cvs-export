@@ -56,14 +56,18 @@ AC_ARG_WITH(initdir,
 	INITDIR="/etc/init.d")
 AC_MSG_RESULT($INITDIR)
 AC_SUBST(INITDIR)
-if [[ ! -d "$INITDIR" ]]; then
-  echo
-  echo "Directory $INITDIR not found."
-  echo "Use '--with-initdir=/etc/init.d' or similar to set the location for"
-  echo "the 0install script, which can be used to start and stop the "
-  echo "zero-install helper."
-  exit 1
+[
+if [ x"$ROOT_PREFIX" = x ]; then
+  if [ ! -d "$INITDIR" ]; then
+    echo
+    echo "Directory $INITDIR not found."
+    echo "Use '--with-initdir=/etc/init.d' or similar to set the location for"
+    echo "the 0install script, which can be used to start and stop the "
+    echo "zero-install helper."
+    exit 1
+  fi
 fi
+]
 
 AC_MSG_CHECKING(for user to run helper as)
 AC_ARG_WITH(user,
