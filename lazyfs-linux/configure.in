@@ -43,14 +43,20 @@ EOF
 fi
 AC_MSG_RESULT(OK)
 
+AC_MSG_CHECKING(for kernel version)
+KERNEL_VERSION=`grep UTS_RELEASE "$KERNELDIR/include/linux/version.h" | sed 's/.*"\(.*\)".*/\1/'`
+AC_MSG_RESULT($KERNEL_VERSION)
+AC_SUBST(KERNEL_VERSION)
+
 AC_MSG_CHECKING(for kernel series)
-if [[ -f "$KERNELDIR/include/linux/compat.h" ]]; then
-  KERNEL_TYPE=Linux_2_6
-else
-  KERNEL_TYPE=Linux_2_4
-fi
+case "$KERNEL_VERSION" in
+  2.4.*) KERNEL_TYPE=Linux_2_4;;
+  2.6.*) KERNEL_TYPE=Linux_2_6;;
+  *) AC_MSG_RESULT(Unknown version number!);;
+esac
 AC_MSG_RESULT($KERNEL_TYPE)
 AC_SUBST(KERNEL_TYPE)
+
 AC_SUBST(COMMA_VERSION)
 AC_DEFINE_UNQUOTED(COMMA_VERSION, "$COMMA_VERSION", [Escaped version number])
 

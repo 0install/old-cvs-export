@@ -12,7 +12,8 @@ prefix = @prefix@
 srcdir = @srcdir@
 VPATH = @srcdir@
 ROOT_PREFIX = @ROOT_PREFIX@
-MODULEDIR = $(ROOT_PREFIX)/lib/modules/`uname -r`/kernel/fs/lazyfs
+KERNEL_VERSION = @KERNEL_VERSION@
+MODULEDIR = $(ROOT_PREFIX)/lib/modules/${KERNEL_VERSION}/kernel/fs/lazyfs
 
 ifeq ($(KERNEL_TYPE), Linux_2_6)
 KOBJECT = ko
@@ -39,6 +40,8 @@ install: lazyfs@COMMA_VERSION@.$(KOBJECT)
 	[ -n "${ROOT_PREFIX}" ] || ${MAKE} real-install
 
 real-install:
+	@echo Installing to ${ROOT_PREFIX}/lib/modules/${KERNEL_VERSION}
+	@echo "(current kernel uses $(ROOT_PREFIX)/lib/modules/`uname -r`)"
 	cp lazyfs@COMMA_VERSION@.$(KOBJECT) ${MODULEDIR}/
 	depmod -a
 	@echo
@@ -47,7 +50,7 @@ real-install:
 	@modprobe lazyfs@COMMA_VERSION@ || echo "FAILED: Try 'dmesg' for help"
 
 uninstall:
-	rm -f ${MODULEDIR}/lazyfs*.o
+	rm -f ${MODULEDIR}/lazyfs@COMMA_VERSION@.${KOBJECT}
 
 lazyfs@COMMA_VERSION@.c: lazyfs.c
 	rm -f lazyfs@COMMA_VERSION@.c
