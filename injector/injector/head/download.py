@@ -144,6 +144,10 @@ class ImplementationDownload(Download):
 		return stream
 	
 	def get_current_fraction(self):
+		if self.status is download_starting:
+			return 0
+		if self.tempfile is None:
+			return 1
 		current_size = os.fstat(self.tempfile.fileno()).st_size
 		return float(current_size) / self.source.size
 	
