@@ -88,11 +88,6 @@ Question: is 'interface.xml' really a good name? It doesn't actually describe
 the interface at all, only links to and requirements of its implementations.
 </p>
 
-<p style='text-align: center'>
-<img width="554" height="345" src="depend.png"
-     alt='Interface files give implementations and dependancies' />
-</p>
-
 <p>
 When we run a program (like Memo) we need to choose an implementation of every
 interface on which it depends, and tell it where to find them. This process is
@@ -217,18 +212,46 @@ Using groups is simply a short-hand notation. Eg:
 
 <p>
 Our example interface for Memo above doesn't mention that Memo needs ROX-Lib
-(Memo will have to find ROX-Lib itself in this case). This more complete
-example gets the injector to find an implementation of ROX-Lib too:
+(Memo will have to find ROX-Lib itself in this case). We can list the
+dependancies of an implementation in its interface file, and the injector
+will locate implementations of them too. All information about dependancies is
+handled at the interface level; this is because the same implementation may be
+used in different ways. Also, for software not specially designed for use with
+the injector, it allows us to keep the implementation in its original form.
+This diagram shows some dependancies for Memo (the dotted lines):
+</p>
+
+<p style='text-align: center'>
+<img width="554" height="345" src="depend.png"
+     alt='Interface files give implementations and dependancies' />
+</p>
+
+<p>
+Depending on the user's policy, the injector may try to download newer
+versions of Memo, ROX-Lib and Python, or it may prefer to use older cached
+versions. It may display a dialog box asking the user what they want to do.
+</p>
+
+<p>
+Here is an extension of our previous example which gets the injector to find
+implementations of ROX-Lib and Python:
 </p>
 
 <pre><![CDATA[
 <?xml version='1.0'?>
 <interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'>
   <group path='/uri/0install/rox.sourceforge.net/apps/Memo/'>
+
     <requires interface='/uri/0install/rox.sourceforge.net/lib/ROX-Lib2/interface.xml'>
       <version min='1.9.6'/>
       <environment name='PYTHONPATH' insert='python'/>
     </requires>
+
+    <requires interface='/uri/0install/python.org/interface.xml'>
+      <version min='2.2.0'/>
+      <environment name='PATH' insert='bin'/>
+    </requires>
+
     <implementation version='1.9.3' path='Memo-1.9.3'/>
     <implementation version='1.9.4' path='Memo-1.9.4'/>
   </group>
@@ -240,15 +263,13 @@ The &lt;requires&gt; element names an interface which is required by all the imp
 in this group. The &lt;version&gt; element inside gives the minimum acceptable
 version, and the &lt;environment&gt; element tells the injector how to make its
 choice known to Memo. In this case, it is by inserting
-<b>/path/of/ROX-Lib/python</b> to the beginning of PYTHONPATH.
+<b>/path/of/ROX-Lib-VVV/python</b> to the beginning of <b>PYTHONPATH</b>, and
+<b>/path/of/python-VVV/bin</b> to the beginning of <b>PATH</b>.
 </p>
 
 <p>
-The injector will also examine the dependancies of ROX-Lib, and so on recursively.
-Depending on the user's policy, it may try to download newer versions, or it
-may prefer to use older cached versions. It may display a dialog box asking the
-user what they want to do.
+The injector will also examine the dependancies of ROX-Lib and Python
+recursively.
 </p>
-
 
 </html>
