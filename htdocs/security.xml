@@ -19,7 +19,7 @@ who don't use it, and on the core system itself.
 <li>No downloaded software is ever run as root, or as any user except the one
 who asked to run it.</li>
 
-<li>Software installed through Zero Install poses no more risk to the core
+<li>Software installed through Zero Install poses no more risk to the system
 than that installed by users into their home directories.
 With traditional (non-zero-install) systems, every application, library and
 documentation package is given root-level access to the system.</li>
@@ -48,13 +48,19 @@ detailing the risks from making use of it.
 installing to your home directory, but Zero Install makes it easier,
 faster, and more efficient.</li>
 
-<li>If you run a malicious program you can still lose your own data, but
-Zero Install makes it easier to use other techniques to solve this separate
-problem.</li>
+<li>If you run a malicious program you can still lose your own data,
+get a virus, etc, unless you use additional sandboxing.
+</li>
+
+<li>Just as the software you use doesn't get access to other users' files
+(at install time), so the software they use doesn't get given access to yours.
+</li>
 
 <li>Zero Install performs checks to try to detect when a remote server has
 been compromised. This only works when upgrading software, not when using it
-for the first time.</li>
+for the first time.
+</li>
+
 </ul>
 
 <h3>Common security questions mini-FAQ</h3>
@@ -99,11 +105,12 @@ The problem is that it is impossible to look at a every piece of software and
 verify that it will only do what you want. Thus, we must sandbox programs so
 that their actions are restricted. Then, risks come only from the software
 enforcing the sandbox. Because a single sandbox can be used to restrict any
-number of programs, there is much less code to check for security problems.
+number of programs, there is much less code (just the sandbox itself) to check
+for security problems.
 </p>
 
 <p>
-Linux (and most other modern operating systems) creates a separate sandbox
+Linux (like most other modern operating systems) creates a separate sandbox
 environment for each user of the system. This means that users are only at high
 risk from software they run, not from software other users run (except due to
 bugs in Linux, which are rare and quickly fixed). Users can, in turn, create
@@ -127,7 +134,10 @@ since the software has already been executed with full access. Previously,
 the only solution was for users to perform the installation step itself
 within their sandbox (installing to their home directory). This is much
 more secure, but also very inefficient (as applications can no longer be
-shared between users).
+shared between users) and often more difficult to do. Zero Install makes
+software installation as safe as having users installing to their home
+directories, but is even quicker and easier than installing as root with
+a traditional package manager.
 </p>
 
 
