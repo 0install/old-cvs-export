@@ -548,6 +548,7 @@ restart:
 
 		spin_unlock(&dcache_lock);
 		d_delete(child);
+		dput(child);
 		goto restart;
 	}
 
