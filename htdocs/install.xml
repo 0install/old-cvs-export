@@ -252,8 +252,8 @@ GTK, Java and NEdit, can be found in the directory
 <h3>Notes</h3>
 <ul>
 <li>I/O errors indicate that the helper failed to fetch the requested file.
-Check <strong>/var/log/daemon.log</strong> for information. In future,
-ZeroProgress will report this information.</li>
+ZeroProgress should pop up a box with an explanation, if it's running. Otherwise,
+check the log file (as shown above).</li>
 <li>When you reboot, /uri/0install is automatically mounted, but the
 zero-install helper program is <strong>not</strong> run automatically.
 Therefore, you will get I/O errors when trying to access anything new, until
