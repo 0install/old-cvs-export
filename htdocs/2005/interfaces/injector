@@ -27,14 +27,18 @@ buttons). Thus, the injector must choose implementations of each dependancy
     <archive size='21652' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.3.tar.gz' extract='injector-0.3'/>
   </implementation>
 
-  <implementation id="sha1=645bebcd1439ef44c15b362efe221bcb8126426a" stability="testing" version="0.4">
+  <implementation id="sha1=645bebcd1439ef44c15b362efe221bcb8126426a" stability="stable" version="0.4">
     <archive size='21808' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.4.tar.gz' extract='injector-0.4'/>
+  </implementation>
+
+  <implementation id="sha1=ff6ad61795e04d2350c9a39ca357aea7a15ba107" stability="testing" version="0.5">
+    <archive size='22219' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.5.tar.gz' extract='injector-0.5'/>
   </implementation>
 </interface>
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCOcXFrgeCgFmlPMERAgCQAKDe78J0LzKO744tQbTicG15zsgZggCeM5qw
-PMn6ys82tFbFBt4Vio4I80A=
-=XHNZ
+iD8DBQFCPDvjrgeCgFmlPMERAsQPAJ9+YXEd2OHGGoEwZ9GeZpJnw2qJ1wCgwKJR
+aCRCppy0FjkDuwj/uypgQ+c=
+=LfUN
 -----END PGP SIGNATURE-----
