@@ -105,6 +105,19 @@ div.note h3 {
 	text-align: center;
 }
 
+div.stop h3 {
+	text-align: center;
+}
+
+div.stop {
+	background: #fbb;
+	color: black;
+	border: 1px solid black;
+	padding: .2cm;
+	text-align: center;
+	margin: 2px 4em 2px 4em;
+}
+
 pre {
 	background: #eee;
 	color: black;

@@ -21,6 +21,17 @@ as running a normal application after the first time, and allows
 off-line use.
 </p>
 
+<div class='stop'>
+<h3>STOP!</h3>
+<p>
+Please at least read to the bottom of this page before flaming
+about how this is like Windows Update/thin-client computing, reinvents APT,
+is slow/inefficient/insecure, doesn't share libraries, requires a
+fast/always-on net connection, or whatever other misconception you've acquired
+about Zero Install after reading one paragraph. Thank you.
+</p>
+</div>
+
 <p class='q'>Show me an example.</p>
 
 <p>
@@ -71,7 +82,7 @@ software.</li>
 <li>Zero Install is both simpler and more secure than traditional packaging
 systems.</li>
 <li>Software can be removed from the cache to free space without affecting
-the behaviour of the system (it will be recached on demand).</li>
+the behaviour of the system (it will be re-cached on demand).</li>
 <li>You can still run a program you cached last week, without using the net again.</li>
 </ul>
 </div>
@@ -84,8 +95,8 @@ can't install Memo using APT, because Debian don't package it. The best an
 author can do is provide Debian .deb packages on the site. But then the user
 still has to do the manual dependency resolution above for everything not in
 Debian's system (some people have suggested setting up additional APT
-respositories: I'd consider that adding all the required third-party
-respositories to <tt>sources.list</tt> still counts as 'manual').
+repositories: I'd consider that adding all the required third-party
+repositories to <tt>sources.list</tt> still counts as 'manual').
 </p><p>
 They are also fragile; if the user deletes managed files then
 the system may stop working. However, a user can remove any part of the
@@ -203,12 +214,12 @@ the network at all.</li>
 </p>
 
 <h3>Articles about Zero Install</h3>
-<p>Here are some discussions about Zero Install I've found on the web (google, emails, etc). Let me
+<p>Here are some discussions about Zero Install I've found on the web (Google, emails, etc). Let me
 know if you find any more!</p>
 <ul>
 <li><a href="http://freshmeat.net/articles/view/1049/">Zero Install and the Web of Software</a> (my freshmeat editorial and comments)</li>
 <li><a href="http://osnews.com/comment.php?news_id=5394">Zero Install and the Web of Software</a> (OSnews article and comments)</li>
-<li><a href="http://slashdot.org/~Sanity/journal/47655">Package Management in the untimate operating system</a></li>
+<li><a href="http://slashdot.org/~Sanity/journal/47655">Package Management in the ultimate operating system</a></li>
 <li><a href="http://ed.puddingbowl.org/archives/001198.html">Ed Heil's Weblog</a></li>
 <li><a href="http://www.varlinux.org/vl/html/modules/newbb/viewtopic.php?topic_id=201&amp;forum=8">Blue Sky Platform discussion</a></li>
 <li><a href="http://forums.gentoo.org/viewtopic.php?t=114652">Gentoo forums discussion</a></li>
