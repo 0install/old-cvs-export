@@ -29,7 +29,8 @@ MODFLAGS := -DMODULE -D__KERNEL__
 install: lazyfs.o
 	mkdir -p ${MODULEDIR}
 	cp lazyfs.o ${MODULEDIR}/
-	[ -n "${ROOT_PREFIX}" ] || depmod -a
+	[ -n "${ROOT_PREFIX}" ] || (depmod -a && \
+	 [ ! -L /uri/.lazyfs-cache ] || (umount /uri && rmmod lazyfs))
 
 uninstall:
 	rm ${MODULEDIR}/lazyfs.o
