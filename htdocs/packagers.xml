@@ -11,9 +11,15 @@ web server (eg, apache). The web server doesn't need to do anything special
 to serve the files you upload.
 </p>
 
-<ul>
-<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/361">I share my webserver with others, and can't put files in the root!</a></li>
-</ul>
+<div class='note'>
+<h3>I share my webserver with others, and can't put files in the root!</h3>
+<p>
+If you can't make a file appear as <b>http://somehost.org/NAME</b>, you
+can put a '#' after your site name. Then, users access <b>/uri/0install/somehost.org#mydir</b>,
+and the files are fetched as <b>http://somehost.org/mydir/NAME</b>. If you host a project on
+sourceforge, you don't need to do this, because each project has its own hostname.
+</p>
+</div>
 
 <h3>Tutorial</h3>
 
