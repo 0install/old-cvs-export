@@ -17,6 +17,8 @@ install:
 	mkdir -p ${MODULEDIR}
 	cp lazyfs.o ${MODULEDIR}/
 	depmod -a
+	[ -d /uri ] || mkdir /uri
+	[ -d /var/cache/zero-inst ] || mkdir /var/cache/zero-inst
 
 lazyfs.o: lazyfs.c
 	${CC} -c ${CFLAGS} ${KERNELFLAGS} ${MODFLAGS} -o $@ $<

@@ -19,6 +19,8 @@
 
 /* See the 'Technical' file for details. */
 
+/* TODO: Don't allow multiple files with the same name. Also '.' and '..'. */
+
 #include <linux/module.h>   /* Needed by all modules */
 #include <linux/kernel.h>   /* Needed for KERN_ALERT */
 #include <linux/init.h>     /* Needed for the macros */
@@ -78,8 +80,6 @@ static void show_refs(struct dentry *dentry, int indent)
 	}
 }
 #endif
-
-//static void show_refs(struct dentry *dentry, int indent);
 
 /* Everyone waiting for the helper to fetch a file waits on
  * this queue. They all get woken up when the fetcher completes any
@@ -1233,11 +1233,11 @@ lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	int err;
 
 	if (file->f_dentry == last) {
-		if (count < 1)
+		if (count < 2)
 			return -ENAMETOOLONG;
-		err = copy_to_user(buffer, "/", 1);
+		err = copy_to_user(buffer, "/\0", 2);
 		if (err) return err;
-		return 1;
+		return 2;
 	}
 
 	while (1) {
