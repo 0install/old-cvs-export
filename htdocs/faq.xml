@@ -208,4 +208,12 @@ If a program relies on a bugfix in libfoo-1.2.6 then it can check that
 not.
 </p>
 
+<h3>Is Linux binary compatibility good enough to share binaries between
+distributions?</h3>
+<p>
+There are some problems in this area generally (not just with Zero Install).
+The <a href="http://www.autopackage.org">Autopackage</a> project is working
+on these issues; see their FAQ for a detailed look at the problems faced.
+</p>
+
 </html>
