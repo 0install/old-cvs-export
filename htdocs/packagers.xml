@@ -110,30 +110,25 @@ is compatible with version 2.2. Other examples: 'latest-2.2 -> 2.2.3',
 'latest-stable', etc.
 </p>
 
-<h3>Avoiding glibc version troubles</h3>
+<h3>Avoiding glibc version troubles (and other binary incompatibilities)</h3>
 
 <p>
 Glibc tries to prevent programs compiled using one version of the library
 from running on other versions, even when the interface is compatible. To
 create portable binaries, it is therefore necessary to use a little program at
-<a href="http://autopackage.org">autopackage.org</a> (apbuild CVS module) which
+<a href="http://autopackage.org">autopackage.org</a> (autopackage/apbuild CVS module) which
 can be used as a wrapper for gcc.
 </p>
 
-<h3>Avoiding pangoxft troubles</h3>
-
 <p>
-When you build a GTK application on a system where pangoxft is installed,
-you'll get a free dependancy on pangoxft thanks to pkg-config. This will
-stop your program working on systems without the library. The solution is
-simple: edit the output from pkg-config to remove this library. Linux (and
-most other modern systems) will deal with loading pangoxft automatically on
-systems which have it.
+There are a number of other traps to watch out for here. When packaging C
+programs for distribution (whether using Zero Install or not), please read
+this:
 </p>
 
-<pre>
-LDFLAGS = `pkg-config --libs gtk+-2.0 | sed 's/-lpangoxft-[^ ]*//'`
-</pre>
+<ul>
+<li><a href="http://autopackage.org/docs/devguide/ch06.html">Chapter 6. Binary portability</a> (in the autopackage packagers' manual)</li>
+</ul>
 
 <h3>Depending on other things in Zero Install</h3>
 
