@@ -403,7 +403,7 @@ int main(int argc, char **argv)
 		printf("Zero Install started: using cache directory '%s'\n",
 				cache_dir);
 
-	if (1) {
+	if (0) {
 		printf("Literal: %s\n", build_string("Hello world"));
 		printf("Combine: %s\n", build_string("%s/%s", "one", "two"));
 		printf("Dir    : %s\n", build_string("%d/%s", "one/two",
