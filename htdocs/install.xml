@@ -48,6 +48,8 @@ Kernel</a>.
 Joachim Kupke has created
 <a href="http://www-i1.informatik.rwth-aachen.de/~joachimk/debian/">Debian
 packages</a> for Zero Install.
+Add<br/><tt>deb http://www-i1.informatik.rwth-aachen.de/~joachimk debian/</tt>
+<br/>to<br/><tt>/etc/apt/sources.list</tt><br/>and install using apt-get.
 </div>
 <!--
 <div class='note'>
