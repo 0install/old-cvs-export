@@ -119,4 +119,19 @@ Thanks to the University of Southampton for the 0install.org, 0install.net, zero
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match='*[name() = "toc"]'>
+    <ol>
+    <xsl:for-each select='//*[name() = "h3"]'>
+      <li><a href="#{generate-id()}"><xsl:value-of select='.'/></a></li>
+    </xsl:for-each>
+    </ol>
+  </xsl:template>
+
+  <xsl:template match='*[name() = "h3"]'>
+    <xsl:copy>
+      <xsl:attribute name='id'><xsl:value-of select="generate-id()"/></xsl:attribute>
+      <xsl:apply-templates/>
+    </xsl:copy>
+  </xsl:template>
+
 </xsl:stylesheet>
