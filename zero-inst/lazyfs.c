@@ -176,7 +176,7 @@ lazyfs_put_inode(struct inode *inode)
 static void
 lazyfs_release_dentry(struct dentry *dentry)
 {
-	struct lazy_de_info *info = (struct lazy_de_info *) dentry->d_fsdata;
+	struct lazy_de_info *info = dentry->d_fsdata;
 	
 	if (dentry->d_inode)
 		BUG();
@@ -391,7 +391,7 @@ get_host_dir_dentry(struct dentry *dentry, struct dentry *host_dentry)
 {
 	struct dentry *list_dentry;
 	struct dentry *old;
-	struct lazy_de_info *info = (struct lazy_de_info *) dentry->d_fsdata;
+	struct lazy_de_info *info = dentry->d_fsdata;
 	struct qstr ddd_name;
 
 	ddd_name.name = "...";
@@ -502,10 +502,10 @@ fetch:
 static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 {
 	struct super_block *sb = dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
 	struct dentry *host_dentry;
 	struct dentry *parent_host = NULL;
-	struct lazy_de_info *info = (struct lazy_de_info *) dentry->d_fsdata;
+	struct lazy_de_info *info = dentry->d_fsdata;
 	int first_try = 1;
 	DECLARE_WAITQUEUE(wait, current);
 
@@ -685,8 +685,7 @@ restart:
 
 	while (next != head) {
 		struct dentry *child = list_entry(next, struct dentry, d_child);
-		struct lazy_de_info *info = (struct lazy_de_info *)
-						child->d_fsdata;
+		struct lazy_de_info *info = child->d_fsdata;
 		next = next->next;
 
 		if (d_unhashed(child) || !child->d_inode)
@@ -970,7 +969,7 @@ lazyfs_dir_open(struct inode *inode, struct file *file)
 static void
 lazyfs_put_super(struct super_block *sb)
 {
-	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
 
 	if (sbi) {
 		if (!list_empty(&sbi->to_helper))
@@ -1095,7 +1094,7 @@ static int
 lazyfs_handle_release(struct inode *inode, struct file *file)
 {
 	struct dentry *dentry = file->f_dentry;
-	struct lazy_de_info *info = (struct lazy_de_info *) dentry->d_fsdata;
+	struct lazy_de_info *info = dentry->d_fsdata;
 
 	if (!info)
 		BUG();
@@ -1179,7 +1178,7 @@ static ssize_t
 send_to_helper(char *buffer, size_t count, struct dentry *dentry)
 {
 	struct super_block *sb = dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
 	struct file *file;
 	char number[20];
 	int len = dentry->d_name.len;
@@ -1221,7 +1220,7 @@ static int
 lazyfs_helper_open(struct inode *inode, struct file *file)
 {
 	struct super_block *sb = inode->i_sb;
-	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
 	int err = 0;
 
 	spin_lock(&fetching_lock);
@@ -1347,7 +1346,7 @@ lazyfs_file_read(struct file *file, char *buffer, size_t count, loff_t *off)
 static int
 lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 {
-	struct file *host_file = (struct file *) file->private_data;
+	struct file *host_file = file->private_data;
 	struct inode *inode, *host_inode;
 	int err;
 
@@ -1405,9 +1404,9 @@ lazyfs_link_readlink(struct dentry *dentry, char *buf, int bufsize)
 static int
 lazyfs_file_open(struct inode *inode, struct file *file)
 {
-	struct dentry *dentry = (struct dentry *) file->f_dentry;
+	struct dentry *dentry = file->f_dentry;
 	struct super_block *sb = inode->i_sb;
-	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
 	struct dentry *host_dentry;
 	struct file *host_file;
 
