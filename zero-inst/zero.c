@@ -50,8 +50,36 @@ static void sig_int(int signum)
 
 static void child_handle(int fd)
 {
-	sleep(1);
-	close(fd);
+	struct stat info;
+	int got;
+	char buffer[1024] = "/usr/";
+
+	got = read(fd, buffer + 5, sizeof(buffer) - 5);
+	if (got <= 0)
+	{
+		perror("read");
+		return;
+	}
+	printf("Create '%s'\n", buffer);
+
+	if (stat(buffer, &info))
+	{
+		perror("stat");
+		return;
+	}
+
+	if (chdir("/var/cache/zero-inst"))
+	{
+		perror("chdir");
+		return;
+	}
+
+	if (S_ISDIR(info.st_mode))
+	{
+		printf("Making directory\n");
+		sleep(1);
+		mkdir(buffer + 5, 0755);
+	}
 }
 
 static void handle_fd(int fd)

@@ -82,7 +82,11 @@ sleep and a request sent to the helper in the form of a file handle.
 The request is a number (ASCII) followed by \n. You have to read the
 whole line in a single read() operation (and you'll only get one per
 read). The number is a file handle which lazyfs has opened for you.
-When this handle is closed, the requesting process wakes up (hopefully to
+Reading from the file with give you the pathname of the file to create
+relative to the mount point (/ = /uri). Again, you must read the whole path
+in one operation.
+
+When the handle is closed, the requesting process wakes up (hopefully to
 find that the missing file has appeared). If more processes request the
 file, they will also be put to sleep until the request is handled.
 

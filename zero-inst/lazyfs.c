@@ -980,6 +980,58 @@ lazyfs_handle_release(struct inode *inode, struct file *file)
 	wake_up_interruptible(&lazy_wait);
 }
 
+/* Reading from a request handle gives the path of the file to create */
+static int
+lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
+{
+	struct dentry *this;
+	struct dentry *last = file->f_dentry->d_inode->i_sb->s_root;
+	size_t start_count = count;
+
+	if (file->f_dentry == last)
+	{
+		if (count < 1)
+			return -ENAMETOOLONG;
+		copy_to_user(buffer, "/", 1);
+		return 1;
+	}
+
+	while (1)
+	{
+		this = file->f_dentry;
+		if (this == last)
+			break;
+		/* Find the topmost dir which we haven't written out yet */
+		while (this->d_parent != last)
+			this = this->d_parent;
+
+		printk("Add '%s'\n", this->d_name.name);
+
+		if (count < 1)
+			return -ENAMETOOLONG;
+		copy_to_user(buffer, "/", 1);
+		count--;
+		buffer++;
+
+		if (this->d_name.len > count)
+			return -ENAMETOOLONG;
+
+		copy_to_user(buffer, this->d_name.name, this->d_name.len);
+		buffer += this->d_name.len;
+		count -= this->d_name.len;
+
+		last = this;
+	}
+
+	if (count < 1)
+		return -ENAMETOOLONG;
+	copy_to_user(buffer, "\0", 1);
+	buffer++;
+	count--;
+
+	return start_count - count;
+}
+
 /* We create a new file object and pass it to userspace. When closed, we
  * check to see if the host has been created. If we don't return an error
  * then lazyfs_handle_release will get called eventually for this dentry...
@@ -1268,6 +1320,7 @@ static struct file_operations lazyfs_helper_operations = {
 };
 
 static struct file_operations lazyfs_handle_operations = {
+	read:		lazyfs_handle_read,
 	release:	lazyfs_handle_release,
 };
 
