@@ -184,6 +184,7 @@ void read_from_control(int control)
 	client->next = clients;
 	client->terminate = 0;
 	client->update_flagged = 0;
+	client->need_update = 0;
 	clients = client;
 
 	if (setsockopt(fd, SOL_SOCKET, SO_PASSCRED, &one, sizeof(one))) {
