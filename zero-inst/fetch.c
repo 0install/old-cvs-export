@@ -397,6 +397,8 @@ static void got_site_index(Task *task, int success)
 		goto err;
 	}
 
+	fprintf(stderr, "TODO: skipping GPG signature check\n");
+
 	assert(strncmp(task->str, cache_dir, strlen(cache_dir)) == 0);
 	assert(!strchr(task->str + strlen(cache_dir) + 1, '/'));
 		
