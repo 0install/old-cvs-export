@@ -83,7 +83,8 @@ in the makefile.
 
 <div class='note'>
 <strong>06-May-2003:</strong> You may need to edit the Makefile and add -O2 to
-<tt>KERNELFLAGS</tt>. Will be fixed in the next release.
+<tt>KERNELFLAGS</tt> (the missing "prefetch" symbol problem).
+Will be fixed in the next release.
 </div>
 
 <p>
