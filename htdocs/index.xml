@@ -68,7 +68,7 @@ any software, and nothing is run as root.</li>
 <li>Running a program is done in the same way whether it's cached or not.</li>
 <li>Running cached software is as fast as running traditionally-installed
 software.</li>
-<li>Zero Install is both easier and more secure than traditional packaging
+<li>Zero Install is both simpler and more secure than traditional packaging
 systems.</li>
 </ul>
 </div>
