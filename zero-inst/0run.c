@@ -138,9 +138,10 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 
-		strcat(path, "/AppRun");
+		sprintf(path, "%s/AppRun", old);
 	}
 
+	argv[1] = path;
 	execv(path, argv + 1);
 
 	perror("execv");

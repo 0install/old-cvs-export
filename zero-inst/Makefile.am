@@ -11,7 +11,7 @@ sbin_PROGRAMS = zero-install
 
 SUBDIRS = Linux
 
-EXTRA_DIST = Linux/lazyfs.c Linux/lazyfs.h Linux/Makefile.in Technical 0test.py
+EXTRA_DIST = Linux/lazyfs.c Linux/lazyfs.h Linux/compat20.h Linux/Makefile.in Technical 0test.py
 DISTCHECK_CONFIGURE_FLAGS = --with-user=zeroinst --with-distcheck
 
 zero_install_SOURCES = zero-install.c support.c fetch.c control.c index.c \
