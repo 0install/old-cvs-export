@@ -1443,11 +1443,59 @@ out:
 
 /*			File operations				*/
 
+/* Try to fill in file->private_data with the host file.
+ * If block is 0, this may just start a fetch and return
+ * -EAGAIN.
+ */
+static int
+get_host_file(struct file *file, int block)
+{
+	struct dentry *dentry = file->f_dentry;
+	struct super_block *sb = dentry->d_inode->i_sb;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct dentry *host_dentry;
+	struct file *host_file;
+
+	if (file->private_data)
+	{
+		printk("get_host_file: already set!\n");
+		return -EIO;
+	}
+	
+	host_dentry = get_host_dentry(dentry, block);
+	if (IS_ERR(host_dentry))
+		return PTR_ERR(host_dentry);
+
+	/* Open the host file */
+	{
+		struct vfsmount *mnt = mntget(sbi->host_mnt);
+		host_file = dentry_open(host_dentry, mnt, file->f_flags);
+		host_dentry = NULL;
+		/* (mnt and dentry freed by here) */
+	}
+
+	if (IS_ERR(host_file))
+		return PTR_ERR(host_file);
+
+	file->private_data = host_file;
+	inc("file->host_file");
+
+	return 0;
+}
+
 static ssize_t
 lazyfs_file_read(struct file *file, char *buffer, size_t count, loff_t *off)
 {
-	struct file *host_file = file->private_data;
-
+	struct file *host_file;
+	
+	if (!file->private_data)
+	{
+		int err;
+		err = get_host_file(file, 1);
+		if (err)
+			return err;
+	}
+	host_file = file->private_data;
 	if (!host_file)
 		BUG();
 
@@ -1460,9 +1508,19 @@ lazyfs_file_read(struct file *file, char *buffer, size_t count, loff_t *off)
 static int
 lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 {
-	struct file *host_file = file->private_data;
+	struct file *host_file;
 	struct inode *inode, *host_inode;
 	int err;
+
+	if (!file->private_data)
+	{
+		err = get_host_file(file, 1);
+		if (err)
+			return err;
+	}
+	host_file = file->private_data;
+	if (!host_file)
+		BUG();
 
 	if (!host_file->f_op || !host_file->f_op->mmap)
 		return -ENODEV;
@@ -1527,33 +1585,20 @@ lazyfs_link_readlink(struct dentry *dentry, char *buf, int bufsize)
 	return copy_err ? copy_err : err;
 }
 
+/* Note: we don't return -EAGAIN, because programs don't except it.
+ * Instead, we just fire off a request for the file and return right
+ * away. The read() or mmap() call will actually block on the host file
+ * becoming available.
+ */
 static int
 lazyfs_file_open(struct inode *inode, struct file *file)
 {
-	struct dentry *dentry = file->f_dentry;
-	struct super_block *sb = inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
-	struct dentry *host_dentry;
-	struct file *host_file;
+	int err;
 
-	host_dentry = get_host_dentry(dentry, 1);
-	if (IS_ERR(host_dentry))
-		return PTR_ERR(host_dentry);
-
-	/* Open the host file */
-	{
-		struct vfsmount *mnt = mntget(sbi->host_mnt);
-		host_file = dentry_open(host_dentry, mnt, file->f_flags);
-		host_dentry = NULL;
-		/* (mnt and dentry freed by here) */
-	}
-
-	if (IS_ERR(host_file))
-		return PTR_ERR(host_file);
-	inc("file->host_file");
-
-	file->private_data = host_file;
-
+	file->private_data = NULL;
+	err = get_host_file(file, 0);
+	if (err == -EAGAIN)
+		err = 0;	/* We'll pick it up in the read */
 	return 0;
 }
 
@@ -1565,7 +1610,7 @@ lazyfs_file_release(struct inode *inode, struct file *file)
 		dec("file->host_file");
 	}
 	else
-		printk("WARNING: no private_data!\n");
+		printk("Note: no host file (never read?)\n");
 
 	return 0;
 }

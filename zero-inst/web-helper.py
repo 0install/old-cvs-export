@@ -81,6 +81,8 @@ def write_dir(host, resource):
 	write_ddd(dir, 'LazyFS\n' + ''.join([e + '\0' for e in handler.dir]))
 
 def write_ddd(dir, contents):
+	if not os.path.isdir(dir):
+		os.makedirs(dir)
 	tmp_path = os.path.join(dir, '....')
 	file(tmp_path, 'w').write(contents)
 	os.rename(tmp_path, tmp_path[:-1])
