@@ -24,6 +24,12 @@
 	/* 2.5 kernel */
 # define SBI(sb) ((struct lazy_sb_info *) ((sb)->s_fs_info))
 # define TIME_T struct timespec
+/* (... format only stores times to 1 second accuracy anyway) */
+# define TIMES_EQUAL(a, b) ((a).tv_sec == (b).tv_sec)
+#include <linux/dcache.h>
+#include <linux/namei.h>
+#include <linux/mount.h>
+#include <linux/vfs.h>
 
 #else
 	/* 2.4 kernel */
@@ -34,6 +40,7 @@
 # endif
 # include <linux/locks.h>
 # define TIME_T time_t
+# define TIMES_EQUAL(a, b) ((a) == (b))
 #endif
 
 #include <linux/module.h>
@@ -452,10 +459,14 @@ host_from_mount_data(struct lazy_sb_info *sbi, const char *cache_dir)
 		return -ENOTDIR;
 	}
 
+#ifdef LINUX_2_5_SERIES
+	if (!path_lookup(cache_dir, LOOKUP_DIRECTORY | LOOKUP_FOLLOW,
+				&host_root)) {
+#else
 	if (!path_init(cache_dir,
 		LOOKUP_POSITIVE | LOOKUP_DIRECTORY | LOOKUP_FOLLOW,
-		&host_root) || path_walk(cache_dir, &host_root))
-	{
+		&host_root) || path_walk(cache_dir, &host_root)) {
+#endif
 		printk("lazyfs: Can't find cache directory '%s'\n", cache_dir);
 		return -ENOTDIR;
 	}
@@ -476,8 +487,8 @@ host_from_mount_data(struct lazy_sb_info *sbi, const char *cache_dir)
 	return err;
 }
 
-static struct super_block *
-lazyfs_read_super(struct super_block *sb, void *data, int silent)
+static int
+lazyfs_fill_super(struct super_block *sb, void *data, int silent)
 {
 	struct lazy_sb_info *sbi = NULL;
 	struct qstr link_target;
@@ -486,7 +497,7 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 
 	sbi = kmalloc(sizeof(struct lazy_sb_info), GFP_KERNEL);
 	if (!sbi)
-		return NULL;
+		return -ENOMEM;
 	SBI(sb) = sbi;
 	sbi->host_dentry = NULL;
 	sbi->host_mnt = NULL;
@@ -529,7 +540,7 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	INIT_LIST_HEAD(&sbi->to_helper);
 	INIT_LIST_HEAD(&sbi->requests_in_progress);
 
-	return sb;
+	return 0;
 err:
 	if (sbi->cache_dentry) {
 		dput(sbi->cache_dentry);
@@ -549,9 +560,27 @@ err:
 	}
 	if (sb->s_root)
 		dput(sb->s_root);
-	return NULL;
+	return -EINVAL;
 }
 
+#ifdef LINUX_2_5_SERIES
+struct super_block *lazyfs_get_sb(struct file_system_type *fs_type,
+				 int flags, const char *dev_name, void *data)
+{
+	return get_sb_nodev(fs_type, flags, data, lazyfs_fill_super);
+}
+#else
+static struct super_block *
+lazyfs_read_super(struct super_block *sb, void *data, int silent)
+{
+	int err;
+
+	err = lazyfs_fill_super(sb, data, silent);
+
+	return err ? NULL : sb;
+}
+#endif
+	
 /* host_dentry is the directory in the cache which corresponds to
  * dentry. Make sure it contains a '...' file, and return that.
  * NULL if the file needs fetching or updating.
@@ -640,8 +669,9 @@ static struct dentry *try_get_host_dentry(struct dentry *dentry,
 	if (S_ISREG(mode)) {
 		if (!S_ISREG(host_mode))
 			goto fetch;
-		if (host_dentry->d_inode->i_mtime != dentry->d_inode->i_mtime ||
-		    host_dentry->d_inode->i_size != dentry->d_inode->i_size) {
+		if (host_dentry->d_inode->i_size != dentry->d_inode->i_size ||
+		    !TIMES_EQUAL(host_dentry->d_inode->i_mtime,
+			    	 dentry->d_inode->i_mtime)) {
 			/* User space helper shouldn't really let this happen */
 			printk("Cache out-of-date for '%s'... refetching\n",
 					dentry->d_name.name);
@@ -888,7 +918,8 @@ static inline int
 has_changed(struct inode *i, mode_t mode, size_t size, TIME_T time,
 	    struct qstr *link_target)
 {
-	if (i->i_mode != mode || i->i_size != size || i->i_mtime != time)
+	if (i->i_mode != mode || i->i_size != size ||
+			!TIMES_EQUAL(i->i_mtime, time))
 		return 1;
 
 	if (S_ISLNK(mode)) {
@@ -958,7 +989,12 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 
 		if (!isdigit(*listing))
 			goto bad_list;
+#ifdef LINUX_2_5_SERIES
+		time.tv_sec = atoi(&listing);
+		time.tv_nsec = 0;
+#else
 		time = atoi(&listing);
+#endif
 		if (*(listing++) != ' ')
 			goto bad_list;
 
@@ -1911,7 +1947,17 @@ static struct dentry_operations lazyfs_dentry_ops = {
 	d_release:	lazyfs_release_dentry,
 };
 
+#ifdef LINUX_2_5_SERIES
+struct file_system_type lazyfs_fs_type = {
+	.name		= "lazyfs",
+	.get_sb		= lazyfs_get_sb,
+	.fs_flags	= 0,
+	.owner		= THIS_MODULE,
+	.kill_sb	= kill_litter_super,
+};
+#else
 static DECLARE_FSTYPE(lazyfs_fs_type, "lazyfs", lazyfs_read_super, FS_LITTER);
+#endif
 
 static int __init init_lazyfs_fs(void)
 {
@@ -1923,7 +1969,9 @@ static void __exit exit_lazyfs_fs(void)
 	unregister_filesystem(&lazyfs_fs_type);
 }
 
+#ifndef LINUX_2_5_SERIES
 EXPORT_NO_SYMBOLS;
+#endif
 
 module_init(init_lazyfs_fs)
 module_exit(exit_lazyfs_fs)
