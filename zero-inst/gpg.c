@@ -17,54 +17,40 @@
 
 #define MATCH(x) (strncmp(buffer, x, sizeof(x) - 1) == 0)
 
-/* Code is a string in the form "%xx". Returns the character it expands
- * to, or -1 if code is invalid.
- */
-static int unescape(const char *code) {
-	char buf[3];
-
-	if (*code == '%' && isxdigit(code[1]) && isxdigit(code[2])) {
-		buf[0] = code[1];
-		buf[1] = code[2];
-		buf[2] = '\0';
-		return strtol(buf, NULL, 16);
-	}
-
-	return -1;
-}
-
-static int ok_for_site(const char *email, const char *site)
+static int ok_for_site(const char *name, const char *site)
 {
 	int domain_len;
 	char *hash;
+	const char *email;
 
-	hash = strchr(site, '#');
-	if (hash)
-		domain_len = hash - site;
-	else
-		domain_len = strlen(site);
-	
-	if (strncmp(email, "<0install@", sizeof("<0install@") - 1) != 0)
+	email = strchr(name, '<');
+	if (!email) {
+		error("Signature name has no email address!");
 		return 0;
-	email += sizeof("<0install@") - 1;
-
-	while (*email && email[0] != '>' && site) {
-		if (*email == '%') {
-			int value = unescape(email);
-			if (value == -1)
-				return 0;	/* Invalid escape sequence */
-			if (value != *site)
-				return 0;	/* Value doesn't match */
-			email += 2;
-		} else {
-			if (*email != *site)
-				return 0;
-			email++;
-		}
-		site++;
 	}
 
-	return *email == '>' && email[1] == '\n' && *site == '\0';
+	hash = strchr(site, '#');
+	if (hash) {
+		domain_len = hash - site;
+		if (strncmp(email, "<0sub@", sizeof("<0sub@") - 1) != 0)
+			return 0;
+		email += sizeof("<0sub@") - 1;
+	} else {
+		/* For root indexes, only care about the email part
+		 * (for backwards-compatibility).
+		 */
+		domain_len = strlen(site);
+		if (strncmp(email, "<0install@", sizeof("<0install@") - 1) != 0)
+			return 0;
+		email += sizeof("<0install@") - 1;
+	}
+	
+	if (strncmp(email, site, domain_len) != 0)
+		return 0;
+	email += domain_len;
+	site += domain_len;
+
+	return *email == '>';	/* XXX: space or newline next? */
 }
 
 /* Check that ./<leafname> is signed by ./index.xml.sig, whose public key
@@ -152,11 +138,12 @@ const char *gpg_trusted(const char *site, const char *leafname)
 			break;
 
 		if (MATCH("[GNUPG:] GOODSIG ")) {
-			const char *langle;
-			langle = strrchr(buffer, '<');
-			if (langle && ok_for_site(langle, site)) {
-				assert(buffer[17 + 16] == ' ');
-				memcpy(current_key, buffer + 17, 16);
+			const char *key_text = buffer + 17;
+			const char *space;
+			space = strchr(key_text, ' ');
+			if (space && ok_for_site(space + 1, site)) {
+				assert(key_text[16] == ' ');
+				memcpy(current_key, key_text, 16);
 			} else
 				current_key[0] = '\0';
 		}
