@@ -40,7 +40,7 @@ comes out with bug-fixes, we will want Memo to use it automatically.
 Zero Install solved this in the past by means of the <b>latest</b> symlinks. Here,
 Memo 2.0.0 uses <b>python.org/latest</b>, which is always a symlink to the latest
 version. But this isn't flexible enough to cope with the list of cases above.
-What if python 2.2.1 is available, but we'd rather continue with 2.0.0 than
+What if python 2.2.1 is available, but we'd rather continue with 2.2.0 than
 download it? The 0divert command allows the root user to redirect these
 symlinks, but a major goal of Zero Install is to make software use easy without
 involving an administrator. Also, 0divert affects all users, whereas we only
@@ -158,9 +158,9 @@ of a web browser.
 </p>
 
 <p>
-A versions is a dot-separated list of integers. Eg "1.2.3". They can be just a
-single number ("1") or a sequence of any number of components ("1.4.2.3"). They
-are ordered like this:
+A version is a dot-separated list of integers. Eg "1.2.3". It can be just a
+single number ("1") or a sequence of any number of components ("1.4.2.3").
+Versions are ordered like this:
 </p>
 
 <ul>
@@ -223,8 +223,7 @@ example gets the injector to find an implementation of ROX-Lib too:
 
 <pre><![CDATA[
 <?xml version='1.0'?>
-<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
-	   xmlns:python='http://zero-install.sourceforge.net/2004/injector/python'>
+<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'>
   <group path='/uri/0install/rox.sourceforge.net/apps/Memo/'>
     <requires interface='/uri/0install/rox.sourceforge.net/lib/ROX-Lib2/interface.xml'>
       <version min='1.9.6'/>
