@@ -5,7 +5,7 @@ extern const char *cache_dir;
 
 typedef struct _Request Request;
 typedef struct _UserRequest UserRequest;
-typedef enum {READY, FETCHING_INDEX} State;
+typedef enum {READY, FETCHING_INDEX, FETCHING_ARCHIVE} State;
 
 struct _Request {
 	char *path;

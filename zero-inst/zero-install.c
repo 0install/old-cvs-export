@@ -345,12 +345,50 @@ static void wget(Request *request, const char *uri, char *path,
 	_exit(1);
 }
 
+/* /http/www.foo.org/some/path, one, two to
+ * http://www.foo.org/some/path/one/two
+ *
+ * The two 'leaf' components are appended, if non-NULL.
+ * 0 on error, which will have been already reported.
+ */
+static int build_uri(char *buffer, int len, const char *path,
+		     const char *leaf1, const char *leaf2)
+{
+	int n;
+	char *slash;
+
+	assert(path[0] == '/');
+	path++;
+
+	slash = strchr(path, '/');
+	assert(slash != NULL && slash != path);
+
+	n = slash - path;	/* Length of protocol (http=4) */
+	if (n > len)
+		goto too_big;
+	memcpy(buffer, path, n);
+	path += n;
+	buffer += n;
+	len -= n;
+
+	if (snprintf(buffer, len, ":/%s%s%s%s%s", path,
+			leaf1 ? "/" : "", leaf1 ? leaf1 : "",
+			leaf2 ? "/" : "", leaf2 ? leaf2 : "") > len - 1)
+		goto too_big;
+
+	return 1;
+too_big:
+	fprintf(stderr, "Path '%s' too long to convert to URI\n", path);
+	return 0;
+}
+
 /* Either do finish_request or start a child process and advance state */
 static void request_ensure_running(Request *request)
 {
 	UserRequest *first_rq = request->users;
 	char uri[MAX_URI_LEN];
 	char path[MAX_PATH_LEN];
+	int err;
 	
 	if (request->child_pid != -1)
 		goto err;
@@ -372,7 +410,18 @@ static void request_ensure_running(Request *request)
 		goto err;
 	}
 
+	if (request->state == FETCHING_ARCHIVE) {
+		fprintf(stderr, "Got archive!\n");
+		exit(EXIT_SUCCESS);
+	}
+
 	if (!strchr(request->path + 1, '/')) {
+		/* The root of a site (eg, /http/zero-install.sf.net) */
+
+		if (strcmp(first_rq->leaf, "AppRun") == 0 ||
+		    strcmp(first_rq->leaf, ".DirIcon") == 0)
+			goto err;
+		
 		if (snprintf(uri, sizeof(uri),
 			"%s://%s/" ZERO_INST_INDEX, request->path + 1,
 			first_rq->leaf) > sizeof(uri) - 1) {
@@ -393,6 +442,62 @@ static void request_ensure_running(Request *request)
 		return;
 	}
 
+	/* It's not the root directory of a site, but a resource within it.
+	 * Read the index file to find out what kind of object it is and
+	 * how to get it.
+	 */
+	/* TODO: check the index is up-to-date */
+
+	if (snprintf(path, sizeof(path), "%s%s/" ZERO_INST_INDEX, cache_dir,
+			request->path) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		goto err;
+	}
+	printf("[ check index '%s' ]\n", path);
+	/* Find out what kind of thing it is */
+
+	err = get_item_info(path, first_rq->leaf, uri, sizeof(uri));
+	if (!err) {
+		request->state = FETCHING_ARCHIVE;
+		if (snprintf(path, sizeof(path),
+			"%s%s/%s/archive.tgz" , cache_dir, request->path, 
+			first_rq->leaf) > sizeof(path) - 1) {
+			fprintf(stderr, "Path too long\n");
+			goto err;
+		}
+
+		wget(request, uri, path, 0);
+		if (!request->child_pid)
+			goto err;
+		return;
+	} else if (err != EISDIR)
+		goto err;
+
+	/* It's a directory */
+	if (snprintf(path, sizeof(path), "%s%s/%s" , cache_dir,
+			request->path, first_rq->leaf) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		goto err;
+	}
+	if (!ensure_dir(path))
+		goto err;
+
+	/* Fetch subdirectory index */
+	if (!build_uri(uri, sizeof(uri), request->path, first_rq->leaf,
+				ZERO_INST_INDEX))
+		goto err;
+	if (snprintf(path, sizeof(path),
+		"%s%s/%s/" ZERO_INST_INDEX, cache_dir, request->path,
+		first_rq->leaf) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		goto err;
+	}
+
+	request->state = FETCHING_INDEX;
+	wget(request, uri, path, 0);
+	if (!request->child_pid)
+		goto err;
+	return;
 err:
 	finish_request(request);
 }
