@@ -10,6 +10,9 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#define DBUS_API_SUBJECT_TO_CHANGE
+#include <dbus/dbus.h>
+
 #define ZERO_MNT "/uri/0install"
 #define MAX_PATH_LEN 4096
 
@@ -54,44 +57,6 @@ static time_t parse_date(const char *str)
 	return retval;
 }
 
-static void send_command(int socket, const char *message)
-{
-	while (*message) {
-		int sent;
-		sent = send(socket, message, strlen(message), 0);
-
-		if (sent <= 0) {
-			perror("send");
-			exit(EXIT_FAILURE);
-		}
-		message += sent;
-	}
-}
-
-/* Display output from socket until next newline (may overread) */
-static void read_reply(int socket)
-{
-	int done = 0;
-
-	while (!done) {
-		char buffer[256];
-		int got;
-		int i;
-
-		got = recv(socket, buffer, sizeof(buffer) - 1, 0);
-		if (got < 0)
-			perror("recv");
-		if (got <= 0)
-			break;
-		for (i = 0; i < got; i++)
-			if (buffer[i] == '\0') {
-				done = 1;
-				buffer[i] = '\n';
-			}
-		write(1, buffer, got);
-	}
-}
-
 static void usage(const char *prog, int status)
 {
 	printf("Usage:\n"
@@ -109,71 +74,61 @@ static void usage(const char *prog, int status)
 	exit(status);
 }
 
+#define DBUS_CONTROL "unix:path=/uri/0install/.lazyfs-cache/.control"
+
 static void refresh(const char *site, int force)
 {
-	int control;
-	struct sockaddr_un addr;
-	struct msghdr msg = {0};
-	struct iovec vec[1];
-	char c = '\n';
-	char buffer[CMSG_SPACE(sizeof(struct ucred))];
-	struct cmsghdr *cmsg;
-	struct ucred *cred;
+	DBusConnection *connection;
+	DBusMessage *message, *reply;
+	DBusError error;
 
-	addr.sun_family = AF_UNIX;
-	if (snprintf(addr.sun_path, sizeof(addr.sun_path),
-	     "/uri/0install/.lazyfs-cache/control") >= sizeof(addr.sun_path)) {
-		fprintf(stderr, "Control socket path too long!\n");
-		exit(EXIT_FAILURE);
-	}
-
-	control = socket(AF_UNIX, SOCK_STREAM, AF_UNIX);
-	if (control == -1) {
-		perror("socket");
-		exit(EXIT_FAILURE);
-	}
-	if (connect(control, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+	dbus_error_init(&error);
+	connection = dbus_connection_open(DBUS_CONTROL, &error);
+	if (dbus_error_is_set(&error)) {
 		fprintf(stderr,
-			"Can't connect to Zero Install helper application.\n"
-			"%m\nIs it running?\n");
+			"Can't connect to Zero Install helper application:\n"
+			"%s\nIs zero-install running?\n", error.message);
+		dbus_error_free(&error);
 		exit(EXIT_FAILURE);
 	}
 
-	vec[0].iov_base = &c;
-	vec[0].iov_len = 1;
-
-	msg.msg_name = NULL;
-	msg.msg_namelen = 0;
-	msg.msg_iov = vec;
-	msg.msg_iovlen = 1;
-	msg.msg_control = buffer;
-	msg.msg_controllen = sizeof(buffer);
-	msg.msg_flags = 0;
-
-	cmsg = CMSG_FIRSTHDR(&msg);
-	cmsg->cmsg_level = SOL_SOCKET;
-	cmsg->cmsg_type = SCM_CREDENTIALS;
-	cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
-
-	cred = (struct ucred *) CMSG_DATA(cmsg);
-	cred->pid = getpid();
-	cred->uid = getuid();
-	cred->gid = getgid();
-
-	msg.msg_controllen = cmsg->cmsg_len;
-	
-	
-	if (sendmsg(control, &msg, 0) != 1) {
-		perror("sendmsg");
+	message = dbus_message_new(force
+			? "net.sourceforge.zero-install.Refresh"
+			: "net.sourceforge.zero-install.Rebuild", NULL);
+	if (!message) {
+		fprintf(stderr, "Out of memory\n");
+		exit(EXIT_FAILURE);
+	}
+	if (!dbus_message_append_args(message, DBUS_TYPE_STRING, site,
+				 DBUS_TYPE_INVALID)) {
+		fprintf(stderr, "Out of memory\n");
 		exit(EXIT_FAILURE);
 	}
 
+	reply = dbus_connection_send_with_reply_and_block(connection, message,
+				5 * 60 * 1000, &error);
+	dbus_message_unref(message);
+	if (reply && dbus_set_error_from_message(&error, reply)) {
+		dbus_message_unref(reply);
+		reply = NULL;
+	}
+
+	if (!reply) {
+		fprintf(stderr, "%s: %s\n", error.name, error.message);
+		dbus_error_free(&error);
+		exit(EXIT_FAILURE);
+	}
+
+	printf("OK\n");
+	dbus_message_unref(reply);
+#if 0
 	send_command(control, force ? "REFRESH " : "REBUILD ");
 
 	send_command(control, site);
 	send_command(control, "\n");
 
 	read_reply(control);
+#endif
 }
 
 static int uptodate(const char *path, time_t mtime)

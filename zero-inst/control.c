@@ -51,6 +51,7 @@ static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 			 DBusError *error, int force);
 
 #define SERVER_SOCKET "unix:path=/uri/0install/.lazyfs-cache/.control"
+#define DBUS_Z_NS "net.sourceforge.zero-install"
 
 static void remove_watch(DBusWatch *watch, void *data)
 {
@@ -113,14 +114,55 @@ static void dispatch_status_function(DBusConnection *connection,
 	dbus_connection_ref(connection);
 }
 
+static void send_task_start(DBusConnection *connection, Task *task)
+{
+	DBusMessage *message;
+
+	assert(task->str);
+	assert(task->child_task->str);
+
+	message = dbus_message_new(DBUS_Z_NS ".NewTask", NULL);
+
+	if (message &&
+	    dbus_message_append_args(message,
+			DBUS_TYPE_STRING, task->str,
+			DBUS_TYPE_STRING, task->child_task->str,
+			DBUS_TYPE_INT64, task->child_task->size) &&
+	    dbus_connection_send(connection, message, NULL)) {
+		/* OK */
+	} else {
+		error("Out of memory");
+	}
+
+	if (message)
+		dbus_message_unref(message);
+
+}
+
+static void dbus_monitor(DBusConnection *connection, DBusError *error)
+{
+	Task *task;
+	unsigned long uid;
+
+	if (!dbus_connection_get_unix_user(connection, &uid)) {
+		error("Can't get UID");
+		return;
+	}
+
+	for (task = all_tasks; task; task = task->next) {
+		if ((task->type == TASK_CLIENT || task->type == TASK_KERNEL) &&
+		    task->child_task && task->uid == uid) {
+			send_task_start(connection, task);
+		}
+	}
+}
+
 static DBusHandlerResult message_handler(DBusMessageHandler *handler,
 	DBusConnection *connection, DBusMessage *message, void *user_data)
 {
 	DBusMessage *reply = NULL;
 	DBusError error;
 	const char *name = dbus_message_get_name(message);
-
-	printf("[ message '%s' ]\n", name);
 
 	dbus_error_init(&error);
 
@@ -134,8 +176,16 @@ static DBusHandlerResult message_handler(DBusMessageHandler *handler,
 				DBUS_TYPE_STRING, "Hi",
 				DBUS_TYPE_INVALID))
 			goto err;
-	} else if (strcmp(name, "net.sourceforge.zero-install.Refresh") == 0) {
+	} else if (strcmp(name, DBUS_Z_NS ".Refresh") == 0) {
 		dbus_refresh(connection, message, &error, 1);
+		if (dbus_error_is_set(&error))
+			goto err;
+	} else if (strcmp(name, DBUS_Z_NS ".Rebuild") == 0) {
+		dbus_refresh(connection, message, &error, 0);
+		if (dbus_error_is_set(&error))
+			goto err;
+	} else if (strcmp(name, DBUS_Z_NS ".Monitor") == 0) {
+		dbus_monitor(connection, &error);
 		if (dbus_error_is_set(&error))
 			goto err;
 	} else {

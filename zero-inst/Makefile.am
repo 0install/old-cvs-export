@@ -22,6 +22,7 @@ zero_install_SOURCES = zero-install.c support.c fetch.c control.c index.c \
 
 INCLUDES = `pkg-config --cflags libxml-2.0 dbus-1`
 zero_install_LDFLAGS = `pkg-config --libs libxml-2.0 dbus-1`
+0refresh_LDFLAGS = `pkg-config --libs libxml-2.0 dbus-1`
 
 install-exec-local:
 	make uninstall-local

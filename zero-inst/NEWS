@@ -6,6 +6,8 @@ Changes since 0.1.15:
 
 * The helper now runs as a daemon, with output going to syslog.
 
+* 0refresh and other programs now use DBUS to communicate with zero-install.
+
 Changes since 0.1.14:
 
 * Removed unused expat include (spotted by Stuart Langridge).
