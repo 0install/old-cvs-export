@@ -11,9 +11,7 @@ myexecbin_PROGRAMS = 0run
 sbin_PROGRAMS = zero-install
 initd_SCRIPTS = 0install
 
-SUBDIRS = Linux
-
-EXTRA_DIST = Linux/lazyfs.c Linux/lazyfs.h Linux/compat20.h Linux/Makefile.in Technical 0test.py test_cases.py 0install.in
+EXTRA_DIST = Technical 0test.py test_cases.py 0install.in
 DISTCHECK_CONFIGURE_FLAGS = --with-user=zeroinst --with-distcheck
 
 zero_install_SOURCES = zero-install.c support.c fetch.c control.c index.c \
@@ -26,25 +24,31 @@ INCLUDES = `pkg-config --cflags dbus-1`
 zero_install_LDFLAGS = `pkg-config --libs dbus-1` -lexpat
 0refresh_LDFLAGS = `pkg-config --libs dbus-1`
 
-install-exec-local:
-	make uninstall-local
-	[ -n "${ROOT_PREFIX}" ] || make install-real
+install-exec-local: uninstall-local
+	@[ -n "${ROOT_PREFIX}" ] || make install-real
+
+uninstall-local:
+	@[ -n "${ROOT_PREFIX}" ] || make uninstall-real
 
 install-real:
+	@echo
+	@echo Creating directories...
 	[ -d /uri ] || mkdir /uri
 	[ -d /uri/0install ] || mkdir /uri/0install
 	rm -f /uri/0http /uri/http
 	[ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst
 	chown "${HELPER_USER}" /var/cache/zero-inst
-	echo "lazyfs	/uri/0install	lazyfs@COMMA_VERSION@	/var/cache/zero-inst	0 0" >> ${FSTAB}
-	echo "Mounting Zero Install filesystem"
-	[ ! -L /uri/0install/.lazyfs-cache ] || (echo "Already mounted!"; exit 1)
-	mount /uri/0install
+	@echo
+	@echo Updating ${FSTAB}...
+	echo "lazyfs	/uri/0install	lazyfs@LAZYFS_VERSION@	/var/cache/zero-inst	0 0" >> ${FSTAB}
+	@echo
+	@echo Stopping any previous version...
+	@${initddir}/0install stop 2>/dev/null || echo "(not yet running)"
+	@[ ! -L /uri/0install/.lazyfs-cache ] || umount -l /uri/0install
 
-uninstall-local:
-	if [ -z "${ROOT_PREFIX}" ]; then \
-	  grep -v "^lazyfs[ 	]*/uri" "${FSTAB}" > "${FSTAB}.new" && \
-	  mv "${FSTAB}.new" "${FSTAB}"; fi
+uninstall-real:
+	grep -v "^lazyfs[ 	]*/uri" "${FSTAB}" > "${FSTAB}.new" && \
+	mv "${FSTAB}.new" "${FSTAB}"
 
 0install: 0install.in config.status
 	sed "s:\@zero-install\@:${sbindir}/zero-install:" $(srcdir)/0install.in | \

@@ -1,7 +1,9 @@
 AC_INIT(zero-install.c)
 AM_INIT_AUTOMAKE(zero-install, 0.1.20)
-AM_CONFIG_HEADER(Linux/config.h)
 AC_PROG_MAKE_SET
+
+LAZYFS_VERSION=0d1d20
+AC_SUBST(LAZYFS_VERSION)
 
 AC_PROG_CC
 
@@ -39,7 +41,7 @@ else
 fi
 ])
 
-dnl When doing 'make distcheck', use $prefix/lib for kernel module.
+dnl When doing 'make distcheck', use $prefix/bin for /bin, etc.
 AC_ARG_WITH(distcheck,,
 	[ROOT_PREFIX='$(prefix)'],
 	[ROOT_PREFIX=''])
@@ -63,21 +65,6 @@ if [[ ! -d "$INITDIR" ]]; then
   exit 1
 fi
 
-dnl Check for directory with kernel source... (from ALSA)
-AC_MSG_CHECKING(for directory with kernel source)
-AC_ARG_WITH(kernel,
-  [  --with-kernel=dir       give the directory with kernel sources]
-  [                        [/usr/src/linux]],
-  KERNELDIR="$withval",
-  if test -d "/lib/modules/`uname -r`/build" -o -L "/lib/modules/`uname -r`/build"; then
-    KERNELDIR="/lib/modules/`uname -r`/build"
-  else
-    KERNELDIR="/usr/src/linux"
-  fi
-)
-AC_MSG_RESULT($KERNELDIR)
-AC_SUBST(KERNELDIR)
-
 AC_MSG_CHECKING(for user to run helper as)
 AC_ARG_WITH(user,
   [  --with-user=user       run helper application as 'user'],
@@ -100,43 +87,6 @@ if ! id "$HELPER_USER" > /dev/null; then
   exit 1
 fi
 
-dnl Check for kernel version...
-AC_MSG_CHECKING(for kernel headers)
-if ! test -r "$KERNELDIR/include/linux/version.h"; then
-  cat << EOF
-
-
-The file $KERNELDIR/include/linux/version.h does not exist.
-Please, install the package with full kernel sources for your distribution
-or use --with-kernel=dir option to specify another directory with kernel
-sources (default is /usr/src/linux). Note: this error could also mean
-that you haven't built the kernel yet.
-EOF
-  exit 1
-fi
-AC_MSG_RESULT(OK)
-
-AC_MSG_CHECKING(for kernel series)
-if [[ -f "$KERNELDIR/include/linux/compat.h" ]]; then
-  KERNEL_TYPE=Linux_2_6
-else
-  KERNEL_TYPE=Linux_2_4
-fi
-AC_MSG_RESULT($KERNEL_TYPE)
-AC_SUBST(KERNEL_TYPE)
-COMMA_VERSION=`echo $VERSION|sed 's/\\./d/g'`
-AC_SUBST(COMMA_VERSION)
-AC_DEFINE_UNQUOTED(COMMA_VERSION, "$COMMA_VERSION", [Escaped version number])
-
-AC_MSG_CHECKING(for platform type)
-ARCH=`uname -m`
-case $ARCH in
-	i?86) ARCH=ix86 ;;
-esac
-PLATFORM=`uname -s`-$ARCH
-AC_MSG_RESULT($PLATFORM)
-AC_DEFINE_UNQUOTED(LAZYFS_PLATFORM, "$PLATFORM", [The canonical name for @PLATFORM@ symlinks])
-
 dnl PKG_REQUIRE(libxml-2.0, 2.0.0)
 echo '  (D-BUS is available from freedesktop.org)'
 PKG_REQUIRE(dbus-1, 0.20)
@@ -146,5 +96,4 @@ AC_CHECK_HEADER(expat.h, [], [
   exit 1
 ])
 
-AC_OUTPUT(Makefile \
-	  Linux/Makefile)
+AC_OUTPUT(Makefile)

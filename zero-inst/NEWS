@@ -1,3 +1,6 @@
+* Moved 'Linux' subdirectory to its own module, allowing for separate
+  development.
+
 * Subsites are now supported. Give the host as, eg, "my.domain#~user" to
   0build. This will fetch the index from http://my.domain/~user/...
 

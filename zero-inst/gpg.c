@@ -1,3 +1,5 @@
+#include <ctype.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -15,6 +17,22 @@
 
 #define MATCH(x) (strncmp(buffer, x, sizeof(x) - 1) == 0)
 
+/* Code is a string in the form "%xx". Returns the character it expands
+ * to, or -1 if code is invalid.
+ */
+static int unescape(const char *code) {
+	char buf[3];
+
+	if (*code == '%' && isxdigit(code[1]) && isxdigit(code[2])) {
+		buf[0] = code[1];
+		buf[1] = code[2];
+		buf[2] = '\0';
+		return strtol(buf, NULL, 16);
+	}
+
+	return -1;
+}
+
 static int ok_for_site(const char *email, const char *site)
 {
 	int domain_len;
@@ -30,12 +48,23 @@ static int ok_for_site(const char *email, const char *site)
 		return 0;
 	email += sizeof("<0install@") - 1;
 
-	if (strncmp(email, site, domain_len) != 0)
-		return 0;
+	while (*email && email[0] != '>' && site) {
+		if (*email == '%') {
+			int value = unescape(email);
+			if (value == -1)
+				return 0;	/* Invalid escape sequence */
+			if (value != *site)
+				return 0;	/* Value doesn't match */
+			email += 2;
+		} else {
+			if (*email != *site)
+				return 0;
+			email++;
+		}
+		site++;
+	}
 
-	email += domain_len;
-
-	return email[0] == '>' && email[1] == '\n';
+	return *email == '>' && email[1] == '\n' && *site == '\0';
 }
 
 /* Check that ./<leafname> is signed by ./index.xml.sig, whose public key

@@ -390,6 +390,7 @@ static void got_archive(Task *task, const char *err)
 			free(dir);
 		}
 	} else {
+		/* XXX: maybe the index to too old? force a refresh... */
 		error("Failed to fetch archive (%s)", task->str);
 	}
 

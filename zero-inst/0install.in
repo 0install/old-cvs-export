@@ -8,6 +8,12 @@ test -f "@zero-install@" || exit 0
 case "$1" in
   start)
     echo Starting zero-install...
+    if [ -L /uri/0install/.lazyfs-cache ]; then
+      echo "(/uri/0install already mounted)"
+    else
+      echo "(mounting /uri/0install)"
+      mount /uri/0install || echo 'Mount failed!'
+    fi
     SHELL=/bin/sh su "@helper_user@" -p -c "@zero-install@"
     ;;
   stop)
