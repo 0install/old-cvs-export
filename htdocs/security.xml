@@ -237,10 +237,10 @@ all users trust the administrator's judgement, any piece of software can be
 </p>
 
 <p>
-Zero Install can do this, because users specify some software to run by its URI
+Zero Install can do this because users specify some software to run by its URL
 (Internet address). There is no question of a user asking to run 'gimp' and
 having to decide which program named 'gimp' they mean; they explicitly ask for
-'http://www.gimp.org/gimp-1.2' (though, as explained elsewhere, the user
+<b>gimp.org/gimp-1.2</b> (though, as explained elsewhere, the user
 interface may not present it quite like this).
 </p>
 
@@ -275,10 +275,16 @@ browser does with a named web page. However, there are some issues with this:
 <ul>
 <li><p>To speed things up, we may choose to get the software from a mirror
 (a computer with a copy of the program which happens to be closer to us).
-Can we trust the mirror?</p></li>
+Can we trust the mirror to provide a faithful copy of the original?</p></li>
 
 <li><p>The computer serving the software could have been broken into, and the
 software replaced with a trojaned version.</p></li>
+
+<li><p>How can we be sure that replies from <b>gimp.org</b> actually come
+from that machine, and not from another machine that intercepted the message on
+its way?</p>
+</li>
+
 </ul>
 
 <p>
@@ -320,6 +326,13 @@ who it says it is, and it doesn't check that they're trust-worthy, but it
 trust-worthy in the past is from the same people as before.
 </p>
 
+<p>
+In the future, Zero Install may be able to use <a href="http://www.onlamp.com/pub/a/onlamp/2004/10/14/dnssec.html?page=2">DNSSEC</a> to get the initial
+trusted key. Here, your computer starts with the keys of the root DNS
+servers and a chain of trust is established from DNS server to DNS server,
+and from the final DNS server to the host's public key.
+</p>
+
 <h3>Extra security from distributions</h3>
 
 <p>
@@ -331,21 +344,6 @@ service; since the system will only work if both the key provider and the
 software provider use the same key, the worst that malicious key providers can
 do is to prevent genuine software from installing (but can't install malicious
 software themselves).
-</p>
-
-<p>
-Distributions can also provide users with notification and key-update
-services, allowing RedHat, for example, to prevent their users from
-running software from a particular cracked site until the issue is resolved
-(to protect users who've never accessed the site before, or in the extreme
-case that the site's secret key has been compromised).
-</p>
-
-<p>
-Imagine this: whenever the zero-install daemon wants to download from a new
-site, it first asks zero-install.sourceforge.net for the site's key. This
-web service will return the current key (or download it if it's not known).
-Then your system never needs to trust new sites.
 </p>
 
 <h3>Web-of-trust and pathname hashes</h3>
@@ -429,7 +427,7 @@ and virtual machines. Any changes made will only affect the virtual machine.
 </p>
 
 <p>
-Third, and perhaps simplest, the system administrator can create a 'sandbox'
+Thirdly, and perhaps simplest, the system administrator can create a 'sandbox'
 UID for testing software. Any user can log in as 'testing' and try programs
 out, safe in the knowledge that no important data is saved as that UID.
 </p>
@@ -451,20 +449,12 @@ where that could cause problems.
 </p>
 
 <p>
-There are various types of exploit that can be launched against a computer
-system. A <strong>local exploit</strong> is where one of the users of the
-computer gets access to something they shouldn't (such as the ability to
-modify another user's files). A <strong>remote exploit</strong> allows
-someone elsewhere on the Internet to get access to the machine.
-</p>
-
-<p>
 Systems which offer a service (such as a serving web pages) to the outside
 world may allow remote exploits if buggy. You could set up a web server, go on
 holiday for a week, and return to find the machine compromised. Zero Install
-does not listen for incoming connections, so this kind of attack is not
-possible. Zero Install only talks to other machines at the request of a user
-on the computer itself.
+does <i>not</i> listen for incoming connections, so this kind of attack
+is not possible. Zero Install only talks to other machines at the request of a
+user on the computer itself.
 </p>
 
 <p>
