@@ -7,7 +7,6 @@
 <li><a href="support.html">Mailing list</a></li>
 <li><a href="http://sourceforge.net/pm/?group_id=76468">Task list</a></li>
 <li><a href="http://sourceforge.net/tracker/?group_id=76468&amp;atid=547191">Bug tracker</a></li>
-<li><a href="http://slashdot.org/~tal197/journal/53077">On-line discussion</a></li>
 </ul>
 
 <h2>Introduction</h2>
@@ -155,5 +154,12 @@ get to.
 <p>More technical readers might want to read the
 <a href="technical.html">technical details</a> page.
 </p>
+
+<h3>Articles about Zero Install</h3>
+<ul>
+<li><a href="http://slashdot.org/~Sanity/journal/47655">Package Management in the untimate operating system</a></li>
+<li><a href="http://ed.puddingbowl.org/archives/001198.html">Ed Heil's Weblog</a></li>
+</ul>
+
 
 </html>

@@ -248,4 +248,33 @@ you just can't download any new stuff until you restart it, but everything
 else continues to work.
 </p>
 
+<h3>Upstream authors can't be trusted to provide decent quality software!</h3>
+
+<p>
+Traditionally, a lot of the QA work that goes on in open source software is done
+by distributions (such as Debian). They take the `upstream' code from the software
+authors, and then provide a packaged version to their users. There are then two classes
+of bugs to worry about: upstream bugs and packaging bugs. Since it's not usually clear
+to users which bugs are in which catagory, they tend to report all bugs to the packagers,
+who often then fix even upstream bugs in their own packages.
+</p>
+
+<p>
+The effect of this is that distribution-provided packages are often more reliable than
+upstream ones (since upstream don't get to hear about many of the bugs), and different
+distributions have fixed different bugs, with no coordination between them. With Zero
+Install, bugs get fixed upstream. So, the 'Debian developer' who currently fixes Gimp
+bugs would still do the same job, but as a 'Gimp developer' instead. Thus, the fixes
+would benefit everyone, not just Debian users.
+</p>
+
+<p>
+Of course, the other reason why packages may be different to the upstream versions is
+because upstream is slow to respond, uninterested or known to be careless about quality.
+In this case, a Zero Install packager can provide a fixed version from their own site
+and get other people to link to that. The advantage here is that, again, everyone benefits
+(anyone can choose to run <tt>/uri/0install/debian.org/gimp.org/gimp</tt> instead of
+<tt>/uri/0install/gimp.org/gimp</tt> if they want, not just Debian users).
+</p>
+
 </html>
