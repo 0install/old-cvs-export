@@ -19,6 +19,8 @@ if len(sys.argv) > 1 and sys.argv[1] == '--read-hello':
 		print "IOError"
 	sys.exit()
 
+os.system('sync')	# Just in case we crash the kernel ;-)
+
 prog_name = os.path.abspath(sys.argv[0])
 
 if os.getuid() == 0:
