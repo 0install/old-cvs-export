@@ -216,7 +216,7 @@ The <a href="http://www.autopackage.org">Autopackage</a> project is working
 on these issues; see their FAQ for a detailed look at the problems faced.
 </p>
 
-<h3>What happens if there are two programs which may not be run simultaneuosly
+<h3>What happens if there are two programs which may not be run simultaneously
 for some reason?</h3>
 <p>
 Running and installing are separate. In Debian, for example, installing some
