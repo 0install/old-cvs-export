@@ -4,6 +4,18 @@ from xml import dom
 from xml.dom import minidom
 import os, sys
 import stat
+import md5
+
+if len(sys.argv) != 2:
+	print >>sys.stderr, "Usuage: 0build <targetdir>/<target>\n" \
+		"Copy ./<target> to <targetdir>/<target>, as a 0install " \
+		"accessible hierarchy."
+	raise SystemExit
+target = sys.argv[1]
+
+if not target.startswith('/'):
+	print >>sys.stderr, "Must give an absolute pathname"
+	raise SystemExit
 
 ZERO_NS = 'http://zero-install.sf.net'
 
@@ -53,6 +65,15 @@ def add_files(node, files):
 		nl(node)
 		node.appendChild(f.toxml(doc))
 
+def md5sum(path):
+	m = md5.new()
+	f = file(path)
+	while 1:
+		data = f.read(1000)
+		if not data: break
+		m.update(data)
+	return m.hexdigest()
+
 def make_group(parent, dir, files, archive):
 	if not files: return
 
@@ -62,12 +83,17 @@ def make_group(parent, dir, files, archive):
 	parent.appendChild(group)
 	add_files(group, files)
 
-	archive_path = os.path.join(dir, archive)
+	archive_path = os.path.join(target, dir, archive)
 	os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive_path,
 		'-C', dir, '--'] + [f.leaf for f in files])
+
+	info = os.lstat(archive_path)
+	
 	nl(group)
 	child = doc.createElementNS(ZERO_NS, 'archive')
 	child.appendChild(doc.createTextNode(archive))
+	child.setAttributeNS(None, 'size', str(info.st_size))
+	child.setAttributeNS(None, 'MD5sum', md5sum(archive_path))
 	group.appendChild(child)
 	nl(group, False)
 
@@ -101,17 +127,18 @@ def do_dir(dir):
 			assert i.type in ('file', 'exec')
 			files.append(i)
 	
-	make_group(root, dir, meta, '.0inst-meta.tgz')
-	make_group(root, dir, files, '.0inst-files.tgz')
+	tdir = os.path.join(target, dir)
+	if not os.path.isdir(tdir):
+		os.makedirs(tdir)
+
+	make_group(root, dir, meta, '0inst-meta.tgz')
+	make_group(root, dir, files, '0inst-files.tgz')
 	if misc:
 		add_files(root, misc)
 	
 	nl(root, False)
-	doc.writexml(file(os.path.join(dir, '.0inst.xml'), 'w'))
+	doc.writexml(file(os.path.join(tdir, '.0inst.xml'), 'w'))
 
-dirs = sys.argv[1:]
-if dirs:
-	for d in dirs:
-		do_dir(d)
-else:
-	do_dir('.')
+leaf = os.path.basename(target)
+target = os.path.dirname(target)
+do_dir(leaf)
