@@ -1,13 +1,10 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-- -----BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
 <?xml version='1.0'?>
 <interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
 	   uri='http://0install.net/2005/interfaces/injector-gui'
-	   last-modified='1110044819'
+	   last-modified='1110924926'
 	   main='0launch-gui'>
   <name>Injector-GUI</name>
   <summary>Graphical interface for the injector</summary>
@@ -19,7 +16,7 @@ Hash: SHA1
     <requires interface='http://0install.net/2005/interfaces/injector'>
       <!-- Package structure changed between 0.2 and 0.3, so try both paths... -->
       <environment name='PYTHONPATH' insert=''/>
-      <environment name='PYTHONPATH' insert='zeroinstall/injectory'/>
+      <environment name='PYTHONPATH' insert='zeroinstall/injector'/>
     </requires>
     <implementation version='0.2' id='sha1=efec372a590c092d40c3d8503e5dc3db94f25225' stability='testing'>
       <archive size='9939' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.2.tgz' extract='injector-gui-0.2'/>
@@ -28,17 +25,10 @@ Hash: SHA1
     <!-- <implementation version='0.3' id='/home/talex/Projects/injector/injector-gui/head' stability='developer'/> -->
   </group>
 </interface>
-- -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.0 (GNU/Linux)
-
-iD8DBQFCN12nrgeCgFmlPMERAh4fAJ90Bwl5SijO14yNDhZpRy7lH7v06gCcDMyY
-2voBp0H0eIGrxpVl9AAjS+0=
-=+iYS
-- -----END PGP SIGNATURE-----
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCN16KrgeCgFmlPMERApj0AJ9/7/F8d/HRpP4IecQEOO07MtHSlgCgiyIc
-wkRKYQNOSChV5Iiw3U4baPQ=
-=UZog
+iD8DBQFCN18ergeCgFmlPMERAu3ZAJwPQZMkkqRq2IuD3wECQhM01OmHcwCfRctR
+RzjnpPcM6PtBzyamtMIR10Q=
+=Q5pE
 -----END PGP SIGNATURE-----
