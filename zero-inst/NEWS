@@ -1,3 +1,5 @@
+* If the PID file can't be created, give the filename in the error message.
+
 * Fix 0refresh so it doesn't print OK before displaying error messages
   (Wayne Scott).
 

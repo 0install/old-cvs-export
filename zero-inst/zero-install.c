@@ -394,10 +394,10 @@ static void create_pid_file(pid_t child)
 	free(pid_file);
 	return;
 err:
+	error("Creating PID file '%s': %m "
+		"(unable to create zero-install.pid file!)", pid_file);
 	if (pid_file)
 		free(pid_file);
-	error("Creating PID file: %m "
-		"(unable to create zero-install.pid file!)");
 	exit(EXIT_FAILURE);
 }
 
