@@ -181,6 +181,12 @@ Starting ZeroProgress...
 Ready and waiting...
 </pre>
 
+<div class='note'>
+Note that ZeroProgress requires the dbus-glib library, which is supplied as
+part of libdbus. If you're using Debian packages, you need to install the
+<tt>dbus-glib-1</tt> package.
+</div>
+
 <p>
 No windows appear on the screen when you run this, but any futher downloads
 will display a progress box. Note that the GTK library is not yet in
