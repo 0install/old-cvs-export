@@ -1,3 +1,26 @@
 For instructions, see:
 
-http://zero-install.sourceforge.net/
+	http://zero-install.sourceforge.net/
+
+But roughly:
+
+* Create a new 'zeroinst' user (or just reuse your own user ID for testing)
+
+* Install:
+
+	$ ./configure --with-user=zeroinst
+	$ make
+	$ su
+	# make install
+
+* Mount:
+
+	# mount /uri/0install
+
+* Run helper (as 'zeroinst' user). Leave it running...
+
+	$ zero-install
+
+* Explore /uri/0install:
+
+	$ cd /uri/0install/zero-install.sourceforge.net
