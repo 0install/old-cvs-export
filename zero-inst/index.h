@@ -3,7 +3,7 @@ struct _Index {
 	int ref;
 };
 
-Index *parse_index(const char *path);
+Index *parse_index(const char *pathname, int validate);
 void index_foreach(xmlNode *dir,
 		   void (*fn)(xmlNode *item, void *data),
 		   void *data);
@@ -17,4 +17,3 @@ void index_dump(Index *site);
 void index_init(void);
 void index_shutdown(void);
 xmlNode *index_get_root(Index *index);
-int index_valid(Index *index, const char *site);

@@ -432,10 +432,8 @@ static Index *unpack_site_index(const char *site)
 	} else if (gpg_trusted(site) != 1)
 		goto out;
 
-	index = parse_index("index.new");
-	if (!index_valid(index, site)) {
-		index_free(index);
-		index = NULL;
+	index = parse_index("index.new", 1);
+	if (!index) {
 		if (unlink("index.new"))
 			perror("unlink");
 		goto out;
@@ -569,7 +567,7 @@ Index *get_index(const char *path, Task **task, int force)
 	if (force == 0 && stat(index_path, &info) == 0) {
 		Index *index;
 		
-		index = parse_index(index_path);
+		index = parse_index(index_path, 0);
 		if (index) {
 			free(index_path);
 			return index;

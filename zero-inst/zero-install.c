@@ -355,7 +355,7 @@ int main(int argc, char **argv)
 
 	if (0)
 	{
-		Index *index = parse_index("/var/www/0install-index.xml");
+		Index *index = parse_index("/var/www/0install-index.xml", 0);
 		if (index) {
 			index_dump(index);
 			index_free(index);

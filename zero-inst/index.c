@@ -180,8 +180,10 @@ static int dir_valid(xmlNode *dir)
 	return ok;
 }
 
-/* Check index is valid for this site. 0 on error (already reported). */
-int index_valid(Index *index, const char *site)
+/* Check index is valid (doesn't do GPG checks; do that first).
+ * 0 on error (already reported).
+ */
+static int index_valid(Index *index)
 {
 	xmlNode *node;
 	char *path;
@@ -191,9 +193,6 @@ int index_valid(Index *index, const char *site)
 		return 0;
 	}
 	
-	assert(site);
-	assert(!strchr(site, '/'));
-
 	assert(schema);
 
 	if (xmlRelaxNGValidateDoc(schema, index->doc)) {
@@ -208,10 +207,6 @@ int index_valid(Index *index, const char *site)
 		fprintf(stderr,
 			"WARNING: Path attribute must start with '%s'\n",
 			MNT_DIR);
-	} else if (strcmp(path + sizeof(MNT_DIR), site) != 0) {
-		fprintf(stderr,
-			"WARNING: Site '%s' accessed incorrectly as '%s'\n",
-			path + sizeof(MNT_DIR), site);
 	}
 
 	if (!dir_valid(index_get_root(index)))
@@ -223,7 +218,7 @@ int index_valid(Index *index, const char *site)
 /* Load 'pathname' as an XML index file. Returns NULL if document is invalid
  * in any way. Ref-count on return is 1.
  */
-Index *parse_index(const char *pathname)
+Index *parse_index(const char *pathname, int validate)
 {
 	xmlDoc *doc;
 	Index *index;
@@ -239,6 +234,11 @@ Index *parse_index(const char *pathname)
 	}
 	index->doc = doc;
 	index->ref = 1;
+
+	if (validate && !index_valid(index)) {
+		index_free(index);
+		return NULL;
+	}
 
 	return index;
 }
