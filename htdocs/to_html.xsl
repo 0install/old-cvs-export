@@ -57,7 +57,7 @@
       <body>
         <div class='heading' style='border-bottom: 2px dashed black'>
           <h1>The Zero Install system</h1>
-          <p class='author'>Thomas Leonard &lt;<a href="mailto:tal197&#064;users.sourceforge.net">tal197&#064;users.sourceforge.net</a>&gt;</p>
+          <p class='author'>Thomas Leonard &lt;<a href="mailto:tal197 at users.sourceforge.net">tal197 at users.sourceforge.net</a>&gt;</p>
 	  <xsl:call-template name='make-links'/>
         </div>
         <div class='main'>
