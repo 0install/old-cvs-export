@@ -94,7 +94,7 @@ as root, with full power to do anything it likes to the machine. When a Debian
 machine is upgraded (eg, with 'apt-get upgrade'), the administrator is running
 hundreds or thousands of newly downloaded shell scripts as root. And if the
 software isn't in the main Debian archive, this means running software from
-less trusted sources as root. And this is almost completely unnecessarily.
+less trusted sources as root. And this is almost completely unnecessary.
 </p>
 
 <p class='zero'>
