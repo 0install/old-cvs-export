@@ -289,10 +289,109 @@ err:
 	return NULL;
 }
 
-/* Return the dentry for this host. It's parent directory must already have one.
- * If 'dentry' is a directory, then the returned value will also be cached.
- * If the host inode does not yet exist, it sleeps until the helper creates
- * it.
+static struct dentry *get_host_dir_dentry(struct dentry *dentry,
+					  struct dentry *host_dentry)
+{
+	struct dentry *list_dentry;
+	struct dentry *old;
+	struct lazy_de_info *info = (struct lazy_de_info *) dentry->d_fsdata;
+	struct super_block *sb = dentry->d_inode->i_sb;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+
+	/* For directories, we also need to check that the '...' file is OK */
+	down(&host_dentry->d_inode->i_sem);
+	list_dentry = lookup_hash(&sbi->dirlist_qname, host_dentry);
+	up(&host_dentry->d_inode->i_sem);
+
+	if (IS_ERR(list_dentry))
+		return list_dentry;
+	if (!list_dentry->d_inode)
+		goto fetch;
+	if (!S_ISREG(list_dentry->d_inode->i_mode))
+		goto fetch;
+
+	/* '...' is valid */
+
+	/* Cache host_dentry */
+	spin_lock(&fetching_lock);
+	old = info->host_dentry;
+	info->host_dentry = dget(host_dentry);
+	if (old)
+		dput(old);
+	spin_unlock(&fetching_lock);
+
+	return list_dentry;
+fetch:
+	dput(list_dentry);
+	return NULL;
+}
+
+/* Try to open parent_host/dentry.name. If it works, and it has the correct
+ * type, and (for directories) has a '...' file, return it (or the '...').
+ *
+ * Returns NULL if there is no error, but the host does not exist yet, or
+ * if it exists, but is the wrong type of object.
+ */
+static struct dentry *try_get_host_dentry(struct dentry *dentry,
+					  struct dentry *parent_host)
+{
+	struct dentry *host_dentry;
+	mode_t mode, host_mode;
+	struct qstr name = dentry->d_name;
+	struct super_block *sb = dentry->d_inode->i_sb;
+	
+	if (dentry == sb->s_root)
+	{
+		struct lazy_sb_info *sbi = sb->u.generic_sbp;
+		host_dentry = dget(sbi->host_file->f_dentry);
+	}
+	else
+	{
+		down(&parent_host->d_inode->i_sem);
+		host_dentry = lookup_hash(&name, parent_host);
+		up(&parent_host->d_inode->i_sem);
+	}
+
+	if (IS_ERR(host_dentry))
+		return host_dentry;
+
+	if (!host_dentry)
+		BUG();
+
+	if (!host_dentry->d_inode)
+		goto fetch;
+
+	mode = dentry->d_inode->i_mode;
+	host_mode = host_dentry->d_inode->i_mode;
+
+	if (S_ISREG(mode))
+	{
+		if (S_ISREG(host_mode))
+			return host_dentry;	/* File, OK */
+		goto fetch;
+	}
+	else if (S_ISDIR(mode))
+	{
+		struct dentry *list_dentry;
+
+		list_dentry = get_host_dir_dentry(dentry, host_dentry);
+		dput(host_dentry);
+		return list_dentry;
+	}
+
+	BUG();
+
+fetch:
+	/* host_dentry exists, but is negative or the wrong type */
+	dput(host_dentry);
+	return NULL;
+}
+
+/* Return the dentry for this host. It's parent directory must already have
+ * one. If the host inode does not yet exist, it sleeps until the helper
+ * creates it.
+ * If 'dentry' is a directory, then the returned value will be the dentry
+ * of the '...' file. The host_dentry for the directory itself is cached.
  */
 static struct dentry *get_host_dentry(struct dentry *dentry)
 {
@@ -303,7 +402,6 @@ static struct dentry *get_host_dentry(struct dentry *dentry)
 	struct lazy_de_info *parent_info;
 	struct dentry *parent_host;
 	struct lazy_de_info *info = (struct lazy_de_info *) dentry->d_fsdata;
-	struct qstr name = dentry->d_name;
 	int first_try = 1;
 	DECLARE_WAITQUEUE(wait, current);
 
@@ -312,14 +410,12 @@ static struct dentry *get_host_dentry(struct dentry *dentry)
 
 	//printk("get_host_dentry: %ld\n", dentry->d_inode->i_ino);
 
-	if (info->host_dentry)
-		return dget(info->host_dentry);	/* dcached */
-
 	parent = dentry->d_parent;
 	parent_info = (struct lazy_de_info *) parent->d_fsdata;
 	if (!parent_info)
 		BUG();
-	parent_host = parent_info->host_dentry;
+	/* (parent_host can't be NULL, but it can change under us; dget) */
+	parent_host = dget(parent_info->host_dentry);
 	if (!parent_host)
 		BUG();
 
@@ -328,17 +424,13 @@ static struct dentry *get_host_dentry(struct dentry *dentry)
 		int start_fetching = 0;
 		int had_helper = 0;
 
-		host_dentry = info->host_dentry;
+		host_dentry = try_get_host_dentry(dentry, parent_host);
 		if (host_dentry)
-			break;
-		down(&parent_host->d_inode->i_sem);
-		host_dentry = lookup_hash(&name, parent_host);
-		up(&parent_host->d_inode->i_sem);
-		if (IS_ERR(host_dentry))
-			goto out;
-		if (host_dentry->d_inode)
-			break;
-		dput(host_dentry);	/* Negative dentry */
+			goto out;	/* Success or fatal error */
+	
+		/* Doesn't exist, or exists but is the wrong type, or
+		 * missing '...' (for directories).
+		 */
 
 		if (!first_try)
 		{
@@ -394,20 +486,8 @@ static struct dentry *get_host_dentry(struct dentry *dentry)
 		//printk("get_host_dentry: it's us!\n");
 	} while (1);
 
-	if (S_ISDIR(dentry->d_inode->i_mode))
-	{
-		if (!S_ISDIR(host_dentry->d_inode->i_mode))
-			return ERR_PTR(-EIO);
-		set_host_dentry(dentry, host_dentry);
-	}
-	else if (S_ISREG(dentry->d_inode->i_mode))
-	{
-		if (!S_ISREG(host_dentry->d_inode->i_mode))
-			return ERR_PTR(-EIO);
-	}
-	else
-		BUG();
 out:
+	dput(parent_host);
         current->state = TASK_RUNNING;
         remove_wait_queue(&lazy_wait, &wait);
 
@@ -658,7 +738,6 @@ static int ensure_cached(struct dentry *dentry)
 	struct super_block *sb = dentry->d_inode->i_sb;
 	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
 	struct dentry *list_dentry = NULL;
-	struct dentry *host_dentry;
 	struct file *ddd_file;
 	int err;
 
@@ -671,26 +750,9 @@ static int ensure_cached(struct dentry *dentry)
 	if (!sbi || !sbi->host_file)
 		BUG();
 
-	host_dentry = get_host_dentry(dentry);
-	if (IS_ERR(host_dentry))
-		return PTR_ERR(host_dentry);
-
-	/* Try to find the '...' file */
-	down(&host_dentry->d_inode->i_sem);
-	list_dentry = lookup_hash(&sbi->dirlist_qname, host_dentry);
-	up(&host_dentry->d_inode->i_sem);
-
+	list_dentry = get_host_dentry(dentry);
 	if (IS_ERR(list_dentry))
 		return PTR_ERR(list_dentry);
-
-	/* We got a dentry, but it might be negative */
-
-	if (!list_dentry->d_inode || !S_ISREG(list_dentry->d_inode->i_mode))
-	{
-		dput(list_dentry);
-		printk("No '...' directory listing\n");
-		return -EIO;	/* TODO: Fetch listing! */
-	}
 
 	if (list_dentry == info->list_dentry)
 	{
@@ -1033,9 +1095,10 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 		return -EINVAL;
 
 	add_wait_queue(&helper_wait, &wait);
-	current->state = TASK_INTERRUPTIBLE;
 	do {
 		struct lazy_de_info *info = NULL;
+
+		current->state = TASK_INTERRUPTIBLE;
 
 		spin_lock(&fetching_lock);
 		if (!list_empty(&to_helper)) {
