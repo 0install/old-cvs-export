@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <html xmlns="http://www.w3.org/1999/xhtml">
 
-<h2>Zero Install security</h2>
+<h2>Zero Install security overview</h2>
 
 <p>
 This page discusses some of the security issues relating to Zero Install.
@@ -13,7 +13,38 @@ and trusted 'core' system, and make sure that the rest of the system can grow
 without introducing additional security problems.
 </p>
 
-<h3>Security on Unix-type systems</h3>
+<h3>System security key points (design)</h3>
+<ul>
+<li>No downloaded software is ever run as root, or as any user except the one
+who asked to run it.</li>
+<li>The system is fully protected from software users 'install'.</li>
+<li>Users are fully protected from each other.</li>
+<li>Zero Install performs checks to try to detect when a remote server has
+been compromised. This only works when upgrading software, not when using it
+for the first time.</li>
+</ul>
+
+<h3>System security key points (implementation)</h3>
+<ul>
+<li>Zero Install contains a very small kernel module, which is the only
+(new) vector for a possible root-compromise.</li>
+<li>A smaller helper runs as a separate user. If compromised, it would
+allow trojaning of software run via Zero Install, but not of the system
+itself.</li>
+<li>Zero Install does not listen for incoming connections (any attack
+must be initiated by a local user, intentionally or otherwise).</li>
+</ul>
+
+<h3>User security key points</h3>
+<ul>
+<li>Anyone can run any software they please, without endangering anyone
+but themselves.</li>
+<li>A user running a malicious program can still lose their own data, but
+Zero Install makes it easier to use other techniques to solve this separate
+problem.</li>
+</ul>
+
+<h2>Security on Unix-type systems</h2>
 
 <p>
 On Unix-type systems, such as Linux, each piece of software runs with a
@@ -36,6 +67,8 @@ they like, including messing with other user's files and programs and even
 changing Linux itself. Therefore, we try to run as little software
 as possible as root.
 </p>
+
+<h2>Zero Install security in detail</h2>
 
 <h3>Installing as different users</h3>
 
@@ -337,7 +370,7 @@ write permission on `~/.config/openoffice.org', without any risk that it
 could mess up another application's preferences.
 </p>
 
-<h3>Conclusions</h3>
+<h2>Conclusions</h2>
 
 <p>
 We have seen that Zero Install can provide a much more secure environment
