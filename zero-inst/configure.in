@@ -82,10 +82,14 @@ fi
 AC_MSG_RESULT($HELPER_USER)
 AC_SUBST(HELPER_USER)
 
-if ! id "$HELPER_USER" > /dev/null; then
-  echo "User '$HELPER_USER' does exist!"
-  exit 1
+[
+if [ x"$ROOT_PREFIX" = x ]; then
+  if ! id "$HELPER_USER" > /dev/null; then
+    echo "User '$HELPER_USER' does exist!"
+    exit 1
+  fi
 fi
+]
 
 dnl PKG_REQUIRE(libxml-2.0, 2.0.0)
 echo '  (D-BUS is available from freedesktop.org)'
