@@ -19,6 +19,8 @@
 	 * Linux to test it)
 	 */
 
+/* TODO: Locking. */
+
 /* See the 'Technical' file for details. */
 
 #include <linux/module.h>   /* Needed by all modules */
@@ -88,11 +90,22 @@ static struct dentry_operations lazyfs_dentry_ops;
 static struct file_operations lazyfs_file_operations;
 static struct file_operations lazyfs_helper_operations;
 static struct file_operations lazyfs_handle_operations;
+static struct inode_operations lazyfs_link_operations;
 
 static int ensure_cached(struct dentry *dentry);
 
 /* A list of dentries which are waiting for a host */
 static LIST_HEAD(pending_helper);
+
+static void
+lazyfs_put_inode(struct inode *inode)
+{
+	if (S_ISLNK(inode->i_mode))
+	{
+		if (inode->u.generic_ip)
+			kfree(inode->u.generic_ip);
+	}
+}
 
 static void
 lazyfs_release_dentry(struct dentry *dentry)
@@ -126,7 +139,8 @@ static struct dentry *new_dentry(struct super_block *sb,
 				 const char *leaf,
 				 mode_t mode,
 				 loff_t size,
-				 time_t mtime)
+				 time_t mtime,
+				 struct qstr *link_target)
 {
 	struct dentry *new = NULL;
 	struct inode *inode = NULL;
@@ -135,6 +149,7 @@ static struct dentry *new_dentry(struct super_block *sb,
 	inode = new_inode(sb);
 	if (!inode)
 		goto err;
+	inode->u.generic_ip = NULL;
 
 	inode->i_mode = mode | 0444;	/* Always give read */
 	inode->i_nlink = 1;
@@ -148,8 +163,22 @@ static struct dentry *new_dentry(struct super_block *sb,
 		inode->i_op = &lazyfs_dir_inode_operations;
 		inode->i_fop = &lazyfs_dir_operations;
 	}
-	else
+	else if (S_ISREG(mode))
 		inode->i_fop = &lazyfs_file_operations;
+	else if (S_ISLNK(mode))
+	{
+		char *target;
+		target = kmalloc(link_target->len + 1, GFP_KERNEL);
+		if (!target)
+			goto err;
+		memcpy(target, link_target->name, link_target->len);
+		target[link_target->len] = '\0';
+		inode->u.generic_ip = target;
+
+		inode->i_op = &lazyfs_link_operations;
+	}
+	else
+		BUG();
 
 	if (parent_dentry)
 	{
@@ -258,13 +287,13 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sb->u.generic_sbp = sbi;
 
 	sb->s_root = new_dentry(sb, NULL, "/", S_IFDIR | 0111, 0,
-			sbi->host_file->f_dentry->d_inode->i_mtime);
+			sbi->host_file->f_dentry->d_inode->i_mtime, NULL);
 	if (!sb->s_root)
 		goto err;
 	set_host_dentry(sb->s_root, sbi->host_file->f_dentry);
 
 	sbi->helper_dentry = new_dentry(sb, sb->s_root, ".lazyfs-helper",
-			0, 0, CURRENT_TIME);
+			S_IFREG, 0, CURRENT_TIME, NULL);
 	sbi->helper_dentry->d_inode->i_fop = &lazyfs_helper_operations;
 	sbi->helper_dentry->d_inode->i_mode = S_IFREG | 0600;
 	sbi->have_helper = 0;
@@ -627,6 +656,23 @@ restart:
 	shrink_dcache_parent(dentry);
 }
 
+static inline int
+has_changed(struct inode *i, mode_t mode, size_t size, time_t time,
+	    struct qstr *link_target)
+{
+	if (i->i_mode != mode || i->i_size != size || i->i_mtime != time)
+		return 1;
+
+	if (S_ISLNK(mode))
+	{
+		char *old = i->u.generic_ip;
+		return strncmp(old, link_target->name, link_target->len)
+			|| strlen(old) != link_target->len;
+	}
+
+	return 0;
+}
+
 /* The file list for a directory has changed.
  * Update it by parsing the new list of contents read from '...'.
  */
@@ -656,6 +702,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		struct dentry *existing;
 		mode_t mode = 0444;
 		struct qstr name;
+		struct qstr link_target;
 		off_t size;
 		time_t time;
 
@@ -685,6 +732,23 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		name.name = listing;
 		name.len = strlen(name.name);
 		listing += name.len + 1;
+		if (!name.len)
+			goto bad_list;
+
+		if (listing == end + 1)
+			goto bad_list;	/* Last line not terminated */
+
+		if (S_ISLNK(mode))
+		{
+			link_target.name = listing;
+			link_target.len = strlen(link_target.name);
+			listing += link_target.len + 1;
+			if (!link_target.len)
+				goto bad_list;
+		}
+		else
+			link_target.len = 0;
+		
 		if (listing == end + 1)
 			goto bad_list;	/* Last line not terminated */
 
@@ -693,24 +757,22 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		if (existing && existing->d_inode)
 		{
 			struct inode *i = existing->d_inode;
-			if (i->i_mode != mode || i->i_size != size ||
-			    i->i_mtime != time)
+			if (has_changed(i, mode, size, time, &link_target))
 			{
 				remove_dentry(existing);
 				new_dentry(sb, dir, name.name,
-					   mode, size, time);
+					   mode, size, time, &link_target);
 			}
 			else
 			{
-				struct lazy_de_info *info =
-					(struct lazy_de_info *)
-						existing->d_fsdata;
+				struct lazy_de_info *info = existing->d_fsdata;
 				info->may_delete = 0;
 			}
 			dput(existing);
 		}
 		else
-			new_dentry(sb, dir, name.name, mode, size, time);
+			new_dentry(sb, dir, name.name, mode, size, time,
+					&link_target);
 	}
 
 	sweep_marked_children(dir);
@@ -727,7 +789,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 bad_list:
 	unlock_kernel();
 
-	printk("lazyfs: '...' file is invalid\n");
+	printk("lazyfs: '%s/...' file is invalid\n", dir->d_name.name);
 	return -EIO;
 }
 
@@ -989,12 +1051,14 @@ lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	struct dentry *this;
 	struct dentry *last = file->f_dentry->d_inode->i_sb->s_root;
 	size_t start_count = count;
+	int err;
 
 	if (file->f_dentry == last)
 	{
 		if (count < 1)
 			return -ENAMETOOLONG;
-		copy_to_user(buffer, "/", 1);
+		err = copy_to_user(buffer, "/", 1);
+		if (err) return err;
 		return 1;
 	}
 
@@ -1009,14 +1073,16 @@ lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
 
 		if (count < 1)
 			return -ENAMETOOLONG;
-		copy_to_user(buffer, "/", 1);
+		err = copy_to_user(buffer, "/", 1);
+		if (err) return err;
 		count--;
 		buffer++;
 
 		if (this->d_name.len > count)
 			return -ENAMETOOLONG;
 
-		copy_to_user(buffer, this->d_name.name, this->d_name.len);
+		err = copy_to_user(buffer, this->d_name.name, this->d_name.len);
+		if (err) return err;
 		buffer += this->d_name.len;
 		count -= this->d_name.len;
 
@@ -1025,7 +1091,8 @@ lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
 
 	if (count < 1)
 		return -ENAMETOOLONG;
-	copy_to_user(buffer, "\0", 1);
+	err = copy_to_user(buffer, "\0", 1);
+	if (err) return err;
 	buffer++;
 	count--;
 
@@ -1045,6 +1112,7 @@ send_to_helper(char *buffer, size_t count, struct dentry *dentry)
 	char number[20];
 	int len = dentry->d_name.len;
 	int fd;
+	int err = 0;
 
 	printk("Sending '%s' to helper\n", dentry->d_name.name);
 
@@ -1072,9 +1140,9 @@ send_to_helper(char *buffer, size_t count, struct dentry *dentry)
 
 	fd_install(fd, file);
 
-	copy_to_user(buffer, number, len + 1);
+	err = copy_to_user(buffer, number, len + 1);
 
-	return len + 1;
+	return err ? err : len + 1;
 }
 
 static int
@@ -1143,7 +1211,7 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	int err = 0;
 	DECLARE_WAITQUEUE(wait, current);
 
-	if (count < 20)
+	if (count < 4)
 		return -EINVAL;
 
 	add_wait_queue(&helper_wait, &wait);
@@ -1165,7 +1233,6 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 		{
 			struct dentry *dentry = info->dentry;
 
-			//printk("Handle '%s'\n", dentry->d_name.name);
 			err = send_to_helper(buffer, count, dentry);
 
 			if (err < 0)
@@ -1259,6 +1326,30 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 }
 
 static int
+lazyfs_link_readlink(struct dentry *dentry, char *buf, int bufsize)
+{
+	char *target = dentry->d_inode->u.generic_ip;
+	int len;
+	int err, copy_err;
+
+	if (!target)
+		BUG();
+
+	len = strlen(target);
+	if (len > bufsize)
+	{
+		err = -ENAMETOOLONG;
+		len = bufsize;
+	}
+	else
+		err = len;
+
+	copy_err = copy_to_user(buf, target, len);
+
+	return copy_err ? copy_err : err;
+}
+
+static int
 lazyfs_file_open(struct inode *inode, struct file *file)
 {
 	struct dentry *dentry = (struct dentry *) file->f_dentry;
@@ -1307,6 +1398,7 @@ lazyfs_file_release(struct inode *inode, struct file *file)
 static struct super_operations lazyfs_ops = {
 	statfs:		lazyfs_statfs,
 	put_super:	lazyfs_put_super,
+	put_inode:	lazyfs_put_inode,
 };
 
 static struct inode_operations lazyfs_dir_inode_operations = {
@@ -1322,6 +1414,10 @@ static struct file_operations lazyfs_helper_operations = {
 static struct file_operations lazyfs_handle_operations = {
 	read:		lazyfs_handle_read,
 	release:	lazyfs_handle_release,
+};
+
+static struct inode_operations lazyfs_link_operations = {
+	readlink:	lazyfs_link_readlink,
 };
 
 static struct file_operations lazyfs_file_operations = {

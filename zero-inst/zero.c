@@ -141,6 +141,21 @@ static void child_handle(int fd)
 				ent->d_name);
 
 			fputc('\0', ddd);
+
+			if (S_ISLNK(i.st_mode))
+			{
+				char target[4096];
+				int got;
+				got = readlink(full, target, sizeof(target) - 1);
+				if (got < 0)
+				{
+					perror("readlink");
+					return;
+				}
+				target[got] = '\0';
+				fputs(target, ddd);
+				fputc('\0', ddd);
+			}
 		}
 		
 		fclose(ddd);
@@ -166,6 +181,17 @@ static void handle_fd(int fd)
 	}
 }
 
+static void child_died(int signum)
+{
+	int child;
+	while ((child = waitpid(-1, NULL, WNOHANG)))
+	{
+		if (child == -1)
+			return;
+		printf("Another one dies!\n");
+	}
+}
+
 int main(int argc, char **argv)
 {
 	const char *mount_point = "/uri";
@@ -181,7 +207,7 @@ int main(int argc, char **argv)
 		act.sa_flags = 0;
 		sigaction(SIGINT, &act, NULL);
 
-		act.sa_handler = SIG_IGN;
+		act.sa_handler = child_died;
 		sigemptyset(&act.sa_mask);
 		act.sa_flags = 0;
 		sigaction(SIGCHLD, &act, NULL);
@@ -197,6 +223,9 @@ int main(int argc, char **argv)
 		printf("waiting\n");
 
 		got = read(helper, &number, sizeof(number));
+		if (got == -1 && errno == EINTR)
+			continue;
+		printf("[ got %d ]\n", got);
 		if (got <= 0)
 		{
 			if (got < 0)
