@@ -42,11 +42,11 @@ int gpg_trusted(const char *site)
 	 * a trust path to it.
 	 * If we have no trusted_key, we blindly trust whatever key is used.
 	 */
-	char *trusted_key = NULL;//"01685F11607BB2C6";
 	char *command;
 	FILE *out;
 	int trusted = 0;
 	char current_key[17];
+	int have_trusted_key = 0;
 
 	/* TODO: escape it somehow */
 	assert(strchr(site, '\'') == NULL);
@@ -60,6 +60,8 @@ int gpg_trusted(const char *site)
 	/* Try to get the key we used last time */
 	{
 		FILE *old_key;
+		char *trusted_key = NULL;
+
 		old_key = fopen("trusted_key", "r");
 		if (old_key) {
 			current_key[16] = '\0';
@@ -75,18 +77,22 @@ int gpg_trusted(const char *site)
 				fprintf(stderr, "Old key corrupted! "
 					"Skipping security check!\n");
 		}
-	}
 
-	if (trusted_key) {
-		command = build_string("gpg " GPG_OPTIONS
-			" --status-fd 1"
-			" --trusted-key %s"
-			" --verify index.xml.sig index.new", trusted_key);
-		//printf("[ trusting %s ]\n", trusted_key);
-	} else {
-		command = build_string("gpg " GPG_OPTIONS
-			" --status-fd 1"
-			" --verify index.xml.sig index.new");
+		have_trusted_key = trusted_key != NULL;
+
+		if (trusted_key) {
+			command = build_string("gpg " GPG_OPTIONS
+				" --status-fd 1"
+				" --trusted-key %s"
+				" --verify index.xml.sig index.new",
+				trusted_key);
+
+			free(trusted_key);
+		} else {
+			command = build_string("gpg " GPG_OPTIONS
+				" --status-fd 1"
+				" --verify index.xml.sig index.new");
+		}
 	}
 
 	out = popen(command, "r");
@@ -121,7 +127,8 @@ int gpg_trusted(const char *site)
 		if (MATCH("[GNUPG:] TRUST_ULTIMATE\n") ||
 		    MATCH("[GNUPG:] TRUST_FULLY\n") ||
 		    MATCH("[GNUPG:] TRUST_MARGINAL\n") ||
-		    (MATCH("[GNUPG:] TRUST_UNDEFINED\n") && !trusted_key)) {
+		    (MATCH("[GNUPG:] TRUST_UNDEFINED\n") &&
+		     		!have_trusted_key)) {
 			FILE *new;
 
 			trusted = 1;
@@ -145,7 +152,7 @@ int gpg_trusted(const char *site)
 		return 0;
 	}
 	
-	if (trusted_key)
+	if (have_trusted_key)
 		fprintf(stderr, "New index is signed OK -- trusting\n");
 	else 
 		fprintf(stderr, "Blindly trusting key for new site\n");
