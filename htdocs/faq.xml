@@ -210,7 +210,7 @@ refresh, the link will now point to 1.2.4 and that will be fetched on
 demand.</p>
 <p>
 If a program relies on a bug fix in libfoo-1.2.6 then it can check that
-'latest-1.2.x' points to that version or later, and force a refresh if
+>'latest-1.2.x' points to that version or later, and force a refresh if
 not.
 </p>
 
@@ -255,7 +255,7 @@ Traditionally, a lot of the QA work that goes on in open source software is done
 by distributions (such as Debian). They take the `upstream' code from the software
 authors, and then provide a packaged version to their users. There are then two classes
 of bugs to worry about: upstream bugs and packaging bugs. Since it's not usually clear
-to users which bugs are in which catagory, they tend to report all bugs to the packagers,
+to users which bugs are in which category, they tend to report all bugs to the packagers,
 who often then fix even upstream bugs in their own packages.
 </p>
 
@@ -275,6 +275,17 @@ In this case, a Zero Install packager can provide a fixed version from their own
 and get other people to link to that. The advantage here is that, again, everyone benefits
 (anyone can choose to run <tt>/uri/0install/debian.org/gimp.org/gimp</tt> instead of
 <tt>/uri/0install/gimp.org/gimp</tt> if they want, not just Debian users).
+</p>
+
+<h3>What was the inspiration for Zero Install?</h3>
+
+<p>
+Several things. <a href="http://www.coda.cs.cmu.edu/">CODA</a> and
+<a href="http://www.gedanken.demon.co.uk/wwwoffle/">wwwoffle</a>
+for showing that caching network filesystems can still work when
+off-line. <a href="http://w3.org">The W3C</a> for using URIs for namespaces.
+Not <a href="http://java.sun.com/products/javawebstart/">Java Web Start</a>,
+though, because I had never heard of it when I started the project.
 </p>
 
 </html>
