@@ -1,0 +1,20 @@
+Lazyfs is a kernel module needed by the Zero Install system.
+
+You will need:
+
+- A C compiler (eg, gcc).
+- Headers for your kernel (Linux 2.4 or 2.6).
+
+To install lazyfs:
+
+	$ ./configure
+	$ make
+	$ su
+	# make install
+
+Then install zero install from:
+
+	http://zero-install.sourceforge.net/
+
+More detailed instructions for installing Lazyfs can be found on the same
+site.

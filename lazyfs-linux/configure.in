@@ -27,7 +27,6 @@ AC_ARG_WITH(kernel,
 AC_MSG_RESULT($KERNELDIR)
 AC_SUBST(KERNELDIR)
 
-dnl Check for kernel version...
 AC_MSG_CHECKING(for kernel headers)
 if ! test -r "$KERNELDIR/include/linux/version.h"; then
   cat << EOF
@@ -43,8 +42,20 @@ EOF
 fi
 AC_MSG_RESULT(OK)
 
+CFLAGS="-I$KERNELDIR/include"
 AC_MSG_CHECKING(for kernel version)
-KERNEL_VERSION=`grep UTS_RELEASE "$KERNELDIR/include/linux/version.h" | sed 's/.*"\(.*\)".*/\1/'`
+AC_TRY_RUN([
+#include <linux/version.h>
+#include <stdio.h>
+int main(void) {
+fputs(UTS_RELEASE, fopen("conftestversion", "w"));
+exit(0);
+}
+],
+[KERNEL_VERSION=`cat conftestversion`],
+AC_MSG_ERROR(Failed to compile test program.),
+AC_MSG_ERROR(Can't cross-compile! Need kernel version.))
+
 AC_MSG_RESULT($KERNEL_VERSION)
 AC_SUBST(KERNEL_VERSION)
 
