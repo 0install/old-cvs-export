@@ -220,7 +220,7 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	task_steal_index(task, get_index(path, &task->child_task, 0));
 	if (task->child_task) {
 		assert(!task->index);
-		control_notify_start(task);
+		control_notify_update(task);
 		return;		/* Download in progress */
 	}
 

@@ -78,7 +78,7 @@ static void dispatch_status_function(DBusConnection *connection,
 	list_prepend(&dispatches, connection);
 }
 
-static void send_task_start(DBusConnection *connection, Task *task)
+static void send_task_update(DBusConnection *connection, Task *task)
 {
 	DBusMessage *message;
 
@@ -87,7 +87,7 @@ static void send_task_start(DBusConnection *connection, Task *task)
 
 	task->notify_on_end = 1;
 
-	message = dbus_message_new(DBUS_Z_NS ".NewTask", NULL);
+	message = dbus_message_new(DBUS_Z_NS ".UpdateTask", NULL);
 
 	if (message &&
 	    dbus_message_append_args(message,
@@ -135,8 +135,6 @@ static void dbus_monitor(DBusConnection *connection, DBusError *error)
 		return;
 	}
 
-	printf("[ monitor ]\n");
-
 	if (list_contains(&monitors, connection)) {
 		dbus_set_error_const(error, "Error", "Already monitoring!");
 		return;
@@ -147,7 +145,7 @@ static void dbus_monitor(DBusConnection *connection, DBusError *error)
 	for (task = all_tasks; task; task = task->next) {
 		if ((task->type == TASK_CLIENT || task->type == TASK_KERNEL) &&
 		    task->child_task && task->uid == uid) {
-			send_task_start(connection, task);
+			send_task_update(connection, task);
 		}
 	}
 }
@@ -234,7 +232,6 @@ static void new_dbus_client(DBusServer *server,
 	 * (for errors)
 	 */
 
-	printf("[ new client ]\n");
 	if (!dbus_connection_set_watch_functions(new_connection,
 				add_watch, remove_watch, NULL,
 				NULL, NULL))
@@ -305,7 +302,7 @@ static void dispatch_one(DBusConnection *connection, Task *unused)
 
 		dbus_connection_disconnect(connection);
 
-		printf("[ error ]\n");
+		/* error */
 	}
 }
 
@@ -421,7 +418,7 @@ static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 	}
 
 	if (task->child_task) {
-		control_notify_start(task);
+		control_notify_update(task);
 	} else {
 		dbus_set_error_const(error, "Error",
 				"Failed to start fetching index");
@@ -472,7 +469,7 @@ static void may_notify(DBusConnection *connection, Task *task)
 	if (uid != task->uid)
 		return;
 
-	send_task_start(connection, task);
+	send_task_update(connection, task);
 }
 
 static void may_notify_end(DBusConnection *connection, Task *task)
@@ -487,18 +484,12 @@ static void may_notify_end(DBusConnection *connection, Task *task)
 	send_task_end(connection, task);
 }
 
-void control_notify_start(Task *task)
-{
-	fprintf(stderr, "control_notify_start\n");
-	list_foreach(&monitors, may_notify, 0, task);
-}
 void control_notify_update(Task *task)
 {
-	fprintf(stderr, "control_notify_update\n");
+	list_foreach(&monitors, may_notify, 0, task);
 }
 void control_notify_end(Task *task)
 {
-	fprintf(stderr, "control_notify_end (%s)\n", task->str);
 	list_foreach(&monitors, may_notify_end, 0, task);
 }
 

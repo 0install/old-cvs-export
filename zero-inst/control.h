@@ -4,6 +4,5 @@ void control_check_select(fd_set *rfds, fd_set *wfds);
 void control_drop_clients(void);
 void control_push_updates(void);
 
-void control_notify_start(Task *task);
 void control_notify_update(Task *task);
 void control_notify_end(Task *task);
