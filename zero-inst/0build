@@ -7,59 +7,107 @@ import stat
 
 ZERO_NS = 'http://zero-install.sf.net'
 
-def do_dir(path):
-	print "Building index file in", path
+def nl(node, more = True):
+	if more:
+		indent = 0
+	else:
+		indent = -2
+	n = node
+	while n.parentNode:
+		indent += 2
+		n = n.parentNode
+	node.appendChild(node.ownerDocument.createTextNode('\n' + ' ' * indent))
+
+class Item:
+	def __init__(self, path):
+		self.path = path
+		info = os.lstat(path)
+		self.mtime = info.st_mtime
+		self.size = info.st_size
+		self.leaf = os.path.basename(path)
+
+		if stat.S_ISDIR(info.st_mode):
+			self.type = 'dir'
+			do_dir(path)
+		elif stat.S_ISREG(info.st_mode):
+			if info.st_mode & 0111:
+				self.type = 'exec'
+			else:
+				self.type = 'file'
+		elif stat.S_ISLNK(info.st_mode):
+			self.type = 'link'
+			self.target = os.readlink(path)
+	
+	def toxml(self, doc):
+		node = doc.createElementNS(ZERO_NS, self.type)
+		node.setAttributeNS(None, 'size', str(self.size))
+		node.setAttributeNS(None, 'mtime', str(self.mtime))
+		if self.type == 'link':
+			node.setAttributeNS(None, 'target', self.target)
+		node.appendChild(doc.createTextNode(self.leaf))
+		return node
+
+def add_files(node, files):
+	doc = node.ownerDocument
+	for f in files:
+		nl(node)
+		node.appendChild(f.toxml(doc))
+
+def make_group(parent, dir, files, archive):
+	if not files: return
+
+	nl(parent)
+	doc = parent.ownerDocument
+	group = doc.createElementNS(ZERO_NS, 'group')
+	parent.appendChild(group)
+	add_files(group, files)
+
+	archive_path = os.path.join(dir, archive)
+	os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive_path,
+		'-C', dir, '--'] + [f.leaf for f in files])
+	nl(group)
+	child = doc.createElementNS(ZERO_NS, 'archive')
+	child.appendChild(doc.createTextNode(archive))
+	group.appendChild(child)
+	nl(group, False)
+
+def do_dir(dir):
+	print "Building index file in", dir
 	os.spawnvp(os.P_WAIT, 'python2.2',
-		['python2.2', '/usr/lib/python2.2/compileall.py', '-l', path])
+		['python2.2', '/usr/lib/python2.2/compileall.py', '-l', dir])
 	doc = minidom.Document()
 	root = doc.createElementNS(ZERO_NS, 'directory')
 	doc.appendChild(root)
 	root.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
 
-	def nl(indent):
-		root.appendChild(doc.createTextNode('\n' + ' ' * indent))
+	meta = []	# .DirIcon, etc
+	misc = []	# Symlinks and dirs (no content)
+	files = []	# Regular files and executables not in meta
 
-	files = []
-
-	for item in os.listdir(path):
+	for item in os.listdir(dir):
 		if item == 'CVS':
 			continue
 		if item.startswith('.0inst'):
 			continue
 		if item.endswith('.swp') or item.endswith('.swo'):
 			continue
-		#print "Adding", item
-		full = os.path.join(path, item)
-		info = os.lstat(full)
-		if stat.S_ISDIR(info.st_mode):
-			child = doc.createElementNS(ZERO_NS, 'dir')
-			do_dir(full)
-		elif stat.S_ISREG(info.st_mode):
-			if info.st_mode & 0111:
-				child = doc.createElementNS(ZERO_NS, 'exec')
-			else:
-				child = doc.createElementNS(ZERO_NS, 'file')
-			files.append(item)
-		elif stat.S_ISLNK(info.st_mode):
-			child = doc.createElementNS(ZERO_NS, 'link')
-			child.setAttributeNS(None, 'target', os.readlink(full))
-		nl(2)
-		child.appendChild(doc.createTextNode(item))
-		child.setAttributeNS(None, 'size', str(info.st_size))
-		child.setAttributeNS(None, 'mtime', str(info.st_mtime))
-		root.appendChild(child)
 
-	if files:
-		archive = os.path.join(path, '.0inst-contents.tgz')
-		os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive,
-			'-C', path, '--'] + files)
-		archive = doc.createElementNS(ZERO_NS, 'archive')
-		archive.appendChild(doc.createTextNode('.0inst-contents.tgz'))
-		nl(2)
-		root.appendChild(archive)
-
-	nl(0)
-	doc.writexml(file(os.path.join(path, '.0inst.xml'), 'w'))
+		i = Item(os.path.join(dir, item))
+		if i.type in ('dir', 'link'):
+			misc.append(i)
+		elif item in ('.DirIcon', 'AppInfo.xml'):
+			meta.append(i)
+		else:
+			assert i.type in ('file', 'exec')
+			files.append(i)
+	
+	make_group(root, dir, meta, '.0inst-meta.tgz')
+	make_group(root, dir, files, '.0inst-files.tgz')
+	if misc:
+		add_files(root, misc)
+	
+	nl(root, False)
+	doc.writexml(file(os.path.join(dir, '.0inst.xml'), 'w'))
 
 dirs = sys.argv[1:]
 if dirs:
