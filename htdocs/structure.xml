@@ -12,6 +12,7 @@
   <item base="injector" label="Injector">
     <item base='injector-packagers' label='Packagers'/>
     <item base='injector-design' label='Design'/>
+    <item base='injector-security' label='Security'/>
   </item>
   <item base="security" label="Security"/>
   <item base="support" label="Support"/>

@@ -36,7 +36,7 @@ $ gpg --recv-key --keyserver www.keyserver.net 59A53CC1
 </li>
 </ul>
 
-<div class='note'>The current release (0.6) is an experimental release. It may
+<div class='note'>The current release (0.7) is an experimental release. It may
 contain a few bugs.</div>
 
 <p>
@@ -51,7 +51,7 @@ href="http://sourceforge.net/project/showfiles.php?group_id=76468&amp;package_id
 download page</a>, or using wget:
 </p>
 <pre>
-$ <b>wget http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.6.tar.gz.gpg</b>
+$ <b>wget http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.7.tar.gz.gpg</b>
 </pre>
 
 <p>
@@ -60,8 +60,8 @@ you will need later!
 </p>
 
 <pre>
-$ <b>gpg injector-0.6.tar.gz.gpg</b>
-gpg: Signature made Wed 23 Mar 2005 21:32:59 GMT using DSA key ID 59A53CC1
+$ <b>gpg injector-0.7.tar.gz.gpg</b>
+gpg: Signature made Wed 30 Mar 2005 16:24:02 BST using DSA key ID 59A53CC1
 gpg: Good signature from "Thomas Leonard &lt;tal197@users.sourceforge.net&gt;"
 </pre>
 
@@ -70,8 +70,8 @@ Extract the archive, become root, install the injector, and exit from root:
 </p>
 
 <pre>
-$ <b>tar xzf injector-0.6.tar.gz</b>
-$ <b>cd injector-0.6</b>
+$ <b>tar xzf injector-0.7.tar.gz</b>
+$ <b>cd injector-0.7</b>
 $ <b>su</b>
 [ enter root password ]
 # <b>python setup.py install</b>
@@ -79,13 +79,14 @@ $ <b>su</b>
 </pre>
 
 <p>
-You now have a new command: <b>0launch</b>, which takes the URL of a program and runs it.
+You now have two new commands: <b>0launch</b>, which takes the URL of a program and runs it, and
+<b>0alias</b>, which lets you use short names instead of URLs.
 </p>
 
 <h3>Running Edit with the injector</h3>
 
 <p>
-Run 0launch, giving it the URL for the program you want to run, as shown below.
+Run <b>0launch</b>, giving it the URL for the program you want to run, as shown below.
 You will be prompted to confirm that you trust my GPG key.
 </p>
 
@@ -122,15 +123,17 @@ Trusting 92429807C9853C0744A68B9AAE07828059A53CC1
 Currently downloading:
 - http://0install.net/2005/interfaces/injector
 Currently downloading:
-- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.2.tgz
-- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.5.tar.gz
-Adding impl with digest: sha1=efec372a590c092d40c3d8503e5dc3db94f25225
-Adding impl with digest: sha1=ff6ad61795e04d2350c9a39ca357aea7a15ba107
+- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.3.tgz
+- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.7.tar.gz
+Adding impl with digest: sha1=2bd2c2766a45257527116eccf1a298117c4a91e3
+Using GNU tar
+Adding impl with digest: sha1=3e3e94d657d5ced14491b95b20d0be9b7e36d63b
+Using GNU tar
 </pre>
 
 <p>
 The injector selected suitable implementations of the two interfaces (<b>injector-gui</b>
-version 0.2 and <b>injector</b> version 0.5). It then downloaded the archives
+version 0.3 and <b>injector</b> version 0.7). It then downloaded the archives
 from sourceforge, unpacked them, checked that their signatures were correct,
 and moved them into the cache directory.
 </p>
@@ -145,7 +148,7 @@ Once <b>0launch-gui</b> has been fetched, it displays this dialog box:
 </p>
 
 <p style='text-align: center'>
-<img width="408" height="330" src="edit-injector.png"
+<img width="545" height="325" src="edit-injector.png"
      alt="Running Edit with the injector" />
 </p>
 
@@ -174,6 +177,38 @@ the dialog box, use the <b>--gui</b> option:
 
 <pre>
 $ <b>0launch --gui http://rox.sourceforge.net/2005/interfaces/Edit</b>
+</pre>
+
+<h2>Creating an alias</h2>
+
+<p>
+It's annoying to have to keep typing in the full URL for Edit. The <b>0alias</b> command
+can be used to create little shell scripts to start programs easily:
+</p>
+
+<pre>
+$ <b>0alias rox-edit http://rox.sourceforge.net/2005/interfaces/Edit</b>
+Created script '/home/talex/bin/rox-edit'.
+To edit policy: rox-edit --versions
+(note: some shells require you to type 'rehash' now)
+</pre>
+
+<p>
+The command puts the script in the first directory in your $PATH, which must therefore be
+writable. You can now run edit like this:
+</p>
+
+<pre>
+$ <b>rox-edit</b>
+</pre>
+
+<p>
+To get back to the policy box (so you can change which versions of Edit and
+ROX-Lib you want used), run it like this:
+</p>
+
+<pre>
+$ <b>rox-edit --versions</b>
 </pre>
 
 <h2>Policy settings</h2>

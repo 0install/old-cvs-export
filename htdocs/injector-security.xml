@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<h2>The Injector: Security Model</h2>
+
+<p>
+This page describes the injector's security model.
+</p>
+
+<p>
+I've noticed that if you describe a security model with digital signatures
+and GPG keys, people start worrying about all kinds of unlikely theoretical
+exploits. Whereas if you just stick software on the web with no security
+what-so-ever, everyone seems happy to download and use it anyway.
+Still, I'll have a go anyway...
+</p>
+
+<h2>Overview</h2>
+
+<p>
+No-one has the time to verify every line of code in every program they use.
+Yet, we need to use these programs to process our data, and we must guard
+against the possibility that the code we use is malicious. We need methods
+to help ensure that we don't allow malicious code to run, to limit the damage
+it can do if we do run it, and to discover and recover from compromises when
+they do happen.
+</p>
+
+<p>
+Sandboxing is used to restrict what code can do. Linux and similar systems come
+with a simple sandboxing system based on users. The system has a number of
+users, and each user can run whatever software they please. Ideally, it is
+not possible for malicious code executed by one user to damage the system or
+any other user. However, the code can do anything that its user is permitted
+to do (such as to delete all that user's files, or log all the user's
+keystrokes and send them to another computer).
+</p>
+
+<p>
+A second approach is to ensure that only software written by trusted
+individuals is run. This presents two problems: how do we come to trust
+someone to provide reliable software, and how do we know that a particular
+program really came from them?
+</p>
+
+<h2>The Injector's trust model</h2>
+
+<p>
+The basis of the injector's model is the standard multi-user model used by
+Linux. The principle is that the system's responsibility is to protect users
+from each other, and to protect the system from the users. If one user (or
+a program they run) can delete another user's files without permission, then
+that is a problem with the system's security. However, the system is not
+responsible for protecting users from themselves; it is up to users to take
+appropriate measures to prevent the programs they run from damaging their
+own files, for example.
+</p>
+
+<p>
+Of course, the system may itself have bugs. Ideally, the system should be
+upgraded when a problem is found (eg, in the Linux kernel). However, if users
+are using sandboxing to protect themselves from the programs they run then
+this may provide an added layer of protection to the system, assuming the
+users themselves are not malicious.
+</p>
+
+<p>
+Users can protect themselves by using additional sandboxes within their
+own sandboxed user account. A good example of this is User-Mode-Linux, which
+runs a new Linux system within a single user account of a main Linux system.
+The user can use the sub-Linux's security features to restrict what
+applications can do inside it, while the whole sub-Linux system is restricted
+to the user's permissions within the main Linux system. More light-weight
+sandboxes include running JavaScript in a web browser, or running Java
+applications with Java's sandboxing turned on.
+</p>
+
+<p>
+However, good per-user sandboxing is still more of a long-term goal for Linux
+than a practical solution for many programs at the moment. Also, some programs
+really do need full access to the user's files (eg, a file manager). Likewise,
+an email client needs to be able to delete emails, so making sure that software
+is not malicious in the first place is very important.
+</p>
+
+<p>
+When deciding whether to trust a particular programmer, the user will have to
+consult external sources. Distributions typically fill this role (recommending
+certain programs only), and friends, magazines, etc, can provide this
+information too.
+</p>
+
+<p>
+TODO: more...
+</p>
+
+</html>
