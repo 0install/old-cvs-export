@@ -228,6 +228,26 @@ Aug 22 15:35:55 everest zero-install: libdbus 0.20 or 0.21 detected.
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/457">lazyfs kernel module not loaded automatically</a></li>
 </ul>
 
+<p>
+As with lazyfs, users with python and sudo can run the unit-tests:
+</p>
+
+<pre>
+$ <b>python tests/0test.py</b>
+Logging to logfile 'log'
+test01Nothing (__main__.TestSimple) ... ok
+test02Fail (__main__.TestSimple) ... ok
+test03EmptySite (__main__.TestSimple) ... ok
+test04ReadFile (__main__.TestSimple) ... ok
+test05InvalidSites (__main__.TestSimple) ... ok
+test06ValidSites (__main__.TestSimple) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 3.362s
+
+OK
+</pre>
+
 <h2>Testing the installation</h2>
 
 <p>
