@@ -96,7 +96,7 @@ depmod -a
 
 <p>
 This will copy the new lazyfs module under /lib/modules/, and create the /uri
-mount point and the /var/cache/zero-install cache directory. The kernel
+mount point and the /var/cache/zero-inst cache directory. The kernel
 module can handle all cached requests itself, but when the user tries to
 access something that isn't cached, it uses a 'helper' application to fetch
 it. For security reasons, it's better not to run the helper as root. Change
@@ -134,7 +134,16 @@ $ <b>cat /uri/http/zero-install.sf.net/demo/test.txt</b>
 It worked!
 </pre>
 
-<p>OK, now you can try actually <a href="index.html">using it</a>!</p>
+<p>
+You can find some other programs to play with in the demo directory. For
+example, you can open the <a href="http://rox.sf.net/rox_filer.php3">ROX-Filer</a> window shown on the main page using this command:
+</p>
+
+<pre>
+$ <b>rox /uri/http/zero-install.sf.net/demo</b>
+</pre>
+
+<p>Back to the <a href="index.html">main page</a>.</p>
 
 <p style='float: right;'>
 <a href="http://sourceforge.net/projects/zero-install">
