@@ -7,34 +7,6 @@
 A running process is created by combining many different libraries (and other components).
 In the Zero Install world, we have all versions of each library available at
 all times. The problem then is how to choose which versions to use.
-Some examples of ways to choose:
-</p>
-<ul>
-<li>The very latest version.</li>
-<li>The latest version in the cache (eg, when off-line).</li>
-<li>The latest stable version.</li>
-<li>The version recommended by your distribution.</li>
-<li>A version not affected by a known security flaw.</li>
-<li>The version you've always used in the past.</li>
-<li>A development version you are working on yourself.</li>
-</ul>
-<p>
-One way to organise things is to have a component link directly to particular
-versions of the components on which it depends. So, running Memo 2.0.0 might
-always use pygtk-2.0.0 and Python 2.2.0. But we often want to use the same component
-with different versions of its dependencies. For example, when Python 2.2.1
-comes out with bug-fixes, we will want Memo to use it automatically. 
-</p>
-
-<p>
-Zero Install solved this in the past by means of the <b>latest</b> symlinks. Here,
-Memo 2.0.0 uses <b>python.org/latest</b>, which is always a symlink to the latest
-version. But this isn't flexible enough to cope with the list of cases above.
-What if Python 2.2.1 is available, but we'd rather continue with 2.2.0 than
-download it? The <b>0divert</b> command allows the root user to redirect these
-symlinks, but a major goal of Zero Install is to make software use easy without
-involving an administrator. Also, <b>0divert</b> affects all users, whereas we only
-wish to affect one user, or maybe even only one program.
 </p>
 
 <p>
@@ -50,22 +22,97 @@ according to rules specified by the user:
 <h2>Trying it out</h2>
 
 <p>
-A prototype of the injector is available through Zero Install. You can try it out like this:
+A prototype of the injector is available through Zero Install. To try it out, you will need:
+</p>
+
+<ul>
+<li><a href="http://python.org">Python</a> (version 2.3 or later).</li>
+<li><a href="http://www.gnupg.org/">GnuPG</a> (to check the digital signatures).</li>
+<li><a href="http://0install.net/public_key.gpg">My GPG key</a>. You can download and import
+it with:
+<pre>
+$ gpg --recv-key --keyserver www.keyserver.net 59A53CC1
+</pre>
+</li>
+</ul>
+
+<p>
+To run the injector, use the <b>0launch</b> or <b>0launch-gui</b> commands. <b>0launch</b>
+tries to run a program without prompting, while the GUI version asks you to confirm or
+adjust the selected versions. The injector is available through Zero Install, but can also
+be used without it.
+</p>
+
+<h3>Getting the injector using Zero Install</h3>
+<p>
+The injector is on the <b>zero-install.sourceforge.net</b> site. You can access it like this:
+</p>
+<pre>
+$ <b>$ alias 0launch=/uri/0install/zero-install.sourceforge.net/bin/0launch</b>
+$ <b>$ alias 0launch-gui=/uri/0install/zero-install.sourceforge.net/bin/0launch-gui</b>
+</pre>
+
+<h3>Running the GUI without Zero Install</h3>
+<p>
+If you're not using the Zero Install filesystem, you can
+download the injector from <a
+href="http://sourceforge.net/project/showfiles.php?group_id=76468&amp;package_id=146899">the
+download page</a>. You don't need to download <b>0launch-gui</b> manually; you can use
+0launch to get it!
+</p>
+<pre>
+$ <b>wget http://heanet.dl.sourceforge.net/sourceforge/zero-install/injector-0.2.tgz.gpg</b>
+$ <b>gpg injector-0.2.tgz.gpg</b>
+$ <b>tar xzf injector-0.2.tgz</b>
+$ <b>alias 0launch="`pwd`/injector-0.2/0launch-auto"</b>
+$ <b>alias 0launch-gui="0launch http://0install.net/2005/interfaces/injector-gui"</b>
+</pre>
+
+<div class='note'>TODO: This really needs a 'make install'!</div>
+
+<h3>Running Edit with the injector</h3>
+
+<p>
+Run the GUI command, giving it the URL for the program you want to run, as shown below.
+You will be prompted to confirm that you trust my GPG key.
 </p>
 
 <pre>
-$ <b>cd /uri/0install/zero-install.sourceforge.net/testing</b>
-$ <b>./edit-injector</b>
+$ <b>0launch-gui http://rox.sourceforge.net/2005/interfaces/Edit</b>
+Currently downloading:
+- http://0install.net/2005/interfaces/injector-gui
+
+Interface: http://0install.net/2005/interfaces/injector-gui
+The interface is correctly signed with the following keys:
+- Valid signature from 92429807C9853C0744A68B9AAE07828059A53CC1
+Do you want to trust all of these keys to sign interfaces?
+Trust all [Y/N] <b>Y</b>
+Trusting 92429807C9853C0744A68B9AAE07828059A53CC1
+Currently downloading:
+- http://0install.net/2005/interfaces/injector
 </pre>
 
 <p>
-This is a simple shell script that just runs <b>/uri/0install/zero-install.sourceforge.net/bin/injector-gui</b> with Edit's interface (<b>/uri/0install/rox.sourceforge.net/apps/Edit/Edit.xml</b>).
-<b>injector-gui</b> is the interactive graphical version of the injector, which pops up this
+The <b>0launch-gui</b> command actually just invokes the non-graphical <b>0launch</b>
+command, giving it the interface for the GUI
+(<b>http://0install.net/2005/interfaces/injector-gui</b>). <b>0launch</b> downloaded this
+interface and asked you to confirm that you trust software written by me. Then it downloaded
+the archive from sourceforge and unpacked it into the cache directory (after checking that
+its signature was correct).
+</p>
+
+<div class='note'>TODO: Archives are currently unpacked to your home directory, in
+<b>~/.cache/0install.net/implementations/</b>. In future, they will unpack to
+a shared directory under <b>/var/cache</b>, using a setuid helper (which will
+check the cryptographic digest first, of course).</div>
+
+<p>
+<b>0launch-gui</b> is an interactive graphical interface to the injector, which pops up this
 dialog box:
 </p>
 
 <p style='text-align: center'>
-<img width="412" height="290" src="edit-injector.png"
+<img width="408" height="330" src="edit-injector.png"
      alt="Running Edit with the injector" />
 </p>
 
@@ -76,157 +123,62 @@ If you are happy with the selected versions, click on <b>Execute</b> to use run 
 </p>
 
 <p>
-You can affect which versions are chosen by changing your policy. Two aspects of your policy are
-shown in this window: <b>Network use</b> and <b>Help test new versions</b>.
-Click on <b>Help test new versions</b>, and you may see the version numbers increase, as the
-injector chooses newer, less well tested, versions. Note however that you may not see any change
-at all, since there may not be new testing versions available when you try it.
+You can affect which versions are chosen by changing your policy. Three aspects
+of your policy are shown in this window: <b>Network use</b>, <b>Freshness</b>
+and <b>Help test new versions</b>. Click on <b>Help test new versions</b>, and
+you may see the version numbers increase, as the injector chooses newer, less
+well tested, versions. Note however that you may not see any change at all,
+since there may not be new testing versions available when you try it.
 </p>
 
 <p>
-Network use and Help test are not the only policy settings. The rest are per-component, and are
+These are not the only policy settings. The rest are per-component, and are
 accessed by double-clicking on a line in the list. This is described in the following sections.
 </p>
 
-<p>Note that all changes to your policy are saved as soon as you make them. Clicking on <b>Cancel</b>
-will close the window without running the program, but any changes made to the
-policy are not reversed.
+<p>Note that all changes to your policy are saved as soon as you make them.
+Clicking on <b>Cancel</b> will close the window without running the program,
+but any changes made to the policy are not reversed.
 </p>
 
-<h2>Interfaces and Implementations</h2>
-
-<dl>
-<dt>An interface</dt>
-<dd>describes what something does (eg, "Simple text editor").</dd>
-
-<dt>An implementation</dt>
-<dd>is something that does it (eg, Edit-1.9.6 or Edit-1.9.7).</dd>
-</dl>
 <p>
-In Zero Install, both interfaces and implementations are named by
-globally unique paths. For these examples, we will use the convention that the
-interface names a file in the directory containing the implementations. So:
-</p>
-<ul>
-<li><b>/uri/0install/rox.sourceforge.net/apps/Edit/Edit.xml</b> (the interface)</li>
-<li><b>/uri/0install/rox.sourceforge.net/apps/Edit/Edit-1.9.6</b> (an implementation)</li>
-<li><b>/uri/0install/rox.sourceforge.net/apps/Edit/Edit-1.9.7</b> (another implementation)</li>
-</ul>
-<p>
-However, the interface could have implementations in other places, eg:
-</p>
-<ul>
-<li><b>/home/fred/apps/Edit-devel</b></li>
-</ul>
-
-<p>
-When we run a program (like Edit) we need to choose an implementation of every
-interface on which it depends. Then, we need to tell the program where to find
-them all; this process is known as <i>Dependency Injection</i> (or <i>Inversion
-of Control</i>).</p>
-
-<p>
-Both tasks are handled by the program
-<b>/uri/0install/zero-install.sourceforge.net/bin/injector</b>. This takes
-as input an interface and chooses an implementation based on the your policy.
-It then runs the program. For example, this script runs any version of Edit
-(running the script <b>AppRun</b> inside the implementation it chooses):
-</p>
-<pre>
-#!/bin/sh
-exec /uri/0install/zero-install.sourceforge.net/bin/injector /uri/0install/rox.sourceforge.net/apps/Edit/Edit.xml AppRun
-</pre>
-<p>
-The interface path
-(<b>/uri/0install/rox.sourceforge.net/apps/Edit/Edit.xml</b>) is used to
-get the default list of implementations. You can see the information about an interface
-by double-clicking on it in the list of interfaces. For example, double-clicking on <b>Edit</b>
-displays this dialog box:
+When you click on <b>Execute</b>, the injector will start downloading the two chosen
+versions (this time showing the progress in a window, now the GUI is being used):
 </p>
 
 <p style='text-align: center'>
-  <img width="799" height="366" src="edit-properties.png"
+<img width="327" height="144" src="injector-downloading.png"
+     alt="Downloading Edit and ROX-Lib" />
+</p>
+
+<h2>Choosing different versions</h2>
+
+<p>
+The interface URI (<b>http://rox.sourceforge.net/2005/interfaces/Edit</b>) is
+used to get the default list of implementations. You can see the information
+about an interface by double-clicking on it in the list of interfaces. For
+example, double-clicking on <b>Edit</b> displays this dialog box:
+</p>
+
+<p style='text-align: center'>
+  <img width="627" height="345" src="edit-properties.png"
   	alt="Properties of the Edit interface" />
 </p>
 
 <p>
-The information displayed is fetched from the interface XML file. Here is a very simple
-example, listing two implementations of the interface:
+The information displayed is fetched from the interface file, which you can view in
+a web browser if you're interested:
+<a href="http://rox.sourceforge.net/2005/interfaces/Edit">Edit's interface</a>. This is
+a plain-text GPG-signed text file. The injector stores the downloaded interface files
+locally (in <b>~/.config/0install.net/injector/interfaces</b>).
 </p>
 
-<pre><![CDATA[
-<?xml version='1.0'?>
-<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
-	   uri='/uri/0install/rox.sourceforge.net/apps/Edit/Edit.xml'>
-
-  <name>Edit</name>
-  <summary>Simple text editor</summary>
-  <description>
-    Edit is a simple text editor, with a ROX-style user interface.
-    It has drag-and-drop saving, search-and-replace and multi-level undo.
-  </description>
-
-  <implementation version='1.9.6' path='/uri/0install/rox.sourceforge.net/apps/Edit/Edit-1.9.6'/>
-  <implementation version='1.9.7' path='/uri/0install/rox.sourceforge.net/apps/Edit/Edit-1.9.7'/>
-</interface>
-]]></pre>
-
-<p>
-The injector stores the information locally (in <b>~/.config/0install.net/injector/interfaces</b>).
-Information from new versions of the XML file is merged with the cached data when the interface
-is refreshed (which happens when you click on <b>Refresh</b>, or when <b>Network use</b> is set
-to <b>Full</b>).
-</p>
-
-<h2>Versions</h2>
-
-<p>
-An implementation (in the Zero Install sense) is always some particular
-version. In future, we will identify implementations with a cryptographic hash
-of their contents in addition to their version number. Therefore, two releases
-with the same version number are still considered as separate implementations
-if they differ in any way.
-</p>
-
-<p>
-A version is a dot-separated list of integers. Eg "1.2.3". It can be just a
-single number ("1") or a sequence of any number of components ("1.4.2.3").
-Versions are ordered like this:
-</p>
-
-<ul>
-<li>1</li>
-<li>1.1</li>
-<li>1.2</li>
-<li>1.2.1</li>
-<li>1.2.1.4</li>
-<li>1.2.2</li>
-<li>3</li>
-</ul>
-
-<p>
-The injector doesn't care about anything other than the sort order (ie, whether
-one version comes before or after another). It is assumed that an
-implementation can be safely replaced by one with a later version number, but
-not with an earlier one. So, if you ask for "1.2.1" then you might get "1.2.2"
-or "1.3" or even "5.7", but not "1.2.0". This is a little different to some
-other systems, where numbers in different places have different meanings.
-</p>
-
-<p>
-Incompatible changes (where a newer version cannot be used in place of an older
-version) to an interface should be handled by creating a new interface. Eg:
-</p>
-
-<ul>
-<li>/uri/0install/gtk.org/gtk/gtk-1.2.xml  (contains 1.2.0, 1.2.1, 1.2.2, ...)</li>
-<li>/uri/0install/gtk.org/gtk/gtk-2.0.xml  (contains 2.0.0, 2.0.1, 2.2.0, 2.4.0, 2.4.1, ...)</li>
-</ul>
+<div class='note'>TODO: Store upstream interfaces in <b>~/.cache</b>, not <b>~/.config</b>.</div>
 
 <h2>Stability</h2>
 
 <p>
-The interface file should also give a stability rating for each implementation. The following
+The interface file also gives a stability rating for each implementation. The following
 levels are allowed:
 </p>
 
@@ -264,7 +216,7 @@ and choosing a new rating from the popup menu. User-set ratings are shown in cap
 <p>
 As you make changes to the policy and ratings, the order of the implementations in the list
 will change. The version at the top is the one that the injector will actually use. In addition
-to the ratings about, you can set the rating to <b>Preferred</b>. Such versions always come first,
+to the ratings above, you can set the rating to <b>Preferred</b>. Such versions always come first,
 unless they're not cached and you are in Off-line mode.
 </p>
 
@@ -275,110 +227,4 @@ second as preferred. This is because when a new version is available, you will w
 become the version at the top of the list, whereas a preferred version will always be first.
 </p>
  
-<h2>Groups</h2>
- 
-<p>
-To avoid specifying the same information multiple times, the &lt;group&gt;
-element can be used. Attributes set on a group are inherited by its child
-elements. 'path' attributes may be relative, in which case they are relative
-to the parent's path. Group may be nested inside other groups to any depth.
-Using groups is simply a short-hand notation. Eg:
-</p>
- 
-<pre><![CDATA[
-  <group path='/uri/0install/rox.sourceforge.net/apps/Edit'>
-    <implementation version='1.9.6' path='Edit-1.9.6'/>
-    <implementation version='1.9.7' path='Edit-1.9.7'/>
-  </group>
-]]></pre>
- 
-<h2>Dependencies</h2>
-
-<p>
-So far, our example XML doesn't mention that Edit needs ROX-Lib (Edit
-will have to find ROX-Lib itself in this case). If we list the
-dependencies of an implementation in its interface file, the injector
-will locate implementations of them too. All information about dependencies is
-handled at the interface level; this is because the same implementation may be
-used in different ways. Also, for software not specially designed for use with
-the injector, it allows us to keep the implementation in its original form.
-</p>
-
-<p>
-This diagram shows some dependencies for Memo (the dotted lines):
-</p>
-
-<p style='text-align: center'>
-<img width="554" height="345" src="depend.png"
-     alt='Interface files give implementations and dependencies' />
-</p>
-
-<p>
-Here is an extension of our previous example which gets the injector to find
-implementations of ROX-Lib and Python:
-</p>
-
-<pre><![CDATA[
-  <group path='/uri/0install/rox.sourceforge.net/apps/Edit'>
-
-    <requires interface='/uri/0install/rox.sourceforge.net/lib/ROX-Lib2/ROX-Lib.xml'>
-      <environment name='PYTHONPATH' insert='python'/>
-    </requires>
-
-    <requires interface='/uri/0install/python.org/python.xml'>
-      <environment name='PATH' insert='bin'/>
-    </requires>
-
-    <implementation version='1.9.6' path='Edit-1.9.6'/>
-    <implementation version='1.9.7' path='Edit-1.9.7'/>
-  </group>
-]]></pre>
-
-<p>
-The &lt;requires&gt; element names an interface which is required by all the implementations
-in this group. 
-The &lt;environment&gt; element inside tells the injector how to make its
-choice known to Edit. In this case, it is by inserting
-<b>/path/of/ROX-Lib-VVV/python</b> to the beginning of <b>PYTHONPATH</b>, and
-<b>/path/of/python-VVV/bin</b> to the beginning of <b>PATH</b>.
-</p>
-
-<p>
-The injector will also examine the dependencies of ROX-Lib and Python
-recursively.
-</p>
-
-<h2>Running the injector on itself</h2>
-
-<p>(this section is just for fun ;-)</p>
-
-<p>
-If you look at the <b>zero-install.sourceforge.net/bin/injector-gui</b> script, you will see that
-it actually runs the non-interactive version of the injector, <b>injector-auto</b>, to find an
-implementation of <b>injector-gui</b>:
-</p>
-
-<pre>
-#!/bin/sh
-/uri/0install/zero-install.sourceforge.net/utils/injector/0.1/injector-auto \
-  /uri/0install/zero-install.sourceforge.net/utils/injector-gui/injector-gui.xml injector-gui "$@"
-</pre>
-
-<p>
-Thus, your policy also affects which version of the GUI you get. If you run <b>injector-gui</b>
-instead of <b>injector-auto</b> then you can use the GUI to set the policy for itself! Eg:
-</p>
-
-<pre>
-/uri/0install/zero-install.sourceforge.net/bin/injector-gui \
-  /uri/0install/zero-install.sourceforge.net/utils/injector-gui/injector-gui.xml injector-gui \
-  /uri/0install/rox.sourceforge.net/apps/Edit/Edit.xml AppRun
-</pre>
-
-<p>
-Here, we run injector-gui, which runs injector-auto to find an implementation of the GUI. This
-is run, and displays the policy for itself. Once you've chosen a version of the GUI, the new
-version is run, and you can use that version to choose a version of Edit.
-</p>
-
 </html>
