@@ -5,7 +5,7 @@ Changes since 0.1.12:
 * New /bin/0run program to be used in scripts, eg:
 	#!/bin/0run example.com/myprog 2003-01-01
 
-* 0refresh can be given an argument to use instead of `pwd`.
+* 0refresh can be given a hostname argument to use instead of using `pwd`.
 
 * New --verbose option for zero-install.
 
