@@ -58,8 +58,8 @@ Add<br/><tt>deb http://www-i1.informatik.rwth-aachen.de/~joachimk debian/</tt>
 <br/>to<br/><tt>/etc/apt/sources.list</tt><br/>and install using apt-get.
 -->
 <p>
-However, version 0.1.11 is rather old and buggy, so I suggest installing from
-the source tarballs below instead.
+However, version 0.1.11 is rather old and buggy, so I <strong>strongly</strong>
+suggest installing from the source tarballs below instead.
 </p>
 </div>
 <!--
@@ -70,13 +70,13 @@ the source tarballs below instead.
 </div>
 -->
 
-<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.14.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.14.tar.gz.sig">GPG Sig</a> ]. Extract it, and
+<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.15.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.15.tar.gz.sig">GPG Sig</a> ]. Extract it, and
 move to the new directory (things you type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.14.tar.gz</b>
-$ <b>cd zero-install-0.1.14</b>
+$ <b>tar xzf zero-install-0.1.15.tar.gz</b>
+$ <b>cd zero-install-0.1.15</b>
 </pre>
 
 <p>
