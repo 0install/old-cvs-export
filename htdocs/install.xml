@@ -17,11 +17,6 @@ part).
 </p>
 
 <div class='note'>
-Note that you need D-BUS version 0.12 or 0.13. The just-released 0.20
-is not yet supported.
-</div>
-
-<div class='note'>
 <h3>Security and stability note</h3>
 <p>
 This software is still under development and has not yet been carefully
@@ -53,7 +48,7 @@ Supported kernels are:
 </p>
 <ul>
 <li> Linux 2.4 series</li>
-<li> Linux 2.6 (tested with 2.6.0-pre7) - <strong>Experimental</strong></li>
+<li> Linux 2.6 series</li>
 </ul>
 <p>
 If you want to port the (small) module to other kernels (BSD, MacOS
@@ -86,15 +81,15 @@ format.
 </div>
 -->
 
-<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.18.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.18.tar.gz.sig">GPG Sig</a> ]
+<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.19.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.19.tar.gz.sig">GPG Sig</a> ]
 (note that the links lead to a list of mirrors).
  Extract it, and move to the new directory (things you
 type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.18.tar.gz</b>
-$ <b>cd zero-install-0.1.18</b>
+$ <b>tar xzf zero-install-0.1.19.tar.gz</b>
+$ <b>cd zero-install-0.1.19</b>
 </pre>
 
 <p>
@@ -150,11 +145,6 @@ $ <b>make</b>
 $ <b>su -c 'make install'</b>
 </pre>
 
-<div class='note'>
-Note that you need D-BUS version 0.12 or 0.13. The just-released 0.20
-is not yet supported.
-</div>
-
 <p>
 This will copy the new lazyfs module under /lib/modules/, and create the
 /uri/0install mount point and the /var/cache/zero-inst cache directory. It will
@@ -175,12 +165,6 @@ Starting zero-install...
 $ <b>tail /var/log/daemon.log</b>
 Oct  5 16:00:16 everest zero-install: Started: using cache directory '/var/cache/zero-inst'
 </pre>
-
-<div class='note'>
-On some systems, running 0install tries to log you in as the zero install
-user instead of running the helper. Try using 'su -p -c' in the 0install
-script file instead of '-s'. Let us know if that helps!
-</div>
 
 <h2>Testing the installation</h2>
 
@@ -250,8 +234,11 @@ Release Date: 27 February 2003
 -->
 
 <p>
-Some example applications can be found in
-<tt>/uri/0install/zero-install.sourceforge.net/demo</tt>.
+This window will then appear:
+</p>
+
+<p style='text-align: center'>
+<img width="443" height="199" src="apps.png" alt="The apps directory"/>
 </p>
 
 <p>

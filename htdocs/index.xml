@@ -33,7 +33,7 @@ title-bar):
 </p>
 
 <p style='text-align: center'>
-<img src='apps.png' width='365' height='152'
+<img width="443" height="199" src="apps.png"
      alt='ROX-Filer window showing Memo application on the remote machine' />
 </p>
 
@@ -45,7 +45,7 @@ needs directly from the remote machines where they're stored:
 </p>
 
 <p style='text-align: center'>
-<img src='progress.png' width='466' height='193'
+<img src='progress.png' width='565' height='235'
      alt='GUI progress indicator' />
 </p>
 
