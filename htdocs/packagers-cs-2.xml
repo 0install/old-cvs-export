@@ -54,8 +54,8 @@ which actually stores the prefix in the created program more care must be taken
 </p>
 
 <p>
-Now we create a symlink for the latest version. We also make a symlink for the binary to let
-people run the latest version easily:
+Now we create a symlink for the latest version. We also make a symlink for the
+main program to let people run the latest version easily:
 </p>
 
 <pre>
@@ -65,10 +65,11 @@ $ ln -s latest-1/bin/scons scons-1
 </pre>
 
 <p>
-The '-1' after latest means the latest version compatible with the scons v1 syntax. If, one day,
-a version of scons comes out which is not backwards compatible we can use a symlink named
-'latest-2'. Then software that needs scons v1 to build will still work in a Zero Install system
-(but not in traditional systems).
+The <b>-1</b> after <b>latest</b> means the latest version compatible with the
+scons v1 syntax. If, one day, a version of scons comes out which is not
+backwards compatible we can use a symlink named <b>latest-2</b>. Then software that
+needs scons v1 to build will still work in a Zero Install system (though not in
+traditional systems).
 </p>
 
 <p>
