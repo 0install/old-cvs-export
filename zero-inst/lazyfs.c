@@ -163,19 +163,8 @@ static LIST_HEAD(pending_helper);
 static void
 lazyfs_put_inode(struct inode *inode)
 {
-	printk("Putting inode %ld\n", inode->i_ino);
-
+	//printk("Putting inode %ld\n", inode->i_ino);
 	return;
-}
-
-static int
-lazyfs_delete_dentry(struct dentry *dentry)
-{
-	/* XXX: Are we supposed to do something here?
-	 * If this method is missing, dentries can't be unhashed.
-	 */
-	printk("Deleting dentry %ld\n", dentry->d_inode->i_ino);
-	return 0;
 }
 
 static void
@@ -191,6 +180,8 @@ lazyfs_release_dentry(struct dentry *dentry)
 	if (!list_empty(&info->to_helper))
 		BUG();
 
+	printk("Putting dentry for '%s'\n", dentry->d_name.name);
+
 	host_dentry = info->host_dentry;
 
 	if (host_dentry)
@@ -199,8 +190,6 @@ lazyfs_release_dentry(struct dentry *dentry)
 				host_dentry->d_inode->i_ino);
 		dput(host_dentry);
 	}
-	else
-		printk("Note: Putting dentry with no host\n");
 
 	dentry->d_fsdata = NULL;
 	kfree(info);
@@ -516,6 +505,8 @@ return i;
 
 static void mark_children_may_delete(struct dentry *dentry)
 {
+	struct super_block *sb = dentry->d_inode->i_sb;
+	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
 	struct list_head *head, *next;
 
 	spin_lock(&dcache_lock);
@@ -531,7 +522,10 @@ static void mark_children_may_delete(struct dentry *dentry)
 		if (d_unhashed(child)||!child->d_inode)
 			continue;
 
-		info->may_delete = 1;
+		if (child != sbi->helper_dentry)
+			info->may_delete = 1;
+		else
+			printk("Don't delete helper!\n");
 	}
 
 	spin_unlock(&dcache_lock);
@@ -637,6 +631,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 			{
 				printk("It's changed!\n");
 				d_delete(existing);
+				dput(existing); /* Yes, twice! */
 				new_dentry(sb, dir, name.name,
 					   mode, size, time);
 			}
@@ -646,8 +641,8 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 					(struct lazy_de_info *)
 						existing->d_fsdata;
 				info->may_delete = 0;
-				dput(existing);	/* Same */
 			}
+			dput(existing);
 		}
 		else
 			new_dentry(sb, dir, name.name, mode, size, time);
@@ -878,7 +873,7 @@ lazyfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 			continue;
 		}
 
-		printk("Got child '%s'\n", child->d_name.name);
+		//printk("Got child '%s'\n", child->d_name.name);
 		file->f_pos++;
 		err = filldir(dirent, child->d_name.name,
 				      child->d_name.len,
@@ -1057,20 +1052,19 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	if (count < 20)
 		return -EINVAL;
 
-	printk("Helper reading...\n");
+	//printk("Helper reading...\n");
 
 	add_wait_queue(&helper_wait, &wait);
 	current->state = TASK_INTERRUPTIBLE;
 	do {
 		struct lazy_de_info *info = NULL;
 
-		printk("Handle list entries...\n");
+		//printk("Handle list entries...\n");
 		spin_lock(&fetching_lock);
 		if (!list_empty(&to_helper)) {
 
 			info = list_entry(to_helper.next,
 					struct lazy_de_info, to_helper);
-			printk("Info = %p\n", info);
 			list_del_init(&info->to_helper);
 		}
 		spin_unlock(&fetching_lock);
@@ -1079,7 +1073,7 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 		{
 			struct dentry *dentry = info->dentry;
 
-			printk("Handle '%s'\n", dentry->d_name.name);
+			//printk("Handle '%s'\n", dentry->d_name.name);
 			err = send_to_helper(buffer, count, dentry);
 
 			if (err < 0)
@@ -1100,7 +1094,6 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 			err = -ERESTARTSYS;
 			goto out;
 		}
-		printk("sched\n");
 		schedule();
 		if (signal_pending(current)) {
 			err = -ERESTARTSYS;
@@ -1261,7 +1254,6 @@ static struct file_operations lazyfs_dir_operations = {
 };
 
 static struct dentry_operations lazyfs_dentry_ops = {
-	d_delete:	lazyfs_delete_dentry,
 	d_release:	lazyfs_release_dentry,
 };
 
