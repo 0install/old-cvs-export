@@ -2,143 +2,243 @@
 
 from xml import dom
 from xml.dom import minidom
+import time
 import os, sys
 import stat
 import md5
 
+ignored_names = ('CVS', '.svn', '.', '..')
+meta_names = ('.DirIcon', 'AppInfo.xml')
+
 if len(sys.argv) != 2:
-	print >>sys.stderr, "Usuage: 0build <targetdir>/<target>\n" \
-		"Copy ./<target> to <targetdir>/<target>, as a 0install " \
-		"accessible hierarchy."
+	print >>sys.stderr, "Usuage: 0build <targetdir>\n" \
+		"The <targetdir>/0install directory will be created/updated.\n"\
+		"This directory should be fetchable as:\n" \
+		"http://your.host/0install\n" \
+		"Then the file ./file will be accessable as\n" \
+		"/uri/http/your.host/file\n\n" \
+		"Eg: 0build /var/www/"
 	raise SystemExit
 target = sys.argv[1]
 
-if not target.startswith('/'):
-	print >>sys.stderr, "Must give an absolute pathname"
+if not os.path.exists(target):
+	print >>sys.stderr, "Target '%s' not found" % target
 	raise SystemExit
 
-ZERO_NS = 'http://zero-install.sf.net'
+ZERO_NS = 'http://zero-install.sourceforge.net'
 
-def nl(node, more = True):
-	if more:
-		indent = 0
-	else:
-		indent = -2
-	n = node
-	while n.parentNode:
-		indent += 2
-		n = n.parentNode
-	node.appendChild(node.ownerDocument.createTextNode('\n' + ' ' * indent))
+archive_dir = os.path.join(target, '0install')
+archive_base = time.strftime('%Y-%b-%d-%H-%M-%S-')
+archive_i = 0
+if not os.path.isdir(archive_dir):
+	print "Creating new directory for archives '%s'" % archive_dir
+	os.mkdir(archive_dir)
+
+def make_archive_path():
+	global archive_i
+	x = 100
+	while x:
+		rel_path = os.path.join('0install',
+				    archive_base + `archive_i` + '.tgz')
+		path = os.path.join(target, rel_path)
+		archive_i += 1
+		if not os.path.exists(path):
+			return path, rel_path
+		x -=1
+	raise Exception("Can't find a free pathname for archive!")
+
+class Archive:
+	def __init__(self, contents, dir):
+		self.dir = dir
+		self.tgz = None
+		self.kids = [File(os.path.join(dir, x)) for x in contents]
+	
+	def __str__(self):
+		kids = '\n'.join(map(str, self.kids)).split('\n')
+		return '\n'.join(["Archive:"] +
+			map(lambda x: '  %s' % x, kids))
+
+	def same_as(self, old):
+		return True
+
+	def get_old_tgz(self, old):
+		# 'old' is an <archive> with the same contents as us.
+		# Set self.tgz to it's href and prevent the old archive
+		# from being deleted. Sets self.tgz on success.
+		for x in old.getElementsByTagNameNS(ZERO_NS, 'mirror'):
+			name = x.getAttributeNS(None, 'href')
+			assert name.startswith('0install/')
+			name = name[9:]
+			break
+		else:
+			print "Warning: old archive had no mirrors!"
+			return
+
+		print "Already archived '%s' as %s" % (self.dir, name)
+
+		if os.path.exists(os.path.join(archive_dir, name)):
+			old_tgz.remove(name)
+			self.tgz = os.path.join('0install', name)
+		else:
+			print "But archive is missing!"
+	
+	def build_tgz(self):
+		assert not self.tgz
+
+		# Find all the previous archives for this directory.
+		# If one has the same files, times and sizes, don't bother
+		# creating a new archive, but use the old one instead.
+		if self.dir == '.':
+			rel_path = '/'
+		else:
+			assert self.dir.startswith('./')
+			rel_path = self.dir[1:]
+		for old in old_archives.get(rel_path, []):
+			if self.same_as(old):
+				self.get_old_tgz(old)
+				if self.tgz:
+					return
+
+		archive_path, self.tgz = make_archive_path()
+		os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive_path,
+			'-C', self.dir, '--'] + [f.name for f in self.kids])
+
+	def add_xml(self, parent):
+		self.build_tgz()
+		node = parent.ownerDocument.createElementNS(ZERO_NS, 'archive')
+		parent.appendChild(node)
+		for k in self.kids:
+			k.add_xml(node)
+		mirror = node.ownerDocument.createElementNS(ZERO_NS, 'mirror')
+		node.appendChild(mirror)
+		mirror.setAttributeNS(None, 'href', self.tgz)
 
 class Item:
-	def __init__(self, path):
-		self.path = path
-		info = os.lstat(path)
-		self.mtime = info.st_mtime
-		self.size = info.st_size
-		self.leaf = os.path.basename(path)
-
-		if stat.S_ISDIR(info.st_mode):
-			self.type = 'dir'
-			do_dir(path)
-		elif stat.S_ISREG(info.st_mode):
-			if info.st_mode & 0111:
-				self.type = 'exec'
-			else:
-				self.type = 'file'
-		elif stat.S_ISLNK(info.st_mode):
-			self.type = 'link'
-			self.target = os.readlink(path)
+	def __init__(self, source, root = False):
+		self.stat = os.lstat(source)
+		if root:
+			self.name = None
+		else:
+			self.name = os.path.basename(source)
+		self.size = self.stat.st_size
+		self.mtime = self.stat.st_mtime
 	
-	def toxml(self, doc):
-		node = doc.createElementNS(ZERO_NS, self.type)
+	def __str__(self):
+		return "%s: %s size=%d mtime=%d" % (self.__class__.__name__,
+				self.name, self.size, self.mtime)
+	
+	def add_xml(self, parent):
+		node = parent.ownerDocument.createElementNS(ZERO_NS, self.type)
 		node.setAttributeNS(None, 'size', str(self.size))
 		node.setAttributeNS(None, 'mtime', str(self.mtime))
-		if self.type == 'link':
-			node.setAttributeNS(None, 'target', self.target)
-		node.appendChild(doc.createTextNode(self.leaf))
-		return node
-
-def add_files(node, files):
-	doc = node.ownerDocument
-	for f in files:
-		nl(node)
-		node.appendChild(f.toxml(doc))
-
-def md5sum(path):
-	m = md5.new()
-	f = file(path)
-	while 1:
-		data = f.read(1000)
-		if not data: break
-		m.update(data)
-	return m.hexdigest()
-
-def make_group(parent, dir, files, archive):
-	if not files: return
-
-	nl(parent)
-	doc = parent.ownerDocument
-	group = doc.createElementNS(ZERO_NS, 'group')
-	parent.appendChild(group)
-	add_files(group, files)
-
-	archive_path = os.path.join(target, dir, archive)
-	os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive_path,
-		'-C', dir, '--'] + [f.leaf for f in files])
-
-	info = os.lstat(archive_path)
+		if self.name:
+			node.setAttributeNS(None, 'name', str(self.name))
+		parent.appendChild(node)
+		self.set_xml(node)
 	
-	nl(group)
-	child = doc.createElementNS(ZERO_NS, 'archive')
-	child.appendChild(doc.createTextNode(archive))
-	child.setAttributeNS(None, 'size', str(info.st_size))
-	child.setAttributeNS(None, 'MD5sum', md5sum(archive_path))
-	group.appendChild(child)
-	nl(group, False)
+	def set_xml(self, node):
+		pass
 
-def do_dir(dir):
-	print "Building index file in", dir
-	os.spawnvp(os.P_WAIT, 'python2.2',
-		['python2.2', '/usr/lib/python2.2/compileall.py', '-l', dir])
-	doc = minidom.Document()
-	root = doc.createElementNS(ZERO_NS, 'directory')
-	doc.appendChild(root)
-	root.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
-
-	meta = []	# .DirIcon, etc
-	misc = []	# Symlinks and dirs (no content)
-	files = []	# Regular files and executables not in meta
-
-	for item in os.listdir(dir):
-		if item in ('CVS', '.svn'):
-			continue
-		if item.startswith('.0inst'):
-			continue
-		if item.endswith('.swp') or item.endswith('.swo'):
-			continue
-
-		i = Item(os.path.join(dir, item))
-		if i.type in ('dir', 'link'):
-			misc.append(i)
-		elif item in ('.DirIcon', 'AppInfo.xml'):
-			meta.append(i)
+class File(Item):
+	def __init__(self, source):
+		Item.__init__(self, source)
+		if self.stat.st_mode & 0111:
+			self.type = 'exec'
 		else:
-			assert i.type in ('file', 'exec')
-			files.append(i)
-	
-	tdir = os.path.join(target, dir)
-	if not os.path.isdir(tdir):
-		os.makedirs(tdir)
+			self.type = 'file'
 
-	make_group(root, dir, meta, '0inst-meta.tgz')
-	make_group(root, dir, files, '0inst-files.tgz')
-	if misc:
-		add_files(root, misc)
-	
-	nl(root, False)
-	doc.writexml(file(os.path.join(tdir, '.0inst.xml'), 'w'))
+class Link(Item):
+	def __init__(self, source):
+		Item.__init__(self, source)
+		self.target = os.readlink(source)
+		
+	def __str__(self):
+		return Item.__str__(self) + ' -> ' + self.target
 
-leaf = os.path.basename(target)
-target = os.path.dirname(target)
-do_dir(leaf)
+class Dir(Item):
+	type = 'dir'
+
+	def __init__(self, source, root = False):
+		Item.__init__(self, source, root)
+		assert stat.S_ISDIR(self.stat.st_mode)
+		self.kids = []
+		meta = []
+		files = []
+
+		for name in os.listdir(source):
+			if name in ignored_names: continue
+
+			path = os.path.join(source, name)
+
+			if name.startswith('.'):
+				if name.endswith('.swp') or name.endswith('.swo'):
+					continue
+				if name is not '.DirIcon':
+					print "Including hidden file", path
+
+			if os.path.islink(path):
+				self.kids.append(Link(path))
+			elif os.path.isdir(path):
+				self.kids.append(Dir(path))
+			elif os.path.isfile(path):
+				if name in meta_names:
+					meta.append(name)
+				else:
+					files.append(name)
+			else:
+				print "Unknown type %s" % path
+		
+		if meta:
+			self.kids.append(Archive(meta, source))
+		if files:
+			self.kids.append(Archive(files, source))
+	
+	def __str__(self):
+		kids = '\n'.join(map(str, self.kids)).split('\n')
+		return '\n'.join([Item.__str__(self)] +
+			map(lambda x: '  %s' % x, kids))
+	
+	def set_xml(self, node):
+		for k in self.kids:
+			k.add_xml(node)
+
+def find_archives(archives, node, path = '/'):
+	if node.nodeType != dom.Node.ELEMENT_NODE: return
+	if node.localName == 'archive':
+		if path not in archives:
+			archives[path] = []
+		archives[path].append(node)
+	name = node.getAttributeNS(None, 'name')
+	path = os.path.join(path, name)
+	for n in node.childNodes:
+		find_archives(archives, n, path)
+
+doc = minidom.Document()
+site = doc.createElementNS(ZERO_NS, 'site-index')
+site.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
+doc.appendChild(site)
+
+root = Dir('.', root = True)
+
+print root
+
+index_path = os.path.join(target, '0install-index.xml')
+old_doc = None
+if index_path:
+	old_doc = dom.minidom.parse(index_path)
+old_tgz = [a for a in os.listdir(archive_dir) if a.endswith('.tgz')]
+
+old_archives = {}
+if old_doc:
+	find_archives(old_archives, old_doc.documentElement)
+
+print "Old archives", old_archives
+
+root.add_xml(site)
+doc.writexml(file(index_path, 'w'), addindent='  ', newl='\n')
+
+for x in old_tgz:
+	path = os.path.join(archive_dir, x)
+	print "Removing unused tgz file:", path
+	assert int(x[:4])
+	os.unlink(path)
