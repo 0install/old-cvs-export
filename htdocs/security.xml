@@ -108,7 +108,7 @@ all users trust the administrator's judgement, any piece of software can be
 <p>
 Zero Install can do this, because users specify some software to run by its URI
 (Internet address). There is no question of a user asking to run 'gimp' and
-having to decide which program named 'gimp' they mean; they explicity ask for
+having to decide which program named 'gimp' they mean; they explicitly ask for
 'http://www.gimp.org/gimp-1.2' (though, as explained elsewhere, the user
 interface may not present it quite like this).
 </p>
@@ -129,7 +129,7 @@ The answer to the first question is that you still need some kind of
 recommendation system. In Debian's case, this is tied up with the installer:
 what Debian recommend can be installed; what they don't, can't. In Zero
 Install, sites such as <a href="http://freshmeat.net">freshmeat.net</a>,
-or distributions, take on this responsiblity. A user of Zero Install may
+or distributions, take on this responsibility. A user of Zero Install may
 choose, for example, to only run programs listed on Debian's web-site.
 However, they may also choose to trust a magazine, a friend or some other
 source.
@@ -151,7 +151,7 @@ software replaced with a trojaned version.</p></li>
 </ul>
 
 <div class='note'>
-The following is a desciption of how it <i>will</i> work. This is not yet
+The following is a description of how it <i>will</i> work. This is not yet
 implemented.
 </div>
 

@@ -49,7 +49,7 @@ want to read the ROX-Lib2 developer reference documentation then it
 doesn't get downloaded (until you try to access it).
 </p>
 
-<h3>What about people without internet connections?</h3>
+<h3>What about people without Internet connections?</h3>
 <p>You can still install from CD. Either install an application in the
 normal AppDir fashion (ie, by dragging to your home directory), or by
 providing a web-cache on the CD and merging it with the master one (we
@@ -62,7 +62,7 @@ stuff on a webserver, whereas it's often hard to find someone who will
 host other types of server. The scheme can use other methods if
 required.</p>
 <p>The main difference between this and standard shares is the way the
-paths use the internet DNS system. This allows us to link to resources
+paths use the Internet DNS system. This allows us to link to resources
 by fixed paths, in the same way that I can put up a link to
 <a href="http://rox.sourceforge.net">ROX</a> on this web page without
 worrying about where the user has 'installed' the web page.
@@ -97,7 +97,7 @@ they're off-line.</h3>
 <p>Various levels of granularity can be used. A user could tell the
 system to cache an entire application, for example. Of course, dial-up
 users might also appreciate that they have to download a lot less
-stuff in total. A user with a slow, but easy to start, internet
+stuff in total. A user with a slow, but easy to start, Internet
 connection will probably prefer this scheme. A user who wants to take
 their laptop up a mountain, however, would probably want to get as
 much software as possible first.
@@ -203,7 +203,7 @@ libfoo/1.2.3. If the user enters the 'libfoo' directory and does a
 refresh, the link will now point to 1.2.4 and that will be fetched on
 demand.</p>
 <p>
-If a program relies on a bugfix in libfoo-1.2.6 then it can check that
+If a program relies on a bug fix in libfoo-1.2.6 then it can check that
 'latest-1.2.x' points to that version or later, and force a refresh if
 not.
 </p>

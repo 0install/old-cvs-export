@@ -74,7 +74,7 @@ within a directory between archives. The 0build script (which scans a
 directory tree and builds all the indexes and archives) will automatically
 put .DirIcon and AppInfo.xml files in one archive and everything else in
 another. Thus, you can view a directory full of applications and you only
-download what you need (AppInfo.xml is for the tooltips).
+download what you need (AppInfo.xml is for the tool-tips).
 </p>
 
 </html>

@@ -58,7 +58,7 @@ Let's say you're looking for a little desktop reminder application. You
 search <a href="http://freshmeat.net">Freshmeat.net</a> and find
 <a href="http://rox.sf.net/memo.php3">Memo</a>. You open the directory
 containing Memo (on the remote machine) with your file manager (note the
-titlebar):
+title-bar):
 </p>
 
 <p style='text-align: center'>
@@ -90,7 +90,7 @@ because the Zero Install system has cached everything locally.
 These require a central authority to maintain the database. For example, you
 can't install Memo using APT, because Debian don't package it. The best an
 author can do is provide Debian .deb packages on the site. But then the user
-still has to do the manual dependancy resolution above for everything not in
+still has to do the manual dependency resolution above for everything not in
 Debian's system.
 </p><p>
 They are also fragile; if the user deletes managed files then
@@ -124,12 +124,12 @@ Although the system makes installing other software very easy, the Zero
 Install system itself still requires some work to install. Please read this:
 </p>
 <ul>
-<li> <a href="install.html">Step-by-step installation walkthough</a>.</li>
+<li> <a href="install.html">Step-by-step installation walk-though</a>.</li>
 </ul>
 
 <p class='q'>Is it fully working yet?</p>
 
-<p>No, it's still under developement, although the examples given here already
+<p>No, it's still under development, although the examples given here already
 work. You can run Memo as shown above, and it will get ROX-Lib via Zero
 Install. However, the other libraries are not yet in Zero Install, so you
 will need to install pygtk, etc, as normal for now.
@@ -142,7 +142,7 @@ on when we get volunteers). We really need lots of volunteers to start packaging
 some common libraries for other things to depend on...
 </p>
 
-<p class='q'>Do I have to enter the full URI everytime I want to run a
+<p class='q'>Do I have to enter the full URI every time I want to run a
 program?</p>
 
 <p>No, create a shortcut to it instead. For example, you could drag Memo

@@ -154,7 +154,7 @@ $ <b>/uri/http/.../MyProg/Linux-ix86/1.0.2/MyProg</b>
 </pre>
 
 <p>
-If your program is platform independant then you can skip the platform part,
+If your program is platform independent then you can skip the platform part,
 of course. If your program is platform dependant, but programs referring to
 it are not, then you should use the special '@PLATFORM@' target:
 </p>

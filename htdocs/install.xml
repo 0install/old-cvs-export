@@ -10,7 +10,7 @@ Install system itself still requires some work to install.
 
 <div class='note'>
 Please do not install this software on important machines. It is still
-very much under developement and has not yet been well tested.</div>
+very much under development and has not yet been well tested.</div>
 
 <p>
 That said, I'm running it on my machine without any problems so far. Please
@@ -188,7 +188,7 @@ $ <b>rox /uri/http/zero-install.sourceforge.net/demo</b>
 
 <p>
 The GTK progress indicator will pop up a progress box (as shown on the
-<a href="index.html">title page</a>) wheneven a download is in progess. It can
+<a href="index.html">title page</a>) whenever a download is in progress. It can
 be run like this (the refresh is only needed if you've already cached an
 old version of this directory):
 </p>
@@ -217,7 +217,7 @@ Release Date: 27 February 2003
 # <b>./XFree86 :1</b>
 </pre>
 
-<h2>Futher reading</h2>
+<h2>Further reading</h2>
 
 <p>Please see <a href="docs.html">the documentation</a> for more information.</p>
 
