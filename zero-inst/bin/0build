@@ -304,7 +304,9 @@ doc.writexml(file(index_xml, 'w'), addindent='  ', newl='\n')
 
 assert os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz,
 			'-C', target, '.0inst-index.xml']) == 0
-os.unlink(index_xml)
+
+# Keep for backwards compat for now...
+#os.unlink(index_xml)
 
 for x in old_tgz:
 	path = os.path.join(archive_dir, x)
