@@ -56,6 +56,7 @@
 #include "index.h"
 #include "zero-install.h"
 #include "task.h"
+#include "xml.h"
 
 int verbose = 0; /* (debug) */
 
@@ -139,7 +140,7 @@ static void kernel_got_archive(Task *task, int success)
  */
 static void kernel_got_index(Task *task)
 {
-	xmlNode *item;
+	Element *item;
 	const char *slash;
 
 	assert(task->index);
@@ -161,7 +162,7 @@ static void kernel_got_index(Task *task)
 	if (item->name[0] == 'd')
 		fetch_create_directory(task->str, item);
 	else {
-		xmlNode *archive;
+		Element *archive;
 
 		archive = index_find_archive(item);
 		assert(archive);
@@ -368,10 +369,15 @@ int main(int argc, char **argv)
 	int helper;
 	int max_fd;
 	char *pid_file;
+
+	if (0) {
+		Index *index = parse_index("index.xml", 0, "foo");
+		printf("%p\n", index);
+		index_free(index);
+		exit(0);
+	}
 	
 	openlog("zero-install", 0, LOG_DAEMON);
-
-	index_init();
 
 	if (argv[1] && strcmp(argv[1], "--debug") == 0)
 		verbose = 1;

@@ -27,14 +27,6 @@
 
 typedef struct _ParserState ParserState;
 
-struct _Element {
-	char *name;
-	Element *lastChild;
-	Element *previousSibling;
-	Element *parentNode;
-	char **attrs;
-};
-
 struct _ParserState {
 	const char *namespaceURI;
 	int namespaceURI_len;
@@ -53,6 +45,38 @@ static void free_attrs(char **attrs)
 }
 	
 static char **copy_attrs(const XML_Char **atts)
+{
+	int i, n = 0;
+	char **new;
+
+	assert(atts);
+	
+	while (atts[n])
+		n += 2;
+
+	assert(n > 0);
+
+	new = my_malloc(sizeof(char *) * (n + 1));
+	if (!new)
+		return NULL;
+
+	for (i = 0; i < n; i++) {
+		assert(atts[i]);
+
+		new[i] = my_strdup(atts[i]);
+		if (!new[i])
+			goto oom;
+	}
+
+	new[n] = NULL;
+
+	return new;
+oom:
+	free_attrs(new);
+	return NULL;
+}
+
+static char **copy_char_attrs(const char **atts)
 {
 	int i, n = 0;
 	char **new;
@@ -109,24 +133,18 @@ static void start_element(void *userData, const XML_Char *name,
 		return;
 	}
 
-	if (strncmp(state->namespaceURI, name, state->namespaceURI_len) != 0 ||
-	    name[state->namespaceURI_len] != ' ') {
-		/* Not our namespace; not interested */
-		state->waiting_for_ends++;
-		return;
+	if (state->namespaceURI) {
+		if (strncmp(state->namespaceURI, name,
+			    state->namespaceURI_len) != 0 ||
+		    name[state->namespaceURI_len] != ' ') {
+			/* Not our namespace; not interested */
+			state->waiting_for_ends++;
+			return;
+		}
 	}
 	
-	new = my_malloc(sizeof(Element));
+	new = xml_new_with_attrs(name + state->namespaceURI_len + 1, NULL);
 	if (!new)
-		goto oom;
-
-	new->parentNode = NULL;
-	new->previousSibling = NULL;
-	new->lastChild = NULL;
-	new->attrs = NULL;
-
-	new->name = my_strdup(name + state->namespaceURI_len + 1);
-	if (!new->name)
 		goto oom;
 
 	if (atts && atts[0]) {
@@ -140,9 +158,7 @@ static void start_element(void *userData, const XML_Char *name,
 		state->root = new;
 	} else {
 		/* Link into existing tree */
-		new->parentNode = state->current;
-		new->previousSibling = state->current->lastChild;
-		state->current->lastChild = new;
+		xml_add_child(state->current, new);
 	}
 
 	state->current = new;
@@ -179,12 +195,11 @@ Element *xml_new(const char *namespace, const char *pathname)
 	ParserState state;
 	int src = -1;
 
-	assert(namespace);
 	assert(pathname);
 
 	state.root = state.current = NULL;
 	state.namespaceURI = namespace;
-	state.namespaceURI_len = strlen(namespace);
+	state.namespaceURI_len = namespace ? strlen(namespace) : -1;
 	state.waiting_for_ends = 0;
 	state.oom = 0;
 
@@ -246,6 +261,7 @@ void xml_destroy(Element *root)
 	Element *current = root;
 	
 	assert(root);
+	assert(root->parentNode == NULL);
 
 	while (current) {
 		Element *next;
@@ -266,4 +282,83 @@ void xml_destroy(Element *root)
 		free_element(current);
 		current = next;
 	}
+}
+
+/* NULL if no such attribute */
+const char *xml_get_attr(Element *node, const char *name)
+{
+	int i;
+
+	if (!node->attrs)
+		return NULL;
+
+	for (i = 0; node->attrs[i]; i += 2) {
+		if (strcmp(node->attrs[i], name) == 0)
+			return node->attrs[i + 1];
+	}
+
+	return NULL;
+}
+
+void xml_destroy_node(Element *node)
+{
+	assert(node);
+
+	/* Unlink from parent and siblings */
+	if (node->previousSibling)
+		node->previousSibling->nextSibling = node->nextSibling;
+	if (node->nextSibling)
+		node->nextSibling->previousSibling = node->previousSibling;
+	else if (node->parentNode)
+		node->parentNode->lastChild = node->previousSibling;
+	node->parentNode = NULL;
+	node->nextSibling = NULL;
+	node->previousSibling = NULL;
+
+	/* Free new detached tree */
+	xml_destroy(node);
+}
+
+Element *xml_new_with_attrs(const char *name, const char **attrs)
+{
+	Element *new;
+
+	new = my_malloc(sizeof(Element));
+	if (!new)
+		goto oom;
+
+	new->parentNode = NULL;
+	new->nextSibling = NULL;
+	new->previousSibling = NULL;
+	new->lastChild = NULL;
+	new->attrs = NULL;
+
+	new->name = my_strdup(name);
+	if (!new->name)
+		goto oom;
+
+	if (attrs) {
+		new->attrs = copy_char_attrs(attrs);
+		if (!new->attrs)
+			goto oom;
+	}
+
+	return new;
+oom:
+	if (new)
+		free_element(new);
+	return NULL;
+}
+	
+void xml_add_child(Element *parent, Element *new)
+{
+	assert(new != NULL);
+	assert(parent != NULL);
+	assert(new->parentNode == NULL);
+
+	new->parentNode = parent;
+	new->previousSibling = parent->lastChild;
+	if (new->previousSibling)
+		new->previousSibling->nextSibling = new;
+	parent->lastChild = new;
 }

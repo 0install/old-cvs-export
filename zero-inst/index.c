@@ -2,19 +2,17 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <assert.h>
-#include <libxml/tree.h>
-#include <libxml/relaxng.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include "global.h"
 #include "index.h"
 #include "support.h"
 #include "zero-install.h"
-
-#define ZERO_NS "http://zero-install.sourceforge.net"
+#include "xml.h"
 
 static const char DTD[] = "<?xml version='1.0'?>	\
 <grammar xmlns:z='" ZERO_NS "' xmlns='http://relaxng.org/ns/structure/1.0'> \
@@ -68,34 +66,9 @@ static const char DTD[] = "<?xml version='1.0'?>	\
  </define>		\
 </grammar>";
 
-static xmlRelaxNGValidCtxtPtr schema = NULL;
-static xmlRelaxNGParserCtxtPtr context = NULL;
-static xmlRelaxNGPtr sc = NULL;
+static int dir_valid(Element *dir);
 
-static int dir_valid(xmlNode *dir);
-
-void index_init(void)
-{
-	assert(!schema);
-
-	context = xmlRelaxNGNewMemParserCtxt(DTD, sizeof(DTD));
-	assert(context);
-
-	sc = xmlRelaxNGParse(context);
-	assert(sc);
-
-	schema = xmlRelaxNGNewValidCtxt(sc);
-}
-
-void index_shutdown(void)
-{
-	xmlRelaxNGFreeValidCtxt(schema);
-	xmlRelaxNGFree(sc);
-	xmlRelaxNGFreeParserCtxt(context);
-	xmlRelaxNGCleanupTypes();
-}
-
-static void count(xmlNode *item, void *data)
+static void count(Element *item, void *data)
 {
 	int *i = data;
 
@@ -107,18 +80,18 @@ static void count(xmlNode *item, void *data)
 	(*i)++;
 }
 
-static void get_names(xmlNode *item, void *data)
+static void get_names(Element *item, void *data)
 {
-	xmlChar ***name = data;
+	const char ***name = data;
 
 	if (item->name[0] == 'a')
 		return;
 
-	(*name)[0] = xmlGetNsProp(item, "name", NULL);
+	(*name)[0] = xml_get_attr(item, "name");
 	(*name)++;
 }
 
-static void valid_subdirs(xmlNode *item, void *data)
+static void valid_subdirs(Element *item, void *data)
 {
 	int *ok = data;
 
@@ -136,11 +109,11 @@ static int compar(const void *a, const void *b)
 	return strcmp(aa, bb);
 }
 
-static int dir_valid(xmlNode *dir)
+static int dir_valid(Element *dir)
 {
 	int i, n = 0;
 	int ok = 1;
-	xmlChar **names, **name;
+	const char **names, **name;
 
 	assert(dir->name[0] == 'd');
 
@@ -168,7 +141,6 @@ static int dir_valid(xmlNode *dir)
 			error("Duplicate leafname '%s'", names[i]);
 			ok = 0;
 		}
-		xmlFree(names[i]);
 	}
 
 	free(names);
@@ -185,14 +157,17 @@ static int dir_valid(xmlNode *dir)
  */
 static int index_valid(Index *index)
 {
-	xmlNode *node;
-	char *path;
+	//Element *node;
+	//char *path;
+
+	return 1;	// XXX
 
 	if (!index) {
 		error("Bad index (missing/bad XML?)");
 		return 0;
 	}
 	
+#if 0
 	assert(schema);
 
 	if (xmlRelaxNGValidateDoc(schema, index->doc)) {
@@ -212,68 +187,65 @@ static int index_valid(Index *index)
 		return 0;
 
 	return 1;
+#endif
 }
 
-static void index_link(Index *index, xmlNode *node)
+static void index_link(Index *index, Element *node)
 {
-	char *src = NULL, *target = NULL, *mtime = NULL, *size = NULL;
-	xmlNode *old = NULL, *new;
-	char *leaf;
+	const char *src;
+	Element *old = NULL, *new;
+	const char *leaf;
+	char *dir;
+	const char *attrs[] = {
+		"mtime", NULL,
+		"size", NULL,
+		"target", NULL,
+		"name", NULL,
+		NULL
+	};
 
-	src = xmlGetNsProp(node, "src", NULL);
-	mtime = xmlGetNsProp(node, "mtime", NULL);
-	target = xmlGetNsProp(node, "target", NULL);
-	size = xmlGetNsProp(node, "size", NULL);
+	src = xml_get_attr(node, "src");
 
-	if (!src || !target || !mtime || !size) {
+	attrs[1] = xml_get_attr(node, "mtime");
+	attrs[3] = xml_get_attr(node, "size");
+	attrs[5] = xml_get_attr(node, "target");
+
+	if (!src || !attrs[1] || !attrs[3] || !attrs[5]) {
 		error("Missing attribute for <link>");
-		goto out;
+		return;
 	}
 
 	leaf = strrchr(src, '/');
 	if (!leaf)
-		goto out;
+		return;
 	leaf++;
 
 	old = index_lookup(index, src);
-	if (old) {
-		xmlUnlinkNode(old);
-		xmlFreeNode(old);
-	}
+	if (old)
+		xml_destroy_node(old);
 
-	leaf[-1] = '\0';
-	old = index_lookup(index, src);
+	dir = build_string("%d", src);
+	old = index_lookup(index, dir);
 	if (!old) {
-		error("Can't override '%s'; doesn't exist!", src);
-		goto out;
+		error("Can't override '%s'; doesn't exist!", dir);
+		free(dir);
+		return;
 	}
+	free(dir);
 
-	new = xmlNewNode(old->ns, "link");
+	attrs[7] = leaf;
+	new = xml_new_with_attrs("link", attrs);
 	if (!new)
-		goto out;
+		return;
 
-	xmlSetNsProp(new, NULL, "mtime", mtime);
-	xmlSetNsProp(new, NULL, "size", size);
-	xmlSetNsProp(new, NULL, "target", target);
-	xmlSetNsProp(new, NULL, "name", leaf);
-
-	xmlAddChild(old, new);
-out:
-	if (src)
-		xmlFree(src);
-	if (mtime)
-		xmlFree(mtime);
-	if (size)
-		xmlFree(size);
-	if (target)
-		xmlFree(target);
+	xml_add_child(old, new);
 }
 
 static int index_merge_overrides(Index *index, const char *site)
 {
 	char *links;
-	xmlDoc *doc;
-	xmlNode *node;
+	Element *doc;
+	Element *node;
 
 	links = build_string("%s/%h/.0inst-meta/override.xml", cache_dir, site);
 	if (!links)
@@ -284,26 +256,21 @@ static int index_merge_overrides(Index *index, const char *site)
 		return 1;	/* no links file; OK */
 	}
 
-	doc = xmlParseFile(links);
+	doc = xml_new(NULL, links);
 	free(links);
 	if (!doc) {
-		error("Failed to parse override.xml for '%s'",
-				site);
+		error("Failed to parse override.xml for '%s'", site);
 		return 0;	/* Corrupt */
 	}
 
-	node = xmlDocGetRootElement(doc);
-
-	for (node = node->children; node; node = node->next) {
-		if (node->type != XML_ELEMENT_NODE)
-			continue;
+	for (node = doc->lastChild; node; node = node->previousSibling) {
 		if (strcmp(node->name, "link") != 0)
 			continue;
 
 		index_link(index, node);
 	}
 
-	xmlFreeDoc(doc);
+	xml_destroy(doc);
 
 	return 1;
 }
@@ -313,19 +280,19 @@ static int index_merge_overrides(Index *index, const char *site)
  */
 Index *parse_index(const char *pathname, int validate, const char *site)
 {
-	xmlDoc *doc;
+	Element *doc;
 	Index *index;
 
 	assert(site);
 	assert(strchr(site, '/') == NULL);
 
-	doc = xmlParseFile(pathname);
+	doc = xml_new(ZERO_NS, pathname);
 	if (!doc)
 		return NULL;
 
 	index = my_malloc(sizeof(Index));
 	if (!index) {
-		xmlFreeDoc(doc);
+		xml_destroy(doc);
 		return NULL;
 	}
 	index->doc = doc;
@@ -352,30 +319,27 @@ void index_free(Index *index)
 	index->ref--;
 	
 	if (!index->ref) {
-		xmlFreeDoc(index->doc);
+		xml_destroy(index->doc);
 		free(index);
 	}
 }
 
-void index_foreach(xmlNode *dir,
-		   void (*fn)(xmlNode *item, void *data),
+void index_foreach(Element *dir,
+		   void (*fn)(Element *item, void *data),
 		   void *data)
 {
-	xmlNode *item;
+	Element *item;
 
-	for (item = dir->children; item; item = item->next) {
-		if (item->type != XML_ELEMENT_NODE)
-			continue;
+	for (item = dir->lastChild; item; item = item->previousSibling) {
 		if (strcmp(item->name, "dir") == 0 ||
 		    strcmp(item->name, "link") == 0)
 			fn(item, data);
 		else {
-			xmlNode *file;
+			Element *file;
 
 			assert(strcmp(item->name, "group") == 0);
-			for (file = item->children; file; file = file->next) {
-				if (file->type != XML_ELEMENT_NODE)
-					continue;
+			for (file = item->lastChild; file;
+					file = file->previousSibling) {
 				if (strcmp(file->name, "file") == 0 ||
 				    strcmp(file->name, "exec") == 0)
 					fn(file, data);
@@ -387,17 +351,13 @@ void index_foreach(xmlNode *dir,
 }
 
 /* Return /site-index/dir */
-xmlNode *index_get_root(Index *index)
+Element *index_get_root(Index *index)
 {
-	xmlNode *node;
+	Element *node;
 
-	node = xmlDocGetRootElement(index->doc);
-
-	for (node = node->children; node; node = node->next) {
-		if (node->type == XML_ELEMENT_NODE) {
-			assert(strcmp(node->name, "dir") == 0);
+	for (node = index->doc->lastChild; node; node = node->previousSibling) {
+		if (strcmp(node->name, "dir") == 0)
 			return node;
-		}
 	}
 
 	assert(0);
@@ -407,18 +367,18 @@ xmlNode *index_get_root(Index *index)
 typedef struct {
 	const char *name;
 	int name_len;
-	xmlNode *node;
+	Element *node;
 } Info;
 
-static void find_child(xmlNode *child, void *data)
+static void find_child(Element *child, void *data)
 {
 	Info *info = data;
-	xmlChar *name;
+	const char *name;
 
 	if (info->node)
 		return;
 
-	name = xmlGetNsProp(child, "name", NULL);
+	name = xml_get_attr(child, "name");
 	assert(name);
 
 	//printf("[ checking '%s' with '%s':%d ]\n",
@@ -427,13 +387,11 @@ static void find_child(xmlNode *child, void *data)
 	if (strncmp(info->name, name, info->name_len) == 0 &&
 					name[info->name_len] == '\0')
 		info->node = child;
-
-	xmlFree(name);
 }
 
-xmlNode *index_lookup(Index *index, const char *path)
+Element *index_lookup(Index *index, const char *path)
 {
-	xmlNode *dir;
+	Element *dir;
 
 	dir = index_get_root(index);
 
@@ -464,13 +422,14 @@ xmlNode *index_lookup(Index *index, const char *path)
 }
 
 /* Find an archive for this file */
-xmlNode *index_find_archive(xmlNode *file)
+Element *index_find_archive(Element *file)
 {
-	xmlNode *node;
+	Element *node;
 	
 	assert(file->name[0] == 'f' || file->name[0] == 'e');
 
-	for (node = file->parent->children; node; node = node->next) {
+	for (node = file->parentNode->lastChild; node;
+			node = node->previousSibling) {
 		if (strcmp(node->name, "archive") == 0)
 			return node;
 	}

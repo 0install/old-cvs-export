@@ -16,6 +16,7 @@
 #include "task.h"
 #include "zero-install.h"
 #include "gpg.h"
+#include "xml.h"
 
 #define TMP_PREFIX ".0inst-tmp-"
 
@@ -23,10 +24,10 @@
 
 #define META ".0inst-meta"
 
-static void build_ddd_from_index(xmlNode *dir_node, char *dir);
+static void build_ddd_from_index(Element *dir_node, char *dir);
 
 /* Create directory 'path' from 'node' */
-void fetch_create_directory(const char *path, xmlNode *node)
+void fetch_create_directory(const char *path, Element *node)
 {
 	char cache_path[MAX_PATH_LEN];
 	
@@ -42,16 +43,16 @@ void fetch_create_directory(const char *path, xmlNode *node)
 	chdir("/");
 }
 
-static void recurse_ddd(xmlNode *item, void *data)
+static void recurse_ddd(Element *item, void *data)
 {
 	char *path = data;
-	xmlChar *name;
+	const char *name;
 	int len = strlen(path);
 
 	if (item->name[0] != 'd')
 		return;
 
-	name = xmlGetNsProp(item, "name", NULL);
+	name = xml_get_attr(item, "name");
 
 	assert(strchr(name, '/') == NULL);
 
@@ -62,7 +63,6 @@ static void recurse_ddd(xmlNode *item, void *data)
 
 	path[len] = '/';
 	strcpy(path + len + 1, name);
-	xmlFree(name);
 
 	/* TODO: only if path exists? */
 
@@ -71,17 +71,17 @@ static void recurse_ddd(xmlNode *item, void *data)
 	path[len] = '\0';
 }
 
-static void write_item(xmlNode *item, void *data)
+static void write_item(Element *item, void *data)
 {
 	FILE *ddd = data;
-	xmlChar *size, *mtime, *name;
+	const char *size, *mtime, *name;
 	char t = item->name[0];
 
 	assert(t == 'd' || t == 'e' || t == 'f' || t == 'l');
 	
-	size = xmlGetNsProp(item, "size", NULL);
-	mtime = xmlGetNsProp(item, "mtime", NULL);
-	name = xmlGetNsProp(item, "name", NULL);
+	size = xml_get_attr(item, "size");
+	mtime = xml_get_attr(item, "mtime");
+	name = xml_get_attr(item, "name");
 
 	assert(size);
 	assert(mtime);
@@ -93,15 +93,10 @@ static void write_item(xmlNode *item, void *data)
 		atol(mtime),
 		name, 0);
 
-	xmlFree(size);
-	xmlFree(mtime);
-	xmlFree(name);
-
 	if (t == 'l') {
-		xmlChar *target;
-		target = xmlGetNsProp(item, "target", NULL);
+		const char *target;
+		target = xml_get_attr(item, "target");
 		fprintf(ddd, "%s%c", target, 0);
-		xmlFree(target);
 	}
 }
 
@@ -109,7 +104,7 @@ static void write_item(xmlNode *item, void *data)
  * Changes dir (MAX_PATH_LEN).
  * 0 on success.
  */
-static void build_ddd_from_index(xmlNode *dir_node, char *dir)
+static void build_ddd_from_index(Element *dir_node, char *dir)
 {
 	FILE *ddd = NULL;
 
@@ -144,74 +139,64 @@ err:
 /* Called with cwd in directory where files have been extracted.
  * Moves each file in 'group' up if everything is correct.
  */
-static void pull_up_files(xmlNode *group)
+static void pull_up_files(Element *group)
 {
-	xmlNode *item;
+	Element *item;
 	struct stat info;
-	xmlChar *leaf = NULL;
+	const char *leaf = NULL;
 
 	if (verbose)
 		syslog(LOG_DEBUG, "(unpacked OK)");
 
-	for (item = group->children; item; item = item->next) {
+	for (item = group->lastChild; item; item = item->previousSibling) {
 		char up[MAX_PATH_LEN] = "../";
-		xmlChar *size_s, *mtime_s;
+		const char *size_s, *mtime_s;
 		long size, mtime;
-
-		if (item->type != XML_ELEMENT_NODE)
-			continue;
 
 		if (item->name[0] == 'a')
 			continue;
 		assert(item->name[0] == 'f' || item->name[0] == 'e');
 
 		assert(!leaf);
-		leaf = xmlGetNsProp(item, "name", NULL);
-		assert(leaf);
+		leaf = xml_get_attr(item, "name");
 
-		size_s = xmlGetNsProp(item, "size", NULL);
+		size_s = xml_get_attr(item, "size");
 		size = atol(size_s);
-		xmlFree(size_s);
 
-		mtime_s = xmlGetNsProp(item, "mtime", NULL);
+		mtime_s = xml_get_attr(item, "mtime");
 		mtime = atol(mtime_s);
-		xmlFree(mtime_s);
 
 		if (lstat(leaf, &info)) {
 			error("lstat: %m ('%s' missing from archive)", leaf);
-			goto out;
+			return;
 		}
 
 		if (!S_ISREG(info.st_mode)) {
 			error("'%s' is not a regular file!", leaf);
-			goto out;
+			return;
 		}
 
 		if (info.st_size != size) {
 			error("'%s' has wrong size!", leaf);
-			goto out;
+			return;
 		}
 
 		if (info.st_mtime != mtime) {
 			error("'%s' has wrong mtime!", leaf);
-			goto out;
+			return;
 		}
 
 		if (strlen(leaf) > sizeof(up) - 4) {
 			error("'%s' way too long", leaf);
-			goto out;
+			return;
 		}
 		strcpy(up + 3, leaf);
 		if (rename(leaf, up)) {
 			error("rename: %m");
-			goto out;
+			return;
 		}
-		xmlFree(leaf);
 		leaf = NULL;
 	}
-out:
-	if (leaf)
-		xmlFree(leaf);
 }
 
 /* Unpacks the archive. Uses the group to find out what other files should be
@@ -219,14 +204,14 @@ out:
  * Changes cwd.
  */
 static void unpack_archive(const char *archive_path, const char *archive_dir,
-				xmlNode *archive)
+				Element *archive)
 {
 	int status = 0;
 	struct stat info;
 	pid_t child;
 	const char *argv[] = {"tar", "-xzf", ".tgz", NULL};
-	xmlChar *size, *md5;
-	xmlNode *group = archive->parent;
+	const char *size, *md5;
+	Element *group = archive->parentNode;
 	
 	if (verbose)
 		syslog(LOG_DEBUG, "(unpacking %s)", archive_path);
@@ -242,22 +227,18 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 		return;
 	}
 
-	size = xmlGetNsProp(group, "size", NULL);
+	size = xml_get_attr(group, "size");
 
 	if (info.st_size != atol(size)) {
-		xmlFree(size);
 		error("Downloaded archive has wrong size!");
 		return;
 	}
-	xmlFree(size);
 
-	md5 = xmlGetNsProp(group, "MD5sum", NULL);
+	md5 = xml_get_attr(group, "MD5sum");
 	if (!check_md5(archive_path, md5)) {
-		xmlFree(md5);
 		error("Downloaded archive has wrong MD5 checksum!");
 		return;
 	}
-	xmlFree(md5);
 	
 	if (access(".0inst-tmp", F_OK) == 0) {
 		/* error("Removing old .0inst-tmp directory"); */
@@ -564,8 +545,10 @@ Index *get_index(const char *path, Task **task, int force)
 	if (!index_path)
 		return NULL;
 
+#if 0
 	if (verbose)
 		printf("Index for '%s' is '%s'\n", path, index_path);
+#endif
 
 	/* TODO: compare times */
 	if (force == 0 && stat(index_path, &info) == 0) {
@@ -595,12 +578,12 @@ Index *get_index(const char *path, Task **task, int force)
  * file is the cache-relative path of a file in the group.
  * free() the result.
  */
-static char *get_uri_for_archive(const char *file, xmlNode *archive)
+static char *get_uri_for_archive(const char *file, Element *archive)
 {
-	xmlChar *href;
+	const char *href;
 	char *uri;
 
-	href = xmlGetNsProp(archive, "href", NULL);
+	href = xml_get_attr(archive, "href");
 	assert(href);
 
 	/* Make URI absolute if needed */
@@ -608,7 +591,6 @@ static char *get_uri_for_archive(const char *file, xmlNode *archive)
 		uri = build_string("http://%H/%s", file + 1, href);
 	} else
 		uri = my_strdup(href);
-	xmlFree(href);
 
 	return uri;
 }
@@ -617,30 +599,29 @@ static char *get_uri_for_archive(const char *file, xmlNode *archive)
  * to make the name unique within the directory.
  * free() the result.
  */
-static char *get_tmp_path_for_group(const char *file, xmlNode *group)
+static char *get_tmp_path_for_group(const char *file, Element *group)
 {
-	xmlChar *md5 = NULL;
+	const char *md5 = NULL;
 	char *tgz;
 
-	md5 = xmlGetNsProp(group, "MD5sum", NULL);
+	md5 = xml_get_attr(group, "MD5sum");
 	assert(strlen(md5) == 32);
 	assert(strchr(md5, '/') == NULL);
 
 	tgz = build_string("%s%d/" TMP_PREFIX "%s", cache_dir, file, md5);
-	xmlFree(md5);
 
 	return tgz;
 }
 
 /* 'file' is the path of a file within the archive */
-Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
+Task *fetch_archive(const char *file, Element *archive, Index *index)
 {
 	Task *task = NULL;
 	char *uri = NULL;
 	char *tgz = NULL;
 
 	uri = get_uri_for_archive(file, archive);
-	tgz = get_tmp_path_for_group(file, archive->parent);
+	tgz = get_tmp_path_for_group(file, archive->parentNode);
 
 	if (!tgz || !uri)
 		goto out;
@@ -668,10 +649,9 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 
 	/* Store the size, for progress indicators */
 	{
-		xmlChar *size_s;
-		size_s = xmlGetNsProp(archive->parent, "size", NULL);
+		const char *size_s;
+		size_s = xml_get_attr(archive->parentNode, "size");
 		task->size = atol(size_s);
-		xmlFree(size_s);
 	}
 
 	if (task->child_pid == -1) {
@@ -681,8 +661,8 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 
 out:
 	if (uri)
-		xmlFree(uri);
+		free(uri);
 	if (tgz)
-		xmlFree(tgz);
+		free(tgz);
 	return task;
 }

@@ -18,11 +18,12 @@ DISTCHECK_CONFIGURE_FLAGS = --with-user=zeroinst --with-distcheck
 
 zero_install_SOURCES = zero-install.c support.c fetch.c control.c index.c \
 		       zero-install.h support.h fetch.h control.h index.h \
-		       list.c list.h global.h task.c task.h gpg.c gpg.h
+		       list.c list.h global.h task.c task.h gpg.c gpg.h \
+		       xml.c xml.h
 
-INCLUDES = `pkg-config --cflags libxml-2.0 dbus-1`
-zero_install_LDFLAGS = `pkg-config --libs libxml-2.0 dbus-1`
-0refresh_LDFLAGS = `pkg-config --libs libxml-2.0 dbus-1`
+INCLUDES = `pkg-config --cflags dbus-1`
+zero_install_LDFLAGS = `pkg-config --libs dbus-1` -lexpat
+0refresh_LDFLAGS = `pkg-config --libs dbus-1`
 
 install-exec-local:
 	make uninstall-local

@@ -116,7 +116,7 @@ PLATFORM=`uname -s`-$ARCH
 AC_MSG_RESULT($PLATFORM)
 AC_DEFINE_UNQUOTED(LAZYFS_PLATFORM, "$PLATFORM", [The canonical name for @PLATFORM@ symlinks])
 
-PKG_REQUIRE(libxml-2.0, 2.0.0)
+dnl PKG_REQUIRE(libxml-2.0, 2.0.0)
 PKG_REQUIRE(dbus-1, 0.12)
 
 AC_OUTPUT(Makefile \
