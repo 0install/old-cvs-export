@@ -4,6 +4,17 @@ import traceback
 import os, socket
 import time
 
+def modnames():
+	names = [x.split()[0] for x in os.popen('sudo lsmod').read().split('\n')
+				if x.startswith('lazyfs')]
+	return names
+
+def unload():
+	names = modnames()
+	if names:
+		os.system('sudo rmmod ' + ' '.join(names))
+	assert modnames() == []
+
 def unmount():
 	if os.path.exists('/uri/0install/.lazyfs-helper'):
 		print "Unmounting..."
@@ -20,10 +31,11 @@ def unmount():
 		lines.reverse()
 		print ">> dmesg output"
 		#print ''.join(lines[-i:])
-		os.system('sudo rmmod lazyfs')
 
 unmount()
+unload()
 os.system('rm -rf /var/cache/zero-inst/0test')
+assert os.system('sudo insmod ./Linux/lazyfs*.ko') == 0
 os.system('sudo mount /uri/0install')
 tmp = '/tmp'
 
@@ -48,7 +60,6 @@ def tgz_containing(name, contents):
 	os.system("cd '%s'; rm -f index.xml.sig keyring.pub; gpg -o index.xml.sig --default-key 0install@0test --detach-sign '%s'; gpg -o keyring.pub --export 0install@0test" %
 		(tmp, name))
 	file(os.path.join(tmp, "mirrors.xml"), 'w').write('Hello')
-	os.system('ls /tmp')
 	data = os.popen('tar -cz -O -C "%s" "%s" mirrors.xml keyring.pub index.xml.sig' % (tmp, name)).read()
 	os.unlink(os.path.join(tmp, name))
 	return data
@@ -61,7 +72,10 @@ class Request:
 		data = self.c.recv(1024)
 		uri = data.split('\n', 1)[0].split()[1]
 		print "[s] Zero-Install requested", uri
-		assert uri == want_uri
+		if uri != want_uri:
+			raise Exception('URI error\n'
+					'Wanted: %s\n'
+					'Got   : %s' % (want_uri, uri))
 
 	def reply(self, message):
 		self.c.send('HTTP/1.0 200 OK\n\n')
@@ -70,6 +84,10 @@ class Request:
 	
 	def close(self):
 		self.c.close()
+
+def accept_barrier(number):
+	r = Request('http://0test.%d/.0inst-index.tgz' % number)
+	r.reply('OK')
 
 def send_tree(xml, path='/uri/0install/0test'):
 	if path is not None:
@@ -123,3 +141,4 @@ else:
 		print "All tests passed!"
 
 unmount()
+unload()

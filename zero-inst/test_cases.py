@@ -12,17 +12,24 @@
 #
 # The two branches of the if execute in parallel in the two processes.
 
+barrier_count = 0
+def barrier():
+	global barrier_count
+	barrier_count += 1
+	if server:
+		accept_barrier(barrier_count)
+	else:
+		os.popen('0refresh 0test.%d' % barrier_count)
+
 def check_ls(dir, wanted):
 	got = os.listdir(dir)
 	if got != wanted:
 		print "Expected", wanted
 		print "Got     ", got
-		os.system('ls -l /uri/0install/0test/apps/ZeroProgress')
-		print "Here"
 		assert got == wanted
 
 import os
-from __main__ import send_tree, server
+from __main__ import send_tree, server, accept_barrier
 import stat
 
 def refresh():
@@ -44,6 +51,8 @@ else:
 	except OSError:
 		pass
 
+barrier()
+
 # Empty root
 if server:
 	send_tree('<dir size="1" mtime="2"/>')
@@ -58,6 +67,8 @@ else:
 	check_ls('/uri/0install/0test', ['link'])
 	assert os.readlink('/uri/0install/0test/link') == 'end'
 
+barrier()
+
 # Update to invalid index
 if server:
 	send_tree('<dir size="1" mtime="2"><link size="3" mtime="2" target="end"/></dir>')
@@ -65,12 +76,16 @@ else:
 	assert os.popen('cd /uri/0install/0test; 0refresh').read() != 'FAIL\n'
 	check_ls('/uri/0install/0test', ['link'])
 
+barrier()
+
 # Update back to empty
 if server:
 	send_tree('<dir size="1" mtime="2"></dir>')
 else:
 	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
 	check_ls('/uri/0install/0test', [])
+
+barrier()
 
 # Try to trigger a bug in our d_genocide. If you were in directory A,
 # containing a file B, and an ancestor of A got removed from the tree,
@@ -91,10 +106,12 @@ else:
 	check_ls("/uri/0install/0test", ['apps'])
 	os.system("pwd")
 	check_ls('..', [])
-	print os.listdir('.')
+	#print os.listdir('.')
 	check_ls('.', [])
 	#file('foo') (forces creation of a negative dentry)
 	os.chdir('/')
+
+barrier()
 
 # Now make sure the kernel module notices that it's cache isn't uptodate...
 if server:
@@ -107,6 +124,8 @@ else:
 	refresh()
 	assert os.readlink('/uri/0install/0test/link') == 'two'
 
+barrier()
+
 if server:
 	send_tree('<dir size="3" mtime="2"><dir name="a" size="2" mtime="3"><dir name="b" size="2" mtime="3"><dir name="c" size="2" mtime="3"><link target="end" name="link" size="2" mtime="3"/></dir></dir></dir></dir>')
 else:
@@ -117,6 +136,8 @@ else:
 	os.system("rm -r /var/cache/zero-inst/0test/a")
 	assert os.readlink('/uri/0install/0test/a/b/c/link') == 'end'
 	assert os.path.exists('/var/cache/zero-inst/0test/a/b/c')
+
+barrier()
 
 def inum(file): return os.lstat(file)[stat.ST_INO]
 def size(file): return os.lstat(file)[stat.ST_SIZE]

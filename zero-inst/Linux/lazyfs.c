@@ -419,7 +419,7 @@ lazyfs_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
 lazyfs_dentry_revalidate(struct dentry *dentry, int flags)
 #endif
 {
-	//printk("lazyfs_dentry_revalidate: %s\n", dentry->d_name.name);
+	// printk("lazyfs_dentry_revalidate: %s\n", dentry->d_name.name);
 
 	if (!dentry->d_inode)
 		return 1;	/* Negative dentries are always OK */
@@ -427,14 +427,15 @@ lazyfs_dentry_revalidate(struct dentry *dentry, int flags)
 	if (dentry->d_parent == dentry) {
 		return 1;
 	} else {
-		if (ensure_cached(dentry->d_parent, 0) != 0)
+		if (ensure_cached(dentry->d_parent, 1) != 0) {
 			return 0;
+		}
 
 		/* For directories, we also make sure the child list is
 		 * up-to-date for following.
 		 */
 		if (S_ISDIR(dentry->d_inode->i_mode))
-			return ensure_cached(dentry, 0) == 0;
+			return ensure_cached(dentry, 1) == 0;
 	}
 	return 1;
 }
@@ -2068,7 +2069,14 @@ lazyfs_dir_open(struct inode *inode, struct file *file)
 {
 	int err;
 	// printk("Ensure cached %s\n", file->f_dentry->d_name.name);
+
+	if (d_unhashed(file->f_dentry)) {
+		/* Directory no longer exists */
+		return dcache_dir_open(inode, file);
+	}
+
 	err = ensure_cached(file->f_dentry, 1);
+
 	return err ? err : dcache_dir_open(inode, file);
 }
 
