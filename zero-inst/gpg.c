@@ -31,9 +31,24 @@ static int ok_for_site(const char *name, const char *site)
 
 	hash = strchr(site, '#');
 	if (hash) {
+		int subsite_len = strlen(hash + 1);
+
 		domain_len = hash - site;
-		if (strncmp(email, "<0sub@", sizeof("<0sub@") - 1) != 0)
+		if (strncmp(email, "<0sub@", sizeof("<0sub@") - 1) != 0) {
+			error("Signature email must start 0sub@...");
 			return 0;
+		}
+		if (strncmp(name, hash + 1, subsite_len) != 0) {
+			error("Subsite name doesn't match (%s vs %s)",
+					name, hash + 1);
+			return 0;
+		}
+		if (name[subsite_len] != ' ' ||
+		    name + subsite_len + 1 != email) {
+			error("Email address doesn't follow subsite name "
+				"(%s vs %s)", name, hash + 1);
+			return 0;
+		}
 		email += sizeof("<0sub@") - 1;
 	} else {
 		/* For root indexes, only care about the email part

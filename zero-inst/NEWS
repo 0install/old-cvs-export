@@ -1,3 +1,5 @@
+Changes since 0.1.20:
+
 * More helpful error message when an index is incorrectly signed (reported
   by Jeffrey Templon).
 
