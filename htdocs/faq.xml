@@ -154,6 +154,10 @@ would have to install a separate copy to their home directory, or one
 user has to trust the other user not to have modified his copy, and
 use that.
 </p>
+<p>
+See the <a href="security.html">security issues</a> document for
+more information.
+</p>
 
 <h3>Apps will run very slowly on the first load... users might think
 they've crashed</h3>
