@@ -36,42 +36,54 @@ $ gpg --recv-key --keyserver www.keyserver.net 59A53CC1
 </li>
 </ul>
 
-<div class='note'>The current release (0.2) is just an experimental prototype. It will
+<div class='note'>The current release (0.3) is an experimental prototype. It will
 contain a few bugs.</div>
 
 <p>
-To run the injector, use the <b>0launch</b> or <b>0launch-gui</b> commands. <b>0launch</b>
-tries to run a program without prompting, while the GUI version asks you to confirm or
-adjust the selected versions. The injector is available through Zero Install, but can also
-be used without it.
+Note that the injector works without needing the Zero Install filesystem to be
+installed (you can think of it as the next version of Zero Install).
 </p>
 
-<h3>Getting the injector using Zero Install</h3>
+<h3>Installing the injector</h3>
 <p>
-The injector is on the <b>zero-install.sourceforge.net</b> site. You can access it like this:
-</p>
-<pre>
-$ <b>alias 0launch=/uri/0install/zero-install.sourceforge.net/bin/0launch</b>
-$ <b>alias 0launch-gui=/uri/0install/zero-install.sourceforge.net/bin/0launch-gui</b>
-</pre>
-
-<h3>Running the GUI without Zero Install</h3>
-<p>
-If you're not using the Zero Install filesystem, you can
-download the injector from <a
+Download the injector from <a
 href="http://sourceforge.net/project/showfiles.php?group_id=76468&amp;package_id=146899">the
-download page</a>. You don't need to download <b>0launch-gui</b> manually; you can use
-0launch to get it!
+download page</a>, or using wget:
 </p>
 <pre>
-$ <b>wget http://heanet.dl.sourceforge.net/sourceforge/zero-install/injector-0.2.tgz.gpg</b>
-$ <b>gpg injector-0.2.tgz.gpg</b>
-$ <b>tar xzf injector-0.2.tgz</b>
-$ <b>alias 0launch="`pwd`/injector-0.2/0launch-auto"</b>
-$ <b>alias 0launch-gui="0launch http://0install.net/2005/interfaces/injector-gui"</b>
+$ <b>wget http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.3.tar.gz.gpg</b>
 </pre>
 
-<div class='note'>TODO: This really needs a 'make install'!</div>
+<p>
+Check that the signature is correct using GPG. This also ensures that you have my key installed, which
+you will need later!
+</p>
+
+<pre>
+$ <b>gpg injector-0.3.tar.gz.gpg</b>
+gpg: Signature made Tue 15 Mar 2005 21:38:19 GMT using DSA key ID 59A53CC1
+gpg: Good signature from "Thomas Leonard &lt;tal197@users.sourceforge.net&gt;"
+</pre>
+
+<p>
+Extract the archive, become root, install the injector, and exit from root:
+</p>
+
+<pre>
+$ <b>tar xzf injector-0.3.tar.gz</b>
+$ <b>cd injector-0.3</b>
+$ <b>su</b>
+[ enter root password ]
+# <b>python setup.py install</b>
+# <b>exit</b>
+</pre>
+
+<p>
+You now have two new commands: <b>0launch</b> and <b>0launch-gui</b>. 
+<b>0launch</b> tries to run a program without prompting, while the GUI version
+asks you to confirm or adjust the selected versions. In fact, <b>0launch-gui</b> is
+a one-line shell script that uses <b>0launch</b> to download and run the GUI!
+</p>
 
 <h3>Running Edit with the injector</h3>
 
@@ -89,23 +101,38 @@ Interface: http://0install.net/2005/interfaces/injector-gui
 The interface is correctly signed with the following keys:
 - Valid signature from 92429807C9853C0744A68B9AAE07828059A53CC1
 Do you want to trust all of these keys to sign interfaces?
+Trust all [Y/N]
+</pre>
+
+<p>
+You should confirm that this is the fingerprint of my key and answer <b>Y</b>.
+</p>
+
+<div class='note'>TODO: This needs a better interface. At least, we should give the name as well as
+the fingerprint.</div>
+
+<p>
+You might wonder why this confirmation is non-graphical. The reason is that we are currently fetching
+<b>0launch-gui</b>; it is this program, and not Edit, which has triggered the confirmation check. Having
+answered <b>Y</b> and pressed Return, the required components of the injector are downloaded and unpacked:
+</p>
+
+<pre>
 Trust all [Y/N] <b>Y</b>
 Trusting 92429807C9853C0744A68B9AAE07828059A53CC1
 Currently downloading:
 - http://0install.net/2005/interfaces/injector
+Currently downloading:
+- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.2.tgz
+- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.3.tar.gz
+Adding impl with digest: sha1=efec372a590c092d40c3d8503e5dc3db94f25225
+Adding impl with digest: sha1=aaeb7112bfe60523d1ea96936a636635f8fa794c
 </pre>
 
-<ul>
-<li><a href="http://sourceforge.net/tracker/index.php?func=detail&amp;aid=1163184&amp;group_id=76468&amp;atid=547191">ConfigParser.NoOptionError: No option 'freshness' in section: 'global'</a></li>
-</ul>
-
 <p>
-The <b>0launch-gui</b> command actually just invokes the non-graphical <b>0launch</b>
-command, giving it the interface for the GUI
-(<b>http://0install.net/2005/interfaces/injector-gui</b>). <b>0launch</b> downloaded this
-interface and asked you to confirm that you trust software written by me. Then it downloaded
-the archive from sourceforge and unpacked it into the cache directory (after checking that
-its signature was correct).
+The injector selected suitable implementations of the two interfaces (injector-gui version 0.2 and
+injector version 0.3), it downloaded the archives from sourceforge and unpacked
+them into the cache directory (after checking that the signatures were correct).
 </p>
 
 <div class='note'>TODO: Archives are currently unpacked to your home directory, in
