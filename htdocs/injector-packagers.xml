@@ -46,7 +46,7 @@ of Control</i>).</p>
 
 <p>
 Both tasks are handled by the injector. This takes as input an interface and
-chooses an implementation based on the your policy.
+selects a set of implementations based on the user's policy.
 </p>
 
 <p>
@@ -55,10 +55,10 @@ URL and downloading the XML file it names (click on one of the interfaces above 
 what an interface file looks like).
 </p>
 
-<h2>The interface file</h2>
+<h2>Format of an interface file</h2>
 
 <p>
-The interface file is a GPG clear-signed XML file. The root &lt;interface&gt; element contains
+An interface file is a GPG clear-signed XML file. The root &lt;interface&gt; element contains
 information about the interface itself, and a list of implementations (covered below). Edit's
 interface looks like this:
 </p>
@@ -68,7 +68,8 @@ interface looks like this:
 Hash: SHA1
 
 <?xml version="1.0" ?>
-<interface last-modified="1110752708" main="Edit/AppRun"
+<interface last-modified="1110752708"
+	   main="Edit/AppRun"
            uri="http://rox.sourceforge.net/2005/interfaces/Edit"
 	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
   [...]
@@ -83,10 +84,10 @@ The attributes on the root element are:
 </p>
 
 <dl>
-<dt>last-modified</dt> <dd>the time in seconds since the Unix epoch when the file was last modified.</dd>
-<dt>uri</dt> <dd>the correct name for the interface (since there be several URLs which will fetch this
+<dt>last-modified</dt> <dd>the time in seconds since the Unix epoch when the file was last modified</dd>
+<dt>uri</dt> <dd>the correct name for the interface (since there may be several URLs which will fetch this
 interface; this is to ensure everyone uses the canonical name)</dd>
-<dt>xmlns</dt> <dd>the XML namespace for all the elements</dd>
+<dt>xmlns</dt> <dd>the XML namespace for all the elements (don't change this)</dd>
 <dt>main</dt> <dd>(optional) an executable file inside each implementation which is used as the default
 action when the user asks to run the interface</dd>
 </dl>
@@ -116,7 +117,7 @@ The summary is a short one-line message, while the description can be several pa
 Following the details is a list of implementations of the interface.
 </p>
 
-<h2>Versions</h2>
+<h2>Implementations</h2>
 
 <p>
 An implementation (in the Zero Install sense) is always some particular
@@ -127,12 +128,64 @@ way.
 </p>
 
 <p>
-Each implementation of the interface has a definition like this:
+Each implementation of an interface has a definition like this:
 </p>
 
 <pre><![CDATA[
-<implementation id="sha1=00720a16dd9e38c8d29b844730e930db13dc0783" stability="stable" version="1.9.3">
+<implementation id="sha1=00720a16dd9e38c8d29b844730e930db13dc0783"
+		stability="stable" version="1.9.3">
 ]]></pre>
+
+<p>
+When adding a new implementation, you will need to know the SHA1 digest value to
+use. Once the injector has downloaded your program, it will check that the digest
+is correct to ensure that the archive hasn't been tampered with. You can find out
+the digest my running <b>manifest.py</b> on the root directory of your unpacked
+program:
+</p>
+
+<pre>
+$ python /usr/lib/python2.3/site-packages/zeroinstall/zerostore/manifest.py myprog
+[...]
+sha1=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+</pre>
+
+<div class="note">TODO: There should be an easier way to do this in the next version!</div>
+
+<h2>Archives</h2>
+
+<p>
+For each implementation, you also need to tell the injector where it can download it. Here
+is an example from Edit's interface:
+</p>
+
+<pre><![CDATA[
+<implementation stability="stable" version="1.9.3" id="sha1=00720a16dd9e38c8d29b844730e930db13dc0783">
+  <archive extract="edit-1.9.3" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.3.tgz" size="24322"/>
+</implementation>
+]]></pre>
+
+<p>
+The <b>href</b> attribute is the URL which will be used to fetch the archive, which must be
+a tgz archive. <b>size</b> is the size of the archive file, which used for the download progress
+display (you can also set a <b>size</b> on the implementation; that is the uncompressed size).
+</p>
+
+<p>
+The optional <b>extract</b> attribute tells the injector to extract a particular subdirectory
+of the archive. This is useful because many archives contain only a single top-level directory;
+we want the unpacked component to contain a directory called <b>Edit</b>, not
+<b>edit-1.9.3/Edit</b>.
+</p>
+
+<p>
+You might wonder why we don't just create an archive without the extra directory in the first
+place. The reason is that the injector is designed to work with <i>existing</i> archives; Edit
+1.9.3 pre-dates the injector by a long way, but the injector is able to use
+Edit's original archive (and ROX-Lib's too!) without modifications.
+</p>
+
+<h2>Versions</h2>
 
 <p>
 A version is a dot-separated list of integers. Eg "1.2.3". It can be just a
@@ -171,39 +224,6 @@ version) to an interface should be handled by creating a new interface. Eg:
 <li>http://gtk.org/2005/interfaces/GTK-2.0 (contains 2.0.0, 2.0.1, 2.2.0, 2.4.0, 2.4.1, ...)</li>
 </ul>
 
-
-<h2>Archives</h2>
-
-<p>
-For each implementation, you also need to tell the injector where it can download it. Here
-is an example from Edit's interface:
-</p>
-
-<pre><![CDATA[
-<implementation id="sha1=00720a16dd9e38c8d29b844730e930db13dc0783" stability="stable" version="1.9.3">
-  <archive extract="edit-1.9.3" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.3.tgz" size="24322"/>
-</implementation>
-]]></pre>
-
-<p>
-The <b>href</b> attribute is the URL which will be used to fetch the archive, which must be
-a tgz archive. <b>size</b> is the size of the archive file, which used for the download progress
-display (you can also set a <b>size</b> on the implementation; that is the uncompressed size).
-</p>
-
-<p>
-The optional <b>extract</b> attribute tells the injector to extract a particular subdirectory
-of the archive. This is useful because many archives contain only a single top-level directory;
-we want the unpacked component to contain a directory called <b>Edit</b>, not
-<b>edit-1.9.3/Edit</b>.
-</p>
-
-<p>
-You might wonder why we don't just create an archive without the extra directory in the first
-place. The reason is that the injector is designed to work with <i>existing</i> archives; Edit
-1.9.3 pre-dates the injector by a long way, but the injector is able to use
-Edit's original archive (and ROX-Lib's too!) without modifications.
-</p>
 
 <h2>Stability</h2>
 
