@@ -130,9 +130,8 @@ a considerable amount of data that you simply don't need.
 
 <p class='zero'>
 Zero Install makes it easy to group files in smaller packages (as if every
-package had it's own '-common' and '-doc' packages), typically grouping
-by directory, since the grouping is transparent to the user. Thus, you only
-download what you need.
+package had it's own '-common' and '-doc' packages). In fact, files are
+grouped by directory by default. Thus, you only download what you need.
 </p>
 
 <h3>Downloads too little</h3>
