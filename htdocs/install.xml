@@ -318,6 +318,7 @@ zero-install helper program is <strong>not</strong> run automatically.
 Therefore, you will get I/O errors when trying to access anything new, until
 you do <tt>/etc/init.d/0install start</tt>.
 </li>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/535">Starting Zero Install automatically at boot time</a></li>
 </ul>
 
 <h2>Further reading</h2>
