@@ -8,7 +8,7 @@ test -f "@zero-install@" || exit 0
 case "$1" in
   start)
     echo Starting zero-install...
-    su "@helper_user@" -s "@zero-install@"
+    su "@helper_user@" -p -c "@zero-install@"
     ;;
   stop)
     echo Stopping zero-install...

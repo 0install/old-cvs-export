@@ -1,3 +1,8 @@
+* Use 'su -p -c' instead of 'su -s'. Some systems don't have -s (reported by
+  Sampo Vuori).
+
+* Updated to use D-BUS 0.2 API.
+
 * Send better error messages to ZeroProgress.
 
 Changes since 0.1.17:
