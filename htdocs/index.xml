@@ -137,8 +137,8 @@ Install system itself still requires some work to install. Please read this:
 
 <p class='q'>Is it fully working yet?</p>
 
-<p>It's still under development, but the examples given here already
-work. You can run Memo as shown above, and it will get ROX-Lib and pygtk via
+<p>Pretty much. The main issue is how much software is distributed using this
+method. You can run Memo as shown above, and it will get ROX-Lib and pygtk via
 Zero Install. However, the other libraries are not yet in Zero Install, so you
 will need to install Gtk, etc, as normal for now.
 </p>
@@ -147,7 +147,10 @@ will need to install Gtk, etc, as normal for now.
 Take a look at our <a href="http://sourceforge.net/pm/?group_id=76468">tasks
 list</a> for a list of things being worked on (or things that will be worked
 on when we get volunteers). We really need lots of volunteers to start packaging
-some common libraries for other things to depend on...
+some applications (you can distribute them from your own web pages). The
+<a href="http://www.gobolinux.org/">GoboLinux</a> packages would be a good
+place to start, since they're already organised in a way that makes them easy
+to use though Zero Install.
 </p>
 
 <p class='q'>Do I have to enter the full URI every time I want to run a
@@ -204,6 +207,18 @@ opens instantly.</li>
 <tt>Gimp-1.3</tt>. Since it's in the cache, it starts right away without using
 the network at all.</li>
 </ol>
+
+<p class='q'>I dunno... this cache thing sounds complicated...</p>
+
+<p>
+It's really simple. When you run <tt>/uri/0install/abiword.org/abiword</tt>, Zero Install
+stores a copy of it in <tt>/var/cache/zero-inst/abiword.org/abiword</tt>. The next
+time you try to run it, Zero Install sees that it's already got a copy, and runs
+that. If you delete the copy in the cache, it will be refetched next time it's needed.
+It's really hard to mess up the cache, because if anything is missing it gets refetched.
+You could even delete the entire cache directory, and it will just repopulate itself
+as you access things.
+</p>
 
 <p class='q'>I have more questions!</p>
 
