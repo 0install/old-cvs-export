@@ -278,7 +278,8 @@ which we'll save as <tt>roxos.sunsite.dk/0push</tt>:
 </p>
 
 <pre>
-#!/bin/sh
+#!/bin/bash
+alias 0build=/uri/0install/zero-install.sourceforge.net/bin/0build
 cd `dirname "$0"`
 (cd site &amp;&amp; 0build) || exit 1
 rsync -av --delete --rsh="ssh -l fred" export/.0inst-{archives,index.tgz,index.tar.bz2} roxos.sunsite.dk:/path/to/htdocs/
