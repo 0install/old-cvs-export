@@ -9,15 +9,19 @@ import md5
 
 ignored_names = ('CVS', '.svn', '.', '..')
 meta_names = ('.DirIcon', 'AppInfo.xml')
+archive_dir_leaf = '.0inst-archives'
+index_leaf = '.0inst-index.xml'
 
 if len(sys.argv) != 2:
-	print >>sys.stderr, "Usuage: 0build <targetdir>\n" \
-		"The <targetdir>/0install directory will be created/updated.\n"\
-		"This directory should be fetchable as:\n" \
-		"http://your.host/0install\n" \
-		"Then the file ./file will be accessable as\n" \
-		"/uri/http/your.host/file\n\n" \
-		"Eg: 0build /var/www/"
+	print >>sys.stderr, "Usage: 0build <targetdir>\n\n" \
+		"The <targetdir>/%s directory will be created/updated,\n" \
+		"along with the index file <targetdir>/%s\n" \
+		"This file should be fetchable as:\n" \
+		"http://your.host/%s\n" \
+		"Then the file ./<somefile> will be accessable as\n" \
+		"/uri/0http/your.host/<somefile>\n\n" \
+		"Eg: 0build /var/www/" % \
+		(archive_dir_leaf, index_leaf, index_leaf)
 	raise SystemExit
 target = sys.argv[1]
 
@@ -27,7 +31,6 @@ if not os.path.exists(target):
 
 ZERO_NS = 'http://zero-install.sourceforge.net'
 
-archive_dir_leaf = '.0inst-archives'
 archive_dir = os.path.join(target, archive_dir_leaf)
 archive_base = time.strftime('%Y-%b-%d-%H-%M-%S-')
 archive_i = 0
@@ -261,8 +264,7 @@ doc.appendChild(site)
 root = Dir('.', root = True)
 
 #print root
-
-index_path = os.path.join(target, '.0inst-index.xml')
+index_path = os.path.join(target, index_leaf)
 old_doc = None
 if os.path.exists(index_path):
 	old_doc = dom.minidom.parse(index_path)
