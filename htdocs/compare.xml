@@ -11,6 +11,19 @@ these arguments will also apply to other systems (RPM, urpmi, tarballs, etc).
 </p>
 
 <p>
+Also, I'll give a little information about myself, because of the shocking
+number of people posting comments like "This guy's obviously never used
+a Debian system" or "He's clearly never packaged a non-trivial application".
+I run Debian (testing and unstable) on my own machines and have done for years.
+Debian is much more than its packaging system; it's about quality control,
+bug tracking and support. If Debian switched from APT to Zero Install, it would
+still be a great project. I'm also the original author and maintainer of
+the <a href="http://rox.sourceforge.net">ROX desktop</a> (which is why many of
+the examples use ROX). ROX is multi-platform (Linux, BSD, MacOS X, Solaris,
+etc), so I'm very familiar with binary and source compatibility issues.
+</p>
+
+<p>
 Let's start with a simple example. A student is sitting at one of his
 school's Debian machines and wishes to write a report using AbiWord. But
 AbiWord either isn't installed, or the version installed is too old and
