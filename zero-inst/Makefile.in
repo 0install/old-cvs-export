@@ -2,8 +2,8 @@ KERNEL := @KERNELDIR@
 MODULEDIR := /lib/modules/`uname -r`/kernel/fs/lazyfs
 
 TESTS := hello_glib
-GLIB := /uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386
-PKG_CONFIG_PATH=${GLIB}/lib/pkgconfig
+CORE := /uri/http/zero-install.sourceforge.net/libs/core/1.0/Linux-i386
+PKG_CONFIG_PATH=${CORE}/lib/pkgconfig
 
 ZERO_OBJECTS := zero-install.o support.o fetch.o control.o
 
@@ -36,7 +36,7 @@ zero-install: ${ZERO_OBJECTS}
 # Test program using glib
 
 hello_glib.o: hello_glib.c
-	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} ${CC} -c -Wall `pkg-config --cflags glib-2.0` -o $@ $<
+	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} ${CC} -c -Wall `${CORE}/bin/pkg-config --cflags glib-2.0` -o $@ $<
 
 hello_glib: hello_glib.o
-	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} gcc -Wl,--rpath=${GLIB}/lib `pkg-config --libs glib-2.0` -o $@ $<
+	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} gcc `${CORE}/bin/pkg-config --libs glib-2.0` -o $@ $<
