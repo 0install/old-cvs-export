@@ -292,6 +292,19 @@ static void read_from_helper(int helper)
 
 	len = read(request_fd, buffer, sizeof(buffer));
 
+	if (len == -1 && errno == ENOTDIR) {
+		/* No longer exists... not an error 
+		 * (example: someone doing 'pwd' in an unlinked directory)
+		 */
+		close(request_fd);
+		return;
+	}
+
+	if (len < 0) {
+		perror("read from request FD");
+		exit(EXIT_FAILURE);
+	}
+
 	if (len < 2 || buffer[len - 1] != '\0' || buffer[0] != '/') {
 		fprintf(stderr, "Internal error: bad request\n");
 		exit(EXIT_FAILURE);

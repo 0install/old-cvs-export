@@ -402,8 +402,11 @@ lazyfs_put_inode(struct inode *inode)
 static int
 lazyfs_dentry_revalidate(struct dentry *dentry, int flags)
 {
+	if (!dentry->d_inode)
+		return 1;	/* Negative dentries are always OK */
+
 	if (dentry->d_parent == dentry) {
-		printk("lazyfs_dentry_revalidate: Root!\n");
+		return 1;
 	} else {
 		ensure_cached(dentry->d_parent);
 
@@ -972,54 +975,54 @@ static inline void mark_children_may_delete(struct dentry *dentry)
 	spin_unlock(&dcache_lock);
 }
 
-static void genocide_one(struct dentry *dentry)
+static void genocide_one(struct dentry *dentry, struct list_head *to_be_removed)
 {
-	if (dentry->d_parent == dentry) {
-		printk("[ genocide_one: '%s' ]\n", dentry->d_name.name);
-		return;
-	}
-
-	/* Don't force it to stay */
-	atomic_dec(&dentry->d_count);
+	if (dentry->d_parent == dentry)
+		BUG();
 
 	/* Don't allow listing, etc of this directory */
 	if (S_ISDIR(dentry->d_inode->i_mode))
 		dentry->d_inode->i_flags |= S_DEAD;
 
-	/* Unhash, only if unused */
-	if (atomic_read(&dentry->d_count)) {
-		printk("Dentry '%s' will be freed later\n",
-				dentry->d_name.name);
-		/* Break link from parent */
-		atomic_dec(&dentry->d_parent->d_count);
-		dentry->d_parent = dentry;
-		list_del_init(&dentry->d_child);
+	/* Unhash it (unhashing seems to be safe provided there are no
+	 * child dentries).
+	 */
+	list_del_init(&dentry->d_hash);
+
+	/* Turn it into its own subtree */
+	list_del_init(&dentry->d_child);
+	if (atomic_read(&dentry->d_count) > 1) {
+		//printk("Dentry '%s' will be freed later\n",
+		//		dentry->d_name.name);
+		/* Don't force it to stay */
+		atomic_dec(&dentry->d_count);
 	} else {
-		printk("Unhashing unused dentry '%s' now\n",
-				dentry->d_name.name);
-		list_del_init(&dentry->d_hash);
+		/* (reusing d_child; noone else has a ref anyway) */
+		list_add(&dentry->d_child, to_be_removed);
 	}
+
+	/* Break link to parent */
+	atomic_dec(&dentry->d_parent->d_count);
+	dentry->d_parent = dentry;
 }
 
-/* Problem: We can't delete a subtree if any of the dentries
- * in it are still being used. But, we can't rely on a later dput
- * to remove the subtree either.
- * Try turning every node into a separate tree, by unhashing every dentry
- * and setting their parents to themselves.
- * (a count of zero means that the dentry can be freed at any time; this
- * the the normal case for other filesystems, but we keep it non-zero
- * normally to prevent losing bits)
+/*
+ * This removes the whole subtree starting at 'root', trying to cope with
+ * the fact that other people may be using some of the dentries.
  *
- * We scan through the whole tree. For each leaf node we drop the count
- * by one, since we don't want to force it to stay. Then we shrink the
- * dcache, which will free any dentries that have a count of zero.
+ * We scan through the whole subtree, turning each node into its own
+ * subtree. If anyone else has a reference to it, we drop our reference and do
+ * nothing more (the other user will free it later). If we hold the only
+ * reference then we add the node to our to_be_removed list, and dput them all
+ * at the end (for locking reasons).
  *
- * Anything with a non-zero count will eventually be dput() from elsewhere.
+ * Called with update_dir held.
  */
 static void my_d_genocide(struct dentry *root)
 {
 	struct dentry *this_parent = root, *parent;
-	struct list_head *next;
+	struct list_head *next, *tmp;
+	LIST_HEAD(to_be_removed);
 
 	spin_lock(&dcache_lock);
 repeat:
@@ -1035,39 +1038,30 @@ resume:
 			this_parent = dentry;
 			goto repeat;
 		}
-		genocide_one(dentry);
+		genocide_one(dentry, &to_be_removed);
 	}
 
 	/* Moving up to parent */
 
-	shrink_dcache_parent(this_parent);
-
 	next = this_parent->d_child.next; 
 	parent = this_parent->d_parent;
-	genocide_one(this_parent);
+	genocide_one(this_parent, &to_be_removed);
 		
 	if (this_parent != root) {
 		this_parent = parent;
 		goto resume;
 	}
 	spin_unlock(&dcache_lock);
+
+	list_for_each_safe(next, tmp, &to_be_removed) {
+		struct dentry *kid = list_entry(next, struct dentry, d_child);
+		//printk("Removing '%s' now\n", kid->d_name.name);
+		list_del_init(&kid->d_child);
+		dput(kid);
+	}
 }
 
-/* Removes dentry from the tree, and any child nodes too.
- * Note: removes the ref that the tree held, but doesn't drop the reference
- * passed in.
- */
-static void remove_dentry(struct dentry *dentry)
-{
-	struct super_block *sb = dentry->d_inode->i_sb;
-
-	printk("Before remove_dentry(%s)\n", dentry->d_name.name);
-	show_refs(sb->s_root, 0);
-	my_d_genocide(dentry);
-	printk("After remove_dentry(%s)\n", dentry->d_name.name);
-	show_refs(sb->s_root, 0);
-}
-
+/* Called with update_dir help */
 static void sweep_marked_children(struct dentry *dentry)
 {
 	struct list_head *head, *next;
@@ -1089,13 +1083,11 @@ restart:
 			continue;
 
 		spin_unlock(&dcache_lock);
-		remove_dentry(child);
+		my_d_genocide(child);
 		goto restart;
 	}
 
 	spin_unlock(&dcache_lock);
-
-	shrink_dcache_parent(dentry);
 }
 
 /* For directories, returns false but updates time */
@@ -1222,23 +1214,28 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 
 		name.hash = full_name_hash(name.name, name.len);
 		existing = d_lookup(dir, &name);
-		if (existing && existing->d_inode) {
+		if (existing && !existing->d_inode) {
+			/* Unhash any negative dentry */
+			d_drop(existing);
+			dput(existing);
+			existing = NULL;
+		}
+
+		if (existing) {
 			struct inode *i = existing->d_inode;
 			if (has_changed(i, mode, size, time, &link_target)) {
-				remove_dentry(existing);
+				my_d_genocide(existing);
 				new_dentry(sb, dir, name.name,
 					   mode, size, time, &link_target);
 			} else {
 				struct lazy_de_info *info = existing->d_fsdata;
 				info->may_delete = 0;
 			}
+			dput(existing);
 		} else {
-			/* XXX: do we need to remove a negative dentry? */
 			new_dentry(sb, dir, name.name, mode, size, time,
 					&link_target);
 		}
-		if (existing)
-			dput(existing);
 	}
 
 	sweep_marked_children(dir);
@@ -1246,10 +1243,6 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 	if (listing != end)
 		BUG();
 
-	shrink_dcache_sb(dir->d_sb);
-
-	//show_refs(dir->d_inode->i_sb->s_root, 0);
-	
 	return 0;
 
 bad_list:
@@ -1471,7 +1464,7 @@ lookup_via_helper(struct super_block *sb, struct dentry *dentry)
 	{
 		/* Drop it */
 		spin_lock(&update_dir);
-		remove_dentry(new);
+		my_d_genocide(new);
 		dput(new);
 		spin_unlock(&update_dir);
 		return ERR_PTR(err);
@@ -1500,7 +1493,7 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 			return dget(sbi->cache_dentry);
 	}
 
-	printk("[ ensure lookup ]\n");
+	/* Do we still need this now we have d_revalidate? */
 	err = ensure_cached(dentry->d_parent);
 	if (err)
 		return ERR_PTR(err);
@@ -2100,7 +2093,6 @@ static int __init init_lazyfs_fs(void)
 
 static void __exit exit_lazyfs_fs(void)
 {
-	show_resources();
 	unregister_filesystem(&lazyfs_fs_type);
 }
 

@@ -77,6 +77,7 @@ else:
 	assert os.listdir("/uri/0install/0test") == ['apps']
 	assert os.popen('0refresh').read() == 'OK\n'
 	assert os.listdir("/uri/0install/0test") == ['apps']
+	os.system("pwd")
 	assert os.listdir('..') == []
 	assert os.listdir('.') == []
 	#file('foo') (forces creation of a negative dentry)
