@@ -211,9 +211,9 @@ Using groups is simply a short-hand notation. Eg:
 <h2>Dependancies</h2>
 
 <p>
-Our example interface for Memo above doesn't mention that Memo needs ROX-Lib
-(Memo will have to find ROX-Lib itself in this case). We can list the
-dependancies of an implementation in its interface file, and the injector
+So far, our example interface for Memo doesn't mention that Memo needs
+ROX-Lib (Memo will have to find ROX-Lib itself in this case). If we list the
+dependancies of an implementation in its interface file, the injector
 will locate implementations of them too. All information about dependancies is
 handled at the interface level; this is because the same implementation may be
 used in different ways. Also, for software not specially designed for use with
@@ -270,6 +270,11 @@ choice known to Memo. In this case, it is by inserting
 <p>
 The injector will also examine the dependancies of ROX-Lib and Python
 recursively.
+</p>
+
+<p style='text-align: center'>
+<img width="625" height="433" src="inject-browser.png"
+     alt="When run interactively, the user can choose each component's implementation" />
 </p>
 
 </html>
