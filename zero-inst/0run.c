@@ -12,6 +12,12 @@
 
 #define ZERO_MNT "/uri/0install"
 
+#ifdef S_SPLINT_S
+extern void gmtime_r(const time_t *time, /*@out@*/ struct tm *date);
+extern /*@exposed@*/ const char *strptime(const char *time,
+					  const char *format, struct tm *date);
+#endif
+
 static time_t parse_date(const char *str)
 {
 	struct tm tm_date;
@@ -24,13 +30,14 @@ static time_t parse_date(const char *str)
 	if (old_tz) {
 		char *tmp = old_tz;
 		old_tz = malloc(strlen(tmp) + 1);
-		if (!old_tz) {
-			fprintf(stderr, "Out of memory\n");
-			exit(EXIT_FAILURE);
-		}
+		if (!old_tz)
+			goto oom;
 		strcpy(old_tz, tmp);
-	}
-	setenv("TZ", "UTC", 1);
+	} else
+		old_tz = NULL;
+
+	if (setenv("TZ", "UTC", 1))
+		goto oom;
 	
 	gmtime_r(&retval, &tm_date);	/* Zero fields */
 
@@ -48,13 +55,17 @@ static time_t parse_date(const char *str)
 	retval = mktime(&tm_date);
 
 	if (old_tz) {
-		setenv("TZ", old_tz, 1);
+		if (setenv("TZ", old_tz, 1))
+			goto oom;
 		free(old_tz);
 	} else {
 		unsetenv("TZ");
 	}
 
 	return retval;
+oom:
+	fprintf(stderr, "Out of memory\n");
+	exit(EXIT_FAILURE);
 }
 
 static void force_fetch(char *path)
@@ -73,12 +84,15 @@ static void force_fetch(char *path)
 		slash = strchr(path, '/');
 		if (slash)
 			*slash = '\0';
-		execlp("0refresh", "0refresh", path, NULL);
+		(void) execlp("0refresh", "0refresh", path, NULL);
 		perror("execlp(0refresh)");
 		_exit(1);
 	}
 
-	waitpid(child, NULL, 0);
+	if (waitpid(child, NULL, 0) != child) {
+		perror("waitpid");
+		exit(EXIT_FAILURE);
+	}
 }
 
 int main(int argc, char **argv)
@@ -87,6 +101,7 @@ int main(int argc, char **argv)
 	time_t mtime;
 	char *path;
 	char *date;
+	int len;
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: /bin/0run \"program time\" [args]\n\n"
@@ -110,15 +125,19 @@ int main(int argc, char **argv)
 	*date = '\0';
 	date++;
 
-	path = malloc(sizeof(ZERO_MNT) + strlen(argv[1]) + 1);
-	sprintf(path, "%s%s",
+	len = sizeof(ZERO_MNT) + strlen(argv[1]) + 1;
+	path = malloc(len);
+	if (!path)
+		goto oom;
+	if (snprintf(path, len, "%s%s",
 			argv[1][0] == '/' ? "" : ZERO_MNT "/",
-			argv[1]);
+			argv[1]) >= len)
+		abort();
 
 	if (strncmp(path, ZERO_MNT "/", sizeof(ZERO_MNT)) != 0) {
 		fprintf(stderr, "Path '%s' is not under " ZERO_MNT "!\n",
 				path);
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 
 	mtime = parse_date(date);
@@ -128,26 +147,35 @@ int main(int argc, char **argv)
 		if (stat(path, &info) != 0 || info.st_mtime < mtime) {
 			fprintf(stderr, "Failed to update '%s' to date '%s'\n",
 					path, date);
-			return EXIT_FAILURE;
+			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (S_ISDIR(info.st_mode))
 	{
 		char *old = path;
+		int alen;
 
-		path = malloc(strlen(old) + sizeof("/AppRun"));
+		alen = strlen(old) + sizeof("/AppRun");
+		path = malloc(alen);
 		if (!path) {
 			fprintf(stderr, "Out of memory\n");
-			return EXIT_FAILURE;
+			exit(EXIT_FAILURE);
 		}
 
-		sprintf(path, "%s/AppRun", old);
+		if (snprintf(path, alen, "%s/AppRun", old) != alen - 1)
+			abort();
+
+		free(old);
 	}
 
 	argv[1] = path;
-	execv(path, argv + 1);
+	(void) execv(path, argv + 1);
 
 	perror("execv");
-	return 127;
+	/*@-exitarg@*/
+	exit(127);
+oom:
+	fprintf(stderr, "Out of memory\n");
+	return EXIT_FAILURE;
 }

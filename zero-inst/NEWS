@@ -3,8 +3,10 @@ Changes since 0.1.25:
 * Removed command to remove 0http and http symlinks. It's been many versions
   since we used those (requested by Peter Prohaska).
 
-* 'make splint' target checks 0refresh.c with splint. Added a couple of checks
-  for unlikely error conditions.
+* 'make splint' target checks 0refresh.c and 0run.c with splint. Added a couple
+  of checks for unlikely error conditions.
+
+* Compile with -Wwrite-strings (no errors found).
 
 Changes since 0.1.24:
 
