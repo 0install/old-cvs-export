@@ -56,10 +56,15 @@
 #include <linux/file.h>
 #include <linux/poll.h>
 #include <linux/list.h>
+#include <linux/version.h>
 
 #include <asm/uaccess.h>
 
 #include "lazyfs.h"
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 20)
+# include "compat20.h"
+#endif
 
 const char platform[] = LAZYFS_PLATFORM;
 
