@@ -193,4 +193,17 @@ This will update every cached index file. The actual data will be fetched on
 demand.
 </p>
 
+<h3>Cleaning the cache</h3>
+
+<p>
+If you run low on disk space, you can use
+<a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/619">ZeroClean</a>
+to find and remove old files in the cache:
+</p>
+
+<p style='text-align: center'>
+<img width="618" height="338" src="ZeroClean.png"
+     alt='ZeroClean find somes files to remove' />
+</p>
+
 </html>
