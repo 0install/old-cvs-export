@@ -16,7 +16,7 @@
 
 #define ZERO_NS "http://zero-install.sourceforge.net"
 
-#define DTD "<?xml version='1.0'?>	\
+static const char DTD[] = "<?xml version='1.0'?>	\
 <grammar xmlns:z='" ZERO_NS "' xmlns='http://relaxng.org/ns/structure/1.0'> \
  <start>								\
   <element name='z:site-index'>				\
@@ -66,7 +66,7 @@
    </oneOrMore>		\
   </element>		\
  </define>		\
-</grammar>"
+</grammar>";
 
 static xmlRelaxNGValidCtxtPtr schema = NULL;
 static xmlRelaxNGParserCtxtPtr context = NULL;

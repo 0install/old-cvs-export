@@ -28,6 +28,10 @@ static time_t parse_date(const char *str)
 	if (old_tz) {
 		char *tmp = old_tz;
 		old_tz = malloc(strlen(tmp) + 1);
+		if (!old_tz) {
+			fprintf(stderr, "Out of memory\n");
+			exit(EXIT_FAILURE);
+		}
 		strcpy(old_tz, tmp);
 	}
 	setenv("TZ", "UTC", 1);
