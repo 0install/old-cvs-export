@@ -51,11 +51,12 @@ Supported kernels are:
 <li> Linux 2.6 (tested with 2.6.0-pre7) - <strong>Experimental</strong> (may crash; try the <a href="http://cvs.sourceforge.net/viewcvs.py/*checkout*/zero-install/zero-inst/Linux/lazyfs.c">CVS lazyfs.c</a> if you have problems)</li>
 </ul>
 <p>
-If you want to port the (small) module to that or to other kernels (BSD, MacOS
+If you want to port the (small) module to other kernels (BSD, MacOS
 X, etc) please get in touch.
 </p>
 
 <div class='note'>
+<!--
 <p>
 Joachim Kupke has created
 <a href="http://www-i1.informatik.rwth-aachen.de/~joachimk/debian/">Debian
@@ -66,6 +67,11 @@ packages</a> for Zero Install.
 Add<br/><tt>deb http://www-i1.informatik.rwth-aachen.de/~joachimk debian/</tt>
 <br/>to<br/><tt>/etc/apt/sources.list</tt><br/>and install using apt-get.
 </p>
+-->
+There are some Debian packages at
+<tt>http://www-i1.informatik.rwth-aachen.de/~joachimk/debian/</tt>, but
+the version packaged (0.1.14) is now too old to work with the current index
+format.
 </div>
 <!--
 <div class='note'>
