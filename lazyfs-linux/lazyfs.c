@@ -1938,7 +1938,7 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 			BUG();
 		inc(R_MAPPING);
 		inode->i_mapping = host_inode->i_mapping;
-#ifdef LINUX_2_6_SERIES
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,2)
 		file->f_mapping = inode->i_mapping;
 #endif
 	}

@@ -1,0 +1,7 @@
+Changes since 0.1.20:
+
+* Use new f_mapping field to work with Linux kernels >= 2.6.2 (reported by
+  Artem Baguinski and Stephen J Craig).
+
+* Correctly detect the version for RedHat kernels (reported by Alastair
+  Porter).
