@@ -353,17 +353,6 @@ int main(int argc, char **argv)
 
 	index_init();
 
-	if (0)
-	{
-		Index *index = parse_index("/var/www/0install-index.xml", 0);
-		if (index) {
-			index_dump(index);
-			index_free(index);
-		}
-		index_shutdown();
-		return 0;
-	}
-
 	if (argv[1] && strcmp(argv[1], "--verbose") == 0)
 		verbose = 1;
 

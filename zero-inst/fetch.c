@@ -432,7 +432,7 @@ static Index *unpack_site_index(const char *site)
 	} else if (gpg_trusted(site) != 1)
 		goto out;
 
-	index = parse_index("index.new", 1);
+	index = parse_index("index.new", 1, site);
 	if (!index) {
 		if (unlink("index.new"))
 			perror("unlink");
@@ -566,12 +566,18 @@ Index *get_index(const char *path, Task **task, int force)
 	/* TODO: compare times */
 	if (force == 0 && stat(index_path, &info) == 0) {
 		Index *index;
-		
-		index = parse_index(index_path, 0);
-		if (index) {
-			free(index_path);
-			return index;
-		}
+		char *site;
+
+		site = build_string("%h", path);
+		if (site) {
+			index = parse_index(index_path, 0, site);
+			free(site);
+			if (index) {
+				free(index_path);
+				return index;
+			}
+		} else
+			task = NULL;	/* OOM */
 	}
 
 	if (task)

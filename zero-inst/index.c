@@ -215,13 +215,106 @@ static int index_valid(Index *index)
 	return 1;
 }
 
+static void index_link(Index *index, xmlNode *node)
+{
+	char *src = NULL, *target = NULL, *mtime = NULL, *size = NULL;
+	xmlNode *old = NULL, *new;
+	char *leaf;
+
+	src = xmlGetNsProp(node, "src", NULL);
+	mtime = xmlGetNsProp(node, "mtime", NULL);
+	target = xmlGetNsProp(node, "target", NULL);
+	size = xmlGetNsProp(node, "size", NULL);
+
+	if (!src || !target || !mtime || !size) {
+		fprintf(stderr, "Missing attribute for <link>\n");
+		goto out;
+	}
+
+	leaf = strrchr(src, '/');
+	if (!leaf)
+		goto out;
+	leaf++;
+
+	old = index_lookup(index, src);
+	if (!old) {
+		fprintf(stderr, "Can't override '%s'; doesn't exist!\n", src);
+		goto out;
+	}
+
+	new = xmlNewNode(old->ns, "link");
+	if (!new)
+		goto out;
+
+	xmlSetNsProp(new, NULL, "mtime", mtime);
+	xmlSetNsProp(new, NULL, "size", size);
+	xmlSetNsProp(new, NULL, "target", target);
+	xmlSetNsProp(new, NULL, "name", leaf);
+
+	xmlAddNextSibling(old, new);
+
+	xmlUnlinkNode(old);
+	xmlFreeNode(old);
+out:
+	if (src)
+		xmlFree(src);
+	if (mtime)
+		xmlFree(mtime);
+	if (size)
+		xmlFree(size);
+	if (target)
+		xmlFree(target);
+}
+
+static int index_merge_overrides(Index *index, const char *site)
+{
+	char *links;
+	xmlDoc *doc;
+	xmlNode *node;
+
+	links = build_string("%s/%h/.0inst-meta/override.xml", cache_dir, site);
+	if (!links)
+		return 0;
+
+	if (access(links, F_OK) != 0) {
+		free(links);
+		return 1;	/* no links file; OK */
+	}
+
+	doc = xmlParseFile(links);
+	free(links);
+	if (!doc) {
+		fprintf(stderr, "Failed to parse override.xml for '%s'\n",
+				site);
+		return 0;	/* Corrupt */
+	}
+
+	node = xmlDocGetRootElement(doc);
+
+	for (node = node->children; node; node = node->next) {
+		if (node->type != XML_ELEMENT_NODE)
+			continue;
+		if (strcmp(node->name, "link") != 0)
+			continue;
+
+		index_link(index, node);
+	}
+
+	xmlFreeDoc(doc);
+
+	return 1;
+}
+
 /* Load 'pathname' as an XML index file. Returns NULL if document is invalid
  * in any way. Ref-count on return is 1.
  */
-Index *parse_index(const char *pathname, int validate)
+Index *parse_index(const char *pathname, int validate, const char *site)
 {
 	xmlDoc *doc;
 	Index *index;
+
+	assert(site);
+	assert(strchr(site, '/') == NULL);
 
 	doc = xmlParseFile(pathname);
 	if (!doc)
@@ -236,6 +329,11 @@ Index *parse_index(const char *pathname, int validate)
 	index->ref = 1;
 
 	if (validate && !index_valid(index)) {
+		index_free(index);
+		return NULL;
+	}
+	
+	if (!index_merge_overrides(index, site)) {
 		index_free(index);
 		return NULL;
 	}
