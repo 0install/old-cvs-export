@@ -82,19 +82,19 @@ class WithHelper(LazyFS):
 		self.c = None
 		LazyFS.tearDown(self)
 
-class TestWithoutHelper(LazyFS):
-	def testCacheLink(self):
+class Test1WithoutHelper(LazyFS):
+	def test1CacheLink(self):
 		assert os.path.islink(fs + '/.lazyfs-cache')
 		assert os.readlink(fs + '/.lazyfs-cache') == cache
 	
-	def testUnconnectedEmpty(self):
+	def test2UnconnectedEmpty(self):
 		try:
 			file(fs + '/f')
 			assert 0
 		except IOError:
 			pass
 
-class TestWithHelper(WithHelper):
+class Test2WithHelper(WithHelper):
 	def read_rq(self):
 		#print "Reading request..."
 		fd = os.read(self.c, 1000)
@@ -116,7 +116,7 @@ class TestWithHelper(WithHelper):
 
 	def clientNothing(self): pass
 	def serverNothing(self): pass
-	testANothing = cstest('Nothing')
+	test1Nothing = cstest('Nothing')
 	
 	def clientReleaseHelper(self):
 		os.open(fs + '/.lazyfs-helper', os.O_RDONLY)
@@ -125,7 +125,7 @@ class TestWithHelper(WithHelper):
 		os.close(self.c)
 		self.c = None
 
-	testReleaseHelper = cstest('ReleaseHelper')
+	test2ReleaseHelper = cstest('ReleaseHelper')
 	
 	def clientDoubleOpen(self):
 		# Check that we can't open the helper a second time
@@ -140,14 +140,14 @@ class TestWithHelper(WithHelper):
 		fd = self.read_rq()
 		os.close(fd)
 
-	testDoubleOpen = cstest('DoubleOpen')
+	test3DoubleOpen = cstest('DoubleOpen')
 
 	def clientLsRoot(self):
 		self.assert_ls(fs, ['.lazyfs-helper', '.lazyfs-cache'])
 	def serverLsRoot(self):
 		self.send_dir('/', [])
 
-	testLsRoot = cstest('LsRoot')
+	test4LsRoot = cstest('LsRoot')
 
 	def clientGetROX(self):
 		self.assert_ls(fs + '/rox', ['apps'])
@@ -164,7 +164,7 @@ class TestWithHelper(WithHelper):
 		f = file(cache + '/rox/...', 'w').write('LazyFS\nd 1 1 apps\0')
 		os.close(fd)
 	
-	testGetROX = cstest('GetROX')
+	test5GetROX = cstest('GetROX')
 
 	def put_dir(self, dir, contents):
 		f = file(cache + dir + '/....', 'w')
@@ -210,7 +210,9 @@ class TestWithHelper(WithHelper):
 		self.send_file('/hello', 'World', 3)
 		self.send_file('/hello', 'Worlds', 3)
 
-	testDownload = cstest('Download')
+	test6Download = cstest('Download')
 	
 if __name__ == '__main__':
+	import sys
+	sys.argv.append('-v')
 	unittest.main()
