@@ -303,6 +303,7 @@ static struct file_operations lazyfs_helper_operations;
 static struct file_operations lazyfs_handle_operations;
 static struct inode_operations lazyfs_link_operations;
 static struct file_operations lazyfs_dir_file_operations;
+static struct address_space_operations lazyfs_unmapped_aops;
 
 static int ensure_cached(struct dentry *dentry);
 
@@ -490,6 +491,7 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 	inode->i_size = size;
 	inode->i_atime = CURRENT_TIME;
 	inode->i_ctime = inode->i_mtime = mtime;
+	inode->i_data.a_ops = &lazyfs_unmapped_aops;
 	if (S_ISDIR(mode)) {
 		inode->i_op = &lazyfs_dir_inode_operations;
 		inode->i_fop = &lazyfs_dir_file_operations;
@@ -1936,6 +1938,9 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 			BUG();
 		inc(R_MAPPING);
 		inode->i_mapping = host_inode->i_mapping;
+#ifdef LINUX_2_6_SERIES
+		file->f_mapping = inode->i_mapping;
+#endif
 	}
 
 	spin_unlock(&mapping_lock);
@@ -2060,6 +2065,16 @@ lazyfs_dir_open(struct inode *inode, struct file *file)
 	return err ? err : dcache_dir_open(inode, file);
 }
 
+static int
+lazyfs_unmapped_readpage(struct file *file, struct page *page)
+{
+	printk("lazyfs: Attempt to call readpage on an unmapped file ('%s')\n"
+	       "Did you upgrade your kernel? Please recompile lazyfs if so.\n",
+			file->f_dentry->d_name.name);
+	return -ENOSYS;
+}
+
+
 /*			Classes					*/
 
 static struct super_operations lazyfs_ops = {
@@ -2122,6 +2137,10 @@ struct file_system_type lazyfs_fs_type = {
 static DECLARE_FSTYPE(lazyfs_fs_type, "lazyfs" COMMA_VERSION,
 			lazyfs_read_super, FS_LITTER);
 #endif
+
+static struct address_space_operations lazyfs_unmapped_aops = {
+	.readpage	= lazyfs_unmapped_readpage,
+};
 
 static int __init init_lazyfs_fs(void)
 {
