@@ -1,6 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 	# We're building for Linux 2.6 from kconfig
-	obj-m	:= lazyfs.o
+	obj-m	:= lazyfs@COMMA_VERSION@.o
 else
 
 .SUFFIXES:
@@ -13,7 +13,13 @@ VPATH = @srcdir@
 ROOT_PREFIX = @ROOT_PREFIX@
 MODULEDIR = $(ROOT_PREFIX)/lib/modules/`uname -r`/kernel/fs/lazyfs
 
-all: lazyfs.o
+ifeq ($(KERNEL_TYPE), Linux_2_6)
+KOBJECT = ko
+else
+KOBJECT = o
+endif
+
+all: lazyfs@COMMA_VERSION@.$(KOBJECT)
 
 CC	 := @CC@
 CFLAGS   := -O2 -Wall -Wstrict-prototypes -g
@@ -26,9 +32,9 @@ clean:
 KERNELFLAGS := -Werror -I${KERNEL}/include -Wno-trigraphs -fno-strict-aliasing -fno-common -Wall -Wstrict-prototypes -O2 -Wall # ${UMFLAGS}
 MODFLAGS := -DMODULE -D__KERNEL__
 
-install: lazyfs.o
+install: lazyfs.$(KOBJECT)
 	mkdir -p ${MODULEDIR}
-	cp lazyfs.o ${MODULEDIR}/lazyfs-@VERSION@.o
+	cp lazyfs@COMMA_VERSION@.$(KOBJECT) ${MODULEDIR}/
 	[ -n "${ROOT_PREFIX}" ] || ${MAKE} real-install
 
 real-install:
@@ -41,14 +47,14 @@ real-install:
 uninstall:
 	rm -f ${MODULEDIR}/lazyfs*.o
 
-.PHONY: module-Linux_2_4 module-Linux_2_6
-lazyfs.o: lazyfs.c
-	make module-${KERNEL_TYPE}
+lazyfs@COMMA_VERSION@.c: lazyfs.c
+	rm -f lazyfs@COMMA_VERSION@.c
+	ln lazyfs.c lazyfs@COMMA_VERSION@.c
 
-module-Linux_2_4:
+lazyfs@COMMA_VERSION@.o: lazyfs@COMMA_VERSION@.c
 	${CC} -I. -I$(srcdir) -c ${KERNELFLAGS} ${MODFLAGS} -o lazyfs.o $(srcdir)/lazyfs.c
 
-module-Linux_2_6:
+lazyfs@COMMA_VERSION@.ko: lazyfs@COMMA_VERSION@.c
 	$(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules
 
 distclean: clean

@@ -282,7 +282,7 @@ static spinlock_t mapping_lock = SPIN_LOCK_UNLOCKED;
 /* Held when modifying the tree in any way. This is held for longer than
  * dcache_lock.
  */
-static spinlock_t update_dir = SPIN_LOCK_UNLOCKED;
+DECLARE_MUTEX(update_dir);
 
 struct lazy_user_request {
 	struct dentry *dentry;
@@ -304,8 +304,9 @@ static struct file_operations lazyfs_file_operations;
 static struct file_operations lazyfs_helper_operations;
 static struct file_operations lazyfs_handle_operations;
 static struct inode_operations lazyfs_link_operations;
+static struct file_operations lazyfs_dir_file_operations;
 
-static int ensure_cached(struct dentry *dentry);
+static int ensure_cached(struct dentry *dentry, int blocking);
 
 /* Returns NULL if no such request is present.
  * Caller must hold fetching_lock.
@@ -418,19 +419,22 @@ lazyfs_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
 lazyfs_dentry_revalidate(struct dentry *dentry, int flags)
 #endif
 {
+	//printk("lazyfs_dentry_revalidate: %s\n", dentry->d_name.name);
+
 	if (!dentry->d_inode)
 		return 1;	/* Negative dentries are always OK */
 
 	if (dentry->d_parent == dentry) {
 		return 1;
 	} else {
-		ensure_cached(dentry->d_parent);
+		if (ensure_cached(dentry->d_parent, 0) != 0)
+			return 0;
 
 		/* For directories, we also make sure the child list is
 		 * up-to-date for following.
 		 */
 		if (S_ISDIR(dentry->d_inode->i_mode))
-			ensure_cached(dentry);
+			return ensure_cached(dentry, 0) == 0;
 	}
 	return 1;
 }
@@ -493,7 +497,7 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 	inode->i_ctime = inode->i_mtime = mtime;
 	if (S_ISDIR(mode)) {
 		inode->i_op = &lazyfs_dir_inode_operations;
-		inode->i_fop = &dcache_dir_ops;
+		inode->i_fop = &lazyfs_dir_file_operations;
 		inode->i_mode |= 0111;
 	}
 	else if (S_ISREG(mode))
@@ -1268,7 +1272,7 @@ open_and_read(struct dentry *dentry, struct vfsmount *mnt,
 	struct file *file;
 
 	/* Open for reading (frees mnt and dentry) */
-	file = dentry_open(dget(dentry), mntget(mnt), 1);
+	file = dentry_open(dget(dentry), mntget(mnt), 0); /* 0 = RO */
 	if (IS_ERR(file))
 		return (char *) file;
 	inc(R_DDD_FILE);
@@ -1296,7 +1300,7 @@ open_and_read(struct dentry *dentry, struct vfsmount *mnt,
 		got = kernel_read(file, offset, listing + offset,
 				  size - offset);
 		if (got <= 0) {
-			printk("lazyfs: error reading file\n");
+			printk("lazyfs: error reading file (%d)\n", got);
 			fput(file);
 			dec(R_DDD_FILE);
 			kfree(listing);
@@ -1315,10 +1319,10 @@ open_and_read(struct dentry *dentry, struct vfsmount *mnt,
 	return listing;
 }
 
-/* Make sure the dcache relects the contents of '...'. If '...' is
+/* Make sure the dcache reflects the contents of '...'. If '...' is
  * missing, try to fetch it now.
  */
-static int ensure_cached(struct dentry *dentry)
+static int ensure_cached(struct dentry *dentry, int blocking)
 {
 	struct lazy_de_info *info = dentry->d_fsdata;
 	struct dentry *list_dentry = NULL;
@@ -1328,21 +1332,32 @@ static int ensure_cached(struct dentry *dentry)
 	struct super_block *sb = dentry->d_inode->i_sb;
 	struct lazy_sb_info *sbi = SBI(sb);
 
+	// printk("ensure_cached(%s)\n", dentry->d_name.name);
+
 	if (!S_ISDIR(dentry->d_inode->i_mode))
 		BUG();
 
-	list_dentry = get_host_dentry(dentry, 1);
+	list_dentry = get_host_dentry(dentry, blocking);
 	if (IS_ERR(list_dentry))
 		return PTR_ERR(list_dentry);
 
-	spin_lock(&update_dir);
+	down(&update_dir);
 	if (list_dentry == info->list_dentry) {
 		/* Already cached... do nothing */
-		spin_unlock(&update_dir);
+		up(&update_dir);
 		dput(list_dentry);
 		dec(R_LIST_DENTRY);
 		return 0;
 	}
+
+	if (!blocking) {
+		// printk("not blocking\n");
+		up(&update_dir);
+		dput(list_dentry);
+		dec(R_LIST_DENTRY);
+		return -EAGAIN;
+	}
+	// printk("update\n");
 
 	/* Switch to the new version */
 	if (info->list_dentry) {
@@ -1357,7 +1372,7 @@ static int ensure_cached(struct dentry *dentry)
 	dput(list_dentry);
 	dec(R_LIST_DENTRY);
 	if (IS_ERR(listing)) {
-		spin_unlock(&update_dir);
+		up(&update_dir);
 		return PTR_ERR(listing);
 	}
 
@@ -1380,7 +1395,7 @@ static int ensure_cached(struct dentry *dentry)
 		dec(R_LIST_DENTRY);
 	}
 
-	spin_unlock(&update_dir);
+	up(&update_dir);
 
 	return err;
 }
@@ -1450,11 +1465,11 @@ lookup_via_helper(struct super_block *sb, struct dentry *dentry)
 	struct dentry *existing, *new;
 	int err;
 
-	spin_lock(&update_dir);
+	down(&update_dir);
 
 	existing = d_lookup(dentry->d_parent, &dentry->d_name);
 	if (existing && existing->d_inode) {
-		spin_unlock(&update_dir);
+		up(&update_dir);
 		return existing;
 	} else if (existing) {
 		printk("lookup_via_helper: freeing\n");
@@ -1464,20 +1479,20 @@ lookup_via_helper(struct super_block *sb, struct dentry *dentry)
 	new = dget(new_dentry(sb, dentry->d_parent, dentry->d_name.name,
 			S_IFDIR | 0555, 0, CURRENT_TIME, NULL));
 	
-	spin_unlock(&update_dir);
+	up(&update_dir);
 
 	/* Don't block readers while we check it exists... */
 	up(&dentry->d_parent->d_inode->i_sem);
-	err = ensure_cached(new);
+	err = ensure_cached(new, 1);
 	down(&dentry->d_parent->d_inode->i_sem);
 
 	if (err)
 	{
 		/* Drop it */
-		spin_lock(&update_dir);
+		down(&update_dir);
 		my_d_genocide(new);
 		dput(new);
-		spin_unlock(&update_dir);
+		up(&update_dir);
 		return ERR_PTR(err);
 	}
 
@@ -1496,6 +1511,8 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 	struct dentry *new;
 	int err;
 
+	// printk("lazyfs_lookup: %s\n", dentry->d_name.name);
+
 	/* The root "..." file might not exist, but these two still need to be
 	 * accessible...
 	 */
@@ -1509,7 +1526,7 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 	}
 
 	/* Do we still need this now we have d_revalidate? */
-	err = ensure_cached(dentry->d_parent);
+	err = ensure_cached(dentry->d_parent, 1);
 	if (err)
 		return ERR_PTR(err);
 
@@ -1552,9 +1569,9 @@ lazyfs_handle_release(struct inode *inode, struct file *file)
 	if (ensure_cached(existing))
 	{
 		/* Guess it wasn't a directory after all... */
-		spin_lock(&update_dir);
+		down(&update_dir);
 		remove_dentry(existing);
-		spin_unlock(&update_dir);
+		up(&update_dir);
 
 		dput(existing);
 		existing = NULL;
@@ -2046,6 +2063,15 @@ out:
 	return 0;
 }
 
+static int
+lazyfs_dir_open(struct inode *inode, struct file *file)
+{
+	int err;
+	// printk("Ensure cached %s\n", file->f_dentry->d_name.name);
+	err = ensure_cached(file->f_dentry, 1);
+	return err ? err : dcache_dir_open(inode, file);
+}
+
 /*			Classes					*/
 
 static struct super_operations lazyfs_ops = {
@@ -2088,16 +2114,24 @@ static struct dentry_operations lazyfs_dentry_ops = {
 	d_revalidate:	lazyfs_dentry_revalidate,
 };
 
+static struct file_operations lazyfs_dir_file_operations = {
+	open:		lazyfs_dir_open,
+	release:	dcache_dir_close,
+	llseek:		dcache_dir_lseek,
+	read:		generic_read_dir,
+	readdir:	dcache_readdir,
+};
+
 #ifdef LINUX_2_6_SERIES
 struct file_system_type lazyfs_fs_type = {
-	.name		= "lazyfs",
+	.name		= "lazyfs" COMMA_VERSION,
 	.get_sb		= lazyfs_get_sb,
 	.fs_flags	= 0,
 	.owner		= THIS_MODULE,
 	.kill_sb	= kill_litter_super,
 };
 #else
-static DECLARE_FSTYPE(lazyfs_fs_type, "lazyfs-" VERSION,
+static DECLARE_FSTYPE(lazyfs_fs_type, "lazyfs" COMMA_VERSION,
 			lazyfs_read_super, FS_LITTER);
 #endif
 

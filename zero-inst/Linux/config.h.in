@@ -22,4 +22,4 @@
 #undef PACKAGE_VERSION
 
 /* Version number of package */
-#undef VERSION
+#undef COMMA_VERSION
