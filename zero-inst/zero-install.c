@@ -91,6 +91,9 @@ static int open_helper(void)
 					"by the user that runs %s before "
 					MNT_DIR " is mounted.\n",
 					cache_dir, prog);
+		else if (error == EBUSY)
+			fprintf(stderr, "\nEnsure that zero-install is not "
+					"already running.\n");
 		else
 			fprintf(stderr,
 				"\nEnsure that " MNT_DIR " is mounted.\n");

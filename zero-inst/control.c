@@ -367,9 +367,7 @@ static int read_from_client(Client *client)
 		client->task->data = client;
 		client->task->step = client_step;
 
-		if (verbose)
-			printf("Client authenticated as user %ld\n",
-					(long) client->task->uid);
+		printf("New client for user %ld\n", (long) client->task->uid);
 
 		return 0;
 	}

@@ -5,7 +5,7 @@ myexecbindir := ${ROOT_PREFIX}/bin
 
 AUTOMAKE_OPTIONS = foreign
 
-bin_PROGRAMS = 0show 0refresh
+bin_PROGRAMS = 0refresh
 myexecbin_PROGRAMS = 0run
 sbin_PROGRAMS = zero-install
 

@@ -306,8 +306,7 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
 
-	if (verbose)
-		printf("Fetch '%s'\n", uri);
+	printf("Fetching '%s'\n", uri);
 
 	assert(task->child_pid == -1);
 
