@@ -43,8 +43,8 @@ below to get a package tailored for your system...
 <li><a href="http://lists.ibiblio.org/pipermail/sm-grimoire/2003-December/003306.html">SourceMage GNU Linux spell</a></li>
 <li><a href="http://www.cscience.org/pipermail/gobo-l/2003-December/002204.html">Gobo Linux recipe</a></li>
 <li><a href="http://bugs.gentoo.org/show_bug.cgi?id=35768">Gentoo ebuild</a></li>
-<li><a href="http://www.mandrakeclub.com/modules.php?op=modload&amp;name=RPM&amp;func=info_page&amp;RID=1825">Mandrake RPM</a> (request) --
-<a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.21-1.src.rpm?download">LazyFS source RPM</a></li>
+<li><a href="http://www.mandrakeclub.com/modules.php?op=modload&amp;name=RPM&amp;func=info_page&amp;RID=1825">Mandrake RPM</a> (request)</li>
+<li><a href="http://sourceforge.net/project/showfiles.php?group_id=76468">SourceForge file releases page</a></li>
 </ul>
 
 <h2>Building from source</h2>
