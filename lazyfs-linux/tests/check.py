@@ -590,6 +590,21 @@ class Test2WithHelper(WithHelper):
 	
 	test19BadRead = cstest('BadRead')
 
+	def clientFMapping(self):
+		# There was a bug in the handling of f_mapping; it only got set the
+		# first time the inode was mapped, not for each file.
+		fd1 = os.open(fs + '/hello', os.O_RDONLY)
+		fd2 = os.open(fs + '/hello', os.O_RDONLY)
+		m1 = mmap.mmap(fd1, 5, mmap.MAP_SHARED, mmap.PROT_READ)
+		m2 = mmap.mmap(fd2, 5, mmap.MAP_SHARED, mmap.PROT_READ)
+		self.assertEquals(m1[:], m2[:])
+	
+	def serverFMapping(self):
+		self.send_dir('/', ['f 5 3 hello'])
+		self.send_file('/hello', 'World', 3)
+	
+	test20FMapping = cstest('FMapping')
+
 # Run the tests
 sys.argv.append('-v')
 unittest.main()

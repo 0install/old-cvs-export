@@ -1,3 +1,8 @@
+Changes since 0.1.22:
+
+* Still set f_mapping when mapping a file even if its inode is already
+  mapped (affects Linux 2.6.2 and later).
+
 * Only issue new requests when opening a file. A subsequent read() or mmap()
   may block on the original request, but not create a new one if the first
   one failed.
