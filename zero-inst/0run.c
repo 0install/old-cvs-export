@@ -53,7 +53,7 @@ static time_t parse_date(const char *str)
 	return retval;
 }
 
-void force_fetch(char *path)
+static void force_fetch(char *path)
 {
 	pid_t child;
 

@@ -52,4 +52,4 @@ uninstall-local:
 	 sed "s/\@helper_user\@/${HELPER_USER}/" >0install
 	chmod a+x 0install
 
-CFLAGS = -O2 -Wall -Wstrict-prototypes -g
+CFLAGS = -O2 -Wall -Wstrict-prototypes -g -Wmissing-prototypes

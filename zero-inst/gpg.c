@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "support.h"
+#include "gpg.h"
 
 /* Implements the GPG signature checking. Someone who understands GPG
  * fully should really check this stuff over...

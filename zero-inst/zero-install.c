@@ -370,7 +370,6 @@ int main(int argc, char **argv)
 	int wakeup_pipe[2];
 	struct sigaction act;
 	int helper;
-	int control_socket;
 	int max_fd;
 	char *pid_file;
 	
@@ -450,14 +449,12 @@ int main(int argc, char **argv)
 	act.sa_flags = SA_ONESHOT;
 	sigaction(SIGINT, &act, NULL);
 
-	control_socket = create_control_socket();
+	create_control_socket();
 
 	if (wakeup_pipe[0] > helper)
 		max_fd = wakeup_pipe[0];
 	else
 		max_fd = helper;
-	if (control_socket > max_fd)
-		max_fd = control_socket;
 
 	if (!verbose) {
 		/* Daemon mode if we're not debugging... */
@@ -496,14 +493,11 @@ int main(int argc, char **argv)
 		fd_set rfds, wfds;
 		int n = max_fd + 1;
 
-		control_push_updates();
-
 		FD_ZERO(&rfds);
 		FD_ZERO(&wfds);
 
 		FD_SET(helper, &rfds);
 		FD_SET(wakeup_pipe[0], &rfds);
-		FD_SET(control_socket, &rfds);
 
 		n = control_add_select(n, &rfds, &wfds);
 
@@ -520,9 +514,6 @@ int main(int argc, char **argv)
 		if (FD_ISSET(wakeup_pipe[0], &rfds))
 			read_from_wakeup(wakeup_pipe[0]);
 		
-		if (FD_ISSET(control_socket, &rfds))
-			read_from_control(control_socket);
-
 		control_check_select(&rfds, &wfds);
 	}
 

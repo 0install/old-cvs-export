@@ -128,7 +128,7 @@ static void valid_subdirs(xmlNode *item, void *data)
 		*ok = 0;
 }
 
-int compar(const void *a, const void *b)
+static int compar(const void *a, const void *b)
 {
 	const char *aa = * (const char **) a;
 	const char *bb = * (const char **) b;
@@ -410,7 +410,7 @@ typedef struct {
 	xmlNode *node;
 } Info;
 
-void find_child(xmlNode *child, void *data)
+static void find_child(xmlNode *child, void *data)
 {
 	Info *info = data;
 	xmlChar *name;
