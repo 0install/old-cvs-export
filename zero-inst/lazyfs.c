@@ -1470,6 +1470,7 @@ get_host_file(struct file *file, int block)
 	{
 		struct vfsmount *mnt = mntget(sbi->host_mnt);
 		host_file = dentry_open(host_dentry, mnt, file->f_flags);
+		dec("host_dentry");
 		host_dentry = NULL;
 		/* (mnt and dentry freed by here) */
 	}
