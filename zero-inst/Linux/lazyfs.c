@@ -1631,7 +1631,7 @@ send_to_helper(char *buffer, size_t count, struct lazy_user_request *request)
 	struct lazy_sb_info *sbi = SBI(sb);
 	struct file *file;
 	char number[40];
-	int len = dentry->d_name.len;
+	int len;
 	int fd;
 	int err = 0;
 
@@ -1651,7 +1651,7 @@ send_to_helper(char *buffer, size_t count, struct lazy_user_request *request)
 	len = snprintf(number, sizeof(number), "%d uid=%d", fd, request->uid);
 	if (len < 0)
 		BUG();
-	if (len >= count)
+	if (((unsigned int) len) >= count)
 		err = -E2BIG;
 	else
 		err = copy_to_user(buffer, number, len + 1);

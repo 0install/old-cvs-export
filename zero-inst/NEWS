@@ -1,3 +1,7 @@
+* Don't compile with -Werror (header files on some systems generate warnings).
+  Get rid of compiler warning about an unsigned comparision (reported by 
+  Stephen Watson).
+
 * Allow downloads to be cancelled.
 
 * Send errors (to ZeroProgress, etc) when a kernel request fails.
