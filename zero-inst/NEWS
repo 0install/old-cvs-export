@@ -1,5 +1,9 @@
 Changes since 0.1.15:
 
+* Allow sub-sites (example.com#~bob fetches the index
+  http://example.com/~bob/.0inst-index.tgz).
+  (XXX: can't create GPG key!)
+
 * The helper now runs as a daemon, with output going to syslog.
 
 Changes since 0.1.14:

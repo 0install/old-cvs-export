@@ -5,6 +5,40 @@ AC_PROG_MAKE_SET
 
 AC_PROG_CC
 
+if test -z "$PKG_CONFIG"; then
+  PKG_CONFIG=pkg-config
+fi
+AC_SUBST(PKG_CONFIG)
+
+AC_MSG_CHECKING(that pkg-config runs)
+if "$PKG_CONFIG" --version > /dev/null 2>&1 ; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+  AC_MSG_ERROR([*** $PKG_CONFIG missing ***
+
+\'$PKG_CONFIG --version\' failed to run - make sure it is inside one of the
+directories in your PATH environment variable!
+
+pkg-config comes with the developement packages for GTK+-2.0, available at:
+
+    http://www.gtk.org])
+fi
+
+AC_DEFUN(PKG_REQUIRE, [
+AC_MSG_CHECKING(that $1 (version >= $2) is installed)
+if "$PKG_CONFIG" --atleast-version=$2 $1 ; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+  if "$PKG_CONFIG" --exists $1 ; then
+    AC_MSG_ERROR(Current version is too old)
+  else
+    AC_MSG_ERROR(Package is not installed)
+  fi
+fi
+])
+
 dnl When doing 'make distcheck', use $prefix/lib for kernel module.
 AC_ARG_WITH(distcheck,,
 	[ROOT_PREFIX='$(prefix)'],
@@ -81,6 +115,9 @@ esac
 PLATFORM=`uname -s`-$ARCH
 AC_MSG_RESULT($PLATFORM)
 AC_DEFINE_UNQUOTED(LAZYFS_PLATFORM, "$PLATFORM", [The canonical name for @PLATFORM@ symlinks])
+
+PKG_REQUIRE(libxml-2.0, 2.0.0)
+PKG_REQUIRE(dbus-1, 0.12)
 
 AC_OUTPUT(Makefile \
 	  Linux/Makefile)
