@@ -1,0 +1,43 @@
+body {
+	padding: 0.5cm;
+}
+
+h1 {
+	text-align: center;
+}
+
+th {
+	text-align: left;
+}
+
+td {
+	vertical-align: top;
+	width: 50%;
+}
+
+p.author {
+	text-align: center;
+}
+
+p.q {
+	font-style: italic;
+	font-weight: bold;
+}
+
+div {
+	border: 1px solid black;
+	color: black;
+	background: #eee;
+	padding: .2cm;
+	text-align: center;
+}
+
+pre {
+	background: #eee;
+	color: black;
+	padding: 0.2cm;
+}
+
+img {
+	border: none;
+}
