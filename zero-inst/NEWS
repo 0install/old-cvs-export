@@ -1,3 +1,37 @@
+Changes since 0.1.10:
+
+* There is now one index file per site, not one per directory.
+
+* Sometimes when a download finished, 0show wasn't notified.
+
+* Added a test system.
+
+* Use RELAX NG to validate XML files.
+
+* Lazyfs improvements:
+
+	- Better diagnostics.
+
+	- Should be better at detecting incompatible kernel versions.
+
+	- Replaced old buggy readdir routine with generic dcache version.
+
+	- Used to BUG if the helper released a dentry that noone else was
+	  using.
+
+* Use libxml instead of libexpat for XML parsing.
+
+* Helper doesn't pass request handles to child (wget) processes, so they
+  get closed at the right time.
+
+* Scheme name is now '0http', not 'http'.
+
+* New 'task' abstraction handles dependancies between tasks better (eg,
+  a file request depends on an index fetch followed by an archive fetch).
+
+* Push updates to 0show-type clients at next poll, not each time something
+  changes.
+
 Changes since 0.1.9:
 
 * Lots of changes to the build process and layout:
