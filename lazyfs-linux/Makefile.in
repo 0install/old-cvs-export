@@ -48,6 +48,7 @@ real-install:
 	@echo '*** Testing kernel module ***'
 	@echo
 	@/sbin/modprobe lazyfs@COMMA_VERSION@ || echo "FAILED: Try 'dmesg' for help"
+	@echo '(try "python tests/check.py" for more checking)'
 
 uninstall:
 	rm -f ${MODULEDIR}/lazyfs@COMMA_VERSION@.${KOBJECT}

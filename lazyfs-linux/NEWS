@@ -1,3 +1,13 @@
+* Allow directories to be removed from dynamic directories (requested by
+  Karl Bowden).
+
+* Added more unittests (for mmapping and for removing dynamic directories).
+
+* Run tests in an order that tests simpler functions first (in case the
+  system crashes).
+
+* Run tests in verbose mode by default.
+
 Changes since 0.1.21:
 
 * Fixed some bugs the unittests found:

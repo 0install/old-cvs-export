@@ -1351,10 +1351,27 @@ static int ensure_cached(struct dentry *dentry)
 		BUG();
 
 	list_dentry = get_host_dentry(dentry, 1);
-	if (IS_ERR(list_dentry))
-		return PTR_ERR(list_dentry);
 
 	down(&update_dir);
+
+	if (IS_ERR(list_dentry)) {
+		// Since ... was missing and couldn't be fetched, this
+		// directory shouldn't exist. Remove it.
+		//printk("Error from ensure_cached(%s): %ld\n",
+		//		dentry->d_name.name, PTR_ERR(list_dentry));
+		if (!d_unhashed(dentry)) {
+			//printk("Removing...\n");
+			my_d_genocide(dentry);
+		}
+		else if (!sbi->helper_mnt) {
+			//printk("But no helper\n");
+		} else {
+			//printk("But not yet hashed\n");
+		}
+		up(&update_dir);
+		return PTR_ERR(list_dentry);
+	}
+
 	if (list_dentry == info->list_dentry) {
 		/* Already cached... do nothing */
 		up(&update_dir);
@@ -1490,13 +1507,8 @@ lookup_via_helper(struct super_block *sb, struct dentry *dentry)
 	err = ensure_cached(new);
 	down(&dentry->d_parent->d_inode->i_sem);
 
-	if (err)
-	{
-		/* Drop it */
-		down(&update_dir);
-		my_d_genocide(new);
+	if (err) {
 		dput(new);
-		up(&update_dir);
 		return ERR_PTR(err);
 	}
 
