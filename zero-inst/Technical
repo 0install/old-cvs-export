@@ -82,6 +82,9 @@ If we need to access a host file or directory which doesn't exist, we
 need a helper application. If no helper is registered, we return EIO
 (I/O error).
 
+LazyFS creates a symlink, '/uri/.lazyfs-cache', to the actual cache directory,
+so that user-space programs can find it easily.
+
 There can only be one registered helper at a time. It registers by opening
 the /uri/.lazyfs-helper pipe and reading requests from it. When a process
 opens a file or directory which has a missing host inode, it is put to
