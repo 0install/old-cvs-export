@@ -18,6 +18,8 @@
 #include "fetch.h"
 #include "list.h"
 
+#define ZERO_INSTALL_ERROR "net.sourceforge.zero_install.Error"
+
 static DBusWatch *dbus_watches = NULL;
 static DBusServer *server = NULL;
 
@@ -214,7 +216,7 @@ err:
 	}
 
 	if (dbus_error_is_set(&error)) {
-		reply = dbus_message_new_error(message, "Error", error.message);
+		reply = dbus_message_new_error(message, ZERO_INSTALL_ERROR, error.message);
 		dbus_error_free(&error);
 		if (!reply)
 			goto oom;
@@ -395,7 +397,7 @@ static void send_result(Task *task, const char *err)
 	else {
 		DBusMessage *reply;
 		reply = dbus_message_new_error(task->message,
-				"Failed",
+				ZERO_INSTALL_ERROR,
 				err);
 		if (!reply || !dbus_connection_send(task->connection,
 						reply, NULL))
