@@ -2,11 +2,18 @@
 <html xmlns='http://www.w3.org/1999/xhtml'>
 
 <div class='note'><h3>News</h3>
+<p>
 <strong>4-Apr-2003:</strong> XFree86 4.3.0 is now available via Zero Install!
 Everything's under /uri/http/zero-install.sf.net/libs/XFree86/4.3.1/Linux-i386.
 You'll find both the client side stuff (new xterm, etc) there, as well as the
 server side. You'll still need a recent glibc, as it doesn't get that from
 Zero Install.
+</p>
+<p>
+<strong>26-Apr-2003:</strong> A new release is out! All the Python code has
+been converted to C, so this version should be easier to install. It also
+handles multiple downloads in parallel, and has a few other improvements.
+</p>
 </div>
 
 <h2>Introduction</h2>

@@ -8,7 +8,8 @@ Although the system makes installing other software very easy, the Zero
 Install system itself still requires some work to install.
 </p>
 
-<div>Please DO NOT install this software on important machines. It is under
+<div class='note'>
+Please DO NOT install this software on important machines. It is under
 heavy developement and has not yet been well tested.</div>
 
 <p>
@@ -26,20 +27,27 @@ crash, and will probably have to reboot (this affects all kernel modules,
 not just the zero-install one).
 </p>
 
+<p>
+Only Linux 2.4.x series kernels are currently supported. If you want to port
+the (small) module to other kernels (BSD, MacOS X, etc) please get in touch.
+</p>
 
 <p>
 There are plenty of guides on the net if you don't feel confident about
-compiling your own kernel. For example, 
-<a href="http://www.osnews.com/story.php?news_id=2949">The Very Verbose Guide to Updating and Compiling Your Debian Kernel</a> and
-<a href="http://www.osnews.com/story.php?news_id=443">Compiling the Linux Kernel</a>.
+compiling your own kernel. For example,
+<a href="http://www.osnews.com/story.php?news_id=2949">The Very Verbose Guide
+to Updating and Compiling Your Debian Kernel</a> (which isn't very Debian
+specific, despite the name) and
+<a href="http://www.osnews.com/story.php?news_id=443">Compiling the Linux
+Kernel</a>.
 </p>
 
-<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-inst-0.1.6.tgz">download Zero Install</a>. Extract it, and run
+<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-inst-0.1.7.tgz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-inst-0.1.7.tgz.sig">GPG Sig</a> ]. Extract it, and run
 configure (things you type are shown in bold):</p>
 
 <pre>
-$ <b>tar xzf zero-inst-0.1.6.tgz</b>
-$ <b>cd zero-inst-0.1.6</b>
+$ <b>tar xzf zero-inst-0.1.7.tgz</b>
+$ <b>cd zero-inst-0.1.7</b>
 $ <b>./configure</b>
 creating cache ./config.cache
 checking for gcc... gcc
@@ -69,7 +77,15 @@ Then run make and install it (use su to get the root prompt, #):
 
 <pre>
 $ <b>make</b>
-gcc [...] -o lazyfs.o lazyfs.c
+gcc -c -I/lib/modules/2.4.20/build/include -Wno-trigraphs 
+    -fno-strict-aliasing -fno-common -Wall -Wstrict-prototypes
+    -DMODULE -D__KERNEL__ -o lazyfs.o lazyfs.c
+gcc -O2 -Wall -Wstrict-prototypes -g   -c -o zero-install.o zero-install.c
+gcc -O2 -Wall -Wstrict-prototypes -g   -c -o support.o support.c
+gcc -O2 -Wall -Wstrict-prototypes -g   -c -o fetch.o fetch.c
+gcc -O2 -Wall -Wstrict-prototypes -g   -c -o control.o control.c
+gcc -o zero-install zero-install.o support.o fetch.o control.o -lexpat
+gcc -O2 -Wall -Wstrict-prototypes -g    0show.c   -o 0show
 $ <b>su</b>
 # <b>make install</b>
 mkdir -p /lib/modules/`uname -r`/kernel/fs/lazyfs
@@ -81,29 +97,30 @@ depmod -a
 
 <p>
 This will copy the new lazyfs module under /lib/modules/, and create the /uri
-mount point and the /var/cache/zero-inst cache directory. The kernel
-module can handle all cached requests itself, but when the user tries to
-access something that isn't cached, it uses a 'helper' application to fetch
-it. For security reasons, it's better not to run the helper as root. Change
-the ownership of the cache directory to the user the helper will run as (either
-your own user, or create a new user specially for the purpose using 'adduser').
+mount point and the /var/cache/zero-inst cache directory.
 </p>
 
-<div style='text-align: left'>
 <p>
-If you're upgrading from a previous version, you may need to unload
-the lazyfs module at this point:
+If you're upgrading from a previous version, you'll need to unload
+the old lazyfs module at this point:
 </p>
 <pre>
 # <b>umount /uri</b>
 # <b>rmmod lazyfs</b>
 </pre>
-</div>
 
 <p>
-Run this command, replacing 'fred' with your login name, then mount /uri
-(the order is important). Since the helper is not yet running, you won't
-be able to access the directory yet, so don't worry about that.
+The kernel module can handle all cached requests itself, but when the user
+tries to access something that isn't cached, it uses a 'helper' application to
+fetch it. For security reasons, it's better not to run the helper as root.
+</p>
+<p>
+Change the ownership of the cache directory to the user the helper will run as
+(either your own user, or create a new user specially for the purpose using
+'adduser --system'). Run the commands below, replacing 'fred' with the login
+name chosen, then mount /uri (the order is important). Since the helper is not
+yet running, you won't be able to access the directory yet. Don't worry about
+that.
 </p>
 
 <pre>
@@ -118,7 +135,7 @@ helper application (it will just wait, without doing anything):
 
 <pre>
 # <b>exit</b>
-$ <b>./web-helper.py</b>
+$ <b>./zero-install</b>
 </pre>
 
 <p>
@@ -127,17 +144,36 @@ Open another window, and try it out with the following command:
 </p>
 
 <pre>
-$ <b>cat /uri/http/zero-install.sf.net/demo/test.txt</b>
+$ <b>cat /uri/http/zero-install.sourceforge.net/demo/test.txt</b>
 It worked!
 </pre>
 
 <p>
-You can find some other programs to play with in the demo directory. For
-example, you can open the <a href="http://rox.sf.net/rox_filer.php3">ROX-Filer</a> window shown on the main page using this command:
+Users can run the 0show command to see what they are currently downloading.
+This is just a command-line client at the moment, but the idea is to create
+a panel applet or similar to keep the user informed.
+</p>
+
+<p>
+You can find some other programs to play with in the demo directory. Notice
+that running 'hello_glib' will automatically pull in the GLIB library. Running
+the command a second time will be just as fast as running an application
+installed normally.
 </p>
 
 <pre>
-$ <b>rox /uri/http/zero-install.sf.net/demo</b>
+$ <b>cd /uri/http/zero-install.sourceforge.net/demo</b>
+$ <b>./hello_glib</b>
+Hello World from glib!
+</pre>
+
+<p>
+You can open the <a href="http://rox.sf.net/rox_filer.php3">ROX-Filer</a>
+window shown on the main page using this command:
+</p>
+
+<pre>
+$ <b>rox /uri/http/zero-install.sourceforge.net/demo</b>
 </pre>
 
 <p>

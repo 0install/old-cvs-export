@@ -3,6 +3,5 @@ HTML = index.html compare.html faq.html install.html technical.html
 all: ${HTML}
 
 %.html: %.xml to_html.xsl
-	#xmllint --noout --valid $<
 	xsltproc -o $@ --stringparam file "$@" to_html.xsl "$<"
 	xmllint --noout --valid $@
