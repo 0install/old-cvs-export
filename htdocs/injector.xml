@@ -251,6 +251,7 @@ become the version at the top of the list, whereas a preferred version will alwa
 want to make software available to others through the injector.</li>
 <li><a href="injector-design.html">The Injector: Design</a> explains the design of the injector
 itself.</li>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/803">Release notes and future plans</a>.</li>
 </ul>
  
 </html>
