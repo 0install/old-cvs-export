@@ -1,4 +1,5 @@
 <?xml version="1.0" ?>
 <directory xmlns="http://zero-install.sf.net">
   <dir mtime="1048867639" size="4096">demo</dir>
+  <dir mtime="1048867639" size="4096">libs</dir>
 </directory>
