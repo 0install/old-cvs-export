@@ -53,7 +53,7 @@ static time_t parse_date(const char *str)
 	return retval;
 }
 
-void force_fetch(const char *path)
+void force_fetch(char *path)
 {
 	pid_t child;
 
@@ -64,6 +64,11 @@ void force_fetch(const char *path)
 	}
 
 	if (child == 0) {
+		char *slash;
+
+		slash = strchr(path, '/');
+		if (slash)
+			*slash = '\0';
 		execlp("0refresh", "0refresh", path, NULL);
 		perror("execlp(0refresh)");
 		_exit(1);
@@ -115,7 +120,7 @@ int main(int argc, char **argv)
 	mtime = parse_date(date);
 
 	if (stat(path, &info) != 0 || info.st_mtime < mtime) {
-		force_fetch(path);
+		force_fetch(path + sizeof(ZERO_MNT));
 		if (stat(path, &info) != 0 || info.st_mtime < mtime) {
 			fprintf(stderr, "Failed to update '%s' to date '%s'\n",
 					path, date);
