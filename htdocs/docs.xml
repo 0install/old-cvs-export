@@ -230,6 +230,19 @@ $ <b>make install</b>
 Then use 0build to archive the tmpfs partition onto the web server.
 </p>
 
+<h3>Shared libraries</h3>
+
+<p>
+It's quite easy to make normal libraries available through Zero Install
+(see the <a href="technical.html">glib example</a>). For a very simple example,
+take a look in
+<tt>/uri/0http/zero-install.sourceforge.net/libs/libhello-1.0</tt>. There's
+an 'example' subdirectory with a test program. Copy that directory somewhere
+and run make inside it. The program compiles using the header files for
+`libhello' from Zero Install. You'll get a binary called 'demo' which, when
+run, dynamically links against the binary in Zero Install too.
+</p>
+
 <h2>Documentation for Zero Install developers</h2>
 
 See the <a href="technical.html">Technical details</a> page for more

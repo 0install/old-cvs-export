@@ -65,9 +65,9 @@ files in Makefile.</li>
 </ul>
 
 <div class='note'>
-I'm still trying to work out how to set NEEDED to the full path name, rather
-than using rpath (which is rather slow, by comparison). Any linker gurus
-out there?
+For a better approach than using --rpath, see the
+<tt>/uri/0http/zero-install.sourceforge.net/libs/libhello-1.0</tt>
+example library, which changes the soname to an absolute path.
 </div>
 
 <p>
