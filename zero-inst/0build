@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+from xml import dom
+from xml.dom import minidom
+import os, sys
+import stat
+
+ZERO_NS = 'http://zero-install.sf.net'
+
+def do_dir(path):
+	print "Building index file in", path
+	doc = minidom.Document()
+	root = doc.createElementNS(ZERO_NS, 'directory')
+	doc.appendChild(root)
+	root.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
+
+	def nl(indent):
+		root.appendChild(doc.createTextNode('\n' + ' ' * indent))
+
+	files = []
+
+	for item in os.listdir(path):
+		if item == 'CVS':
+			continue
+		if item.startswith('.0inst'):
+			continue
+		if item.endswith('.swp') or item.endswith('.swo'):
+			continue
+		#print "Adding", item
+		full = os.path.join(path, item)
+		info = os.lstat(full)
+		if stat.S_ISDIR(info.st_mode):
+			child = doc.createElementNS(ZERO_NS, 'dir')
+			do_dir(full)
+		elif stat.S_ISREG(info.st_mode):
+			if info.st_mode & 0111:
+				child = doc.createElementNS(ZERO_NS, 'exec')
+			else:
+				child = doc.createElementNS(ZERO_NS, 'file')
+			files.append(item)
+		elif stat.S_ISLNK(info.st_mode):
+			child = doc.createElementNS(ZERO_NS, 'link')
+			child.setAttributeNS(None, 'target', readlink(item))
+		nl(2)
+		child.appendChild(doc.createTextNode(item))
+		child.setAttributeNS(None, 'size', str(info.st_size))
+		child.setAttributeNS(None, 'mtime', str(info.st_mtime))
+		root.appendChild(child)
+
+	if 0 and files:	# Disabled
+		archive = os.path.join(path, '.0inst-contents.tgz')
+		os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive,
+			'-C', path, '--'] + files)
+		archive = doc.createElementNS(ZERO_NS, 'archive')
+		archive.appendChild(doc.createTextNode('.0inst-contents.tgz'))
+		nl(2)
+		root.appendChild(archive)
+
+	nl(0)
+	doc.writexml(file(os.path.join(path, '.0inst.xml'), 'w'))
+
+dirs = sys.argv[1:]
+if dirs:
+	for d in dirs:
+		do_dir(d)
+else:
+	do_dir('.')
