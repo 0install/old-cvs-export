@@ -20,18 +20,16 @@ want to test it in safety.
 </p>
 
 <p>The Zero Install system requires a small Linux kernel module to provide
-the /uri directory. Like all kernel modules, you <strong>must</strong>
+the /uri/0install directory. Like all kernel modules, you <strong>must</strong>
 compile this using the actual kernel headers for the kernel you're actually
-running. In practice, this means that you should have compiled your own
-kernel (eg, from <a href="http://kernel.org">kernel.org</a>) and be running
-it. Using a stock distribution kernel is a bad idea. You may get a kernel
-crash, and will probably have to reboot (this affects all kernel modules, not
-just the zero-install one).
+running. The easiest way to ensure this is to have compiled your own kernel
+(eg, from <a href="http://kernel.org">kernel.org</a>) and be running it.
 </p>
 
 <p>
-Only Linux 2.4.x series kernels are currently supported. If you want to port
-the (small) module to other kernels (BSD, MacOS X, etc) please get in touch.
+Only Linux 2.4.20 and later 2.4 kernels are currently supported, not the
+2.5 series. If you want to port the (small) module to other kernels (BSD, MacOS
+X, etc) please get in touch.
 </p>
 
 <p>
@@ -59,13 +57,13 @@ Add<br/><tt>deb http://www-i1.informatik.rwth-aachen.de/~joachimk debian/</tt>
 </div>
 -->
 
-<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.11.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.11.tar.gz.sig">GPG Sig</a> ]. Extract it, and
+<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.12.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.12.tar.gz.sig">GPG Sig</a> ]. Extract it, and
 move to the new directory (things you type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.11.tar.gz</b>
-$ <b>cd zero-install-0.1.11</b>
+$ <b>tar xzf zero-install-0.1.12.tar.gz</b>
+$ <b>cd zero-install-0.1.12</b>
 </pre>
 
 <p>
@@ -119,21 +117,21 @@ $ <b>su</b>
 </pre>
 
 <p>
-This will copy the new lazyfs module under /lib/modules/, and create the /uri
-mount point and the /var/cache/zero-inst cache directory. It will also add
-an entry to /etc/fstab to allow mounting /uri easily. If you were already
-running an older version, this step also unmounts /uri and unloads the old
-module.
+This will copy the new lazyfs module under /lib/modules/, and create the
+/uri/0install mount point and the /var/cache/zero-inst cache directory. It will
+also add an entry to /etc/fstab to allow mounting /uri/0install easily. If you
+were already running an older version, this step also unmounts /uri/0install
+and unloads the old module.
 </p>
 
 <p>
-Now mount /uri. Since the helper is not yet running, you won't be able to
-access the directory yet. Don't worry about that. Then 'exit' from the 'su',
+Now mount /uri/0install. Since the helper is not yet running, you won't be able
+to access the directory yet. Don't worry about that. Then 'exit' from the 'su',
 as we don't need to be root anymore.
 </p>
 
 <pre>
-# <b>mount /uri</b>
+# <b>mount /uri/0install</b>
 # <b>exit</b>
 </pre>
 
@@ -145,7 +143,6 @@ You need to run the helper as the user you specified at the start.
 <pre>
 $ <b>./zero-install</b>
 Zero Install started: using cache directory '/var/cache/zero-inst'
-Write root ... file
 </pre>
 
 <p>
@@ -160,18 +157,18 @@ the following command:
 </p>
 
 <pre>
-$ <b>cat /uri/http/zero-install.sourceforge.net/demo/test.txt</b>
+$ <b>cat /uri/0install/zero-install.sourceforge.net/demo/test.txt</b>
 It worked!
 </pre>
 
 <p>
 Users can run the 0show command to see what they are currently downloading.
-This is just a command-line client at the moment, but there is also a
+This is just a command-line client, but there is also a
 graphical version called ZeroProgress, itself available via Zero Install:
 </p>
 
 <pre>
-$ <b>/uri/http/zero-install.sourceforge.net/apps/ZeroProgress/AppRun</b>
+$ <b>/uri/0install/zero-install.sourceforge.net/apps/ZeroProgress/AppRun</b>
 </pre>
 
 <p>
@@ -188,7 +185,7 @@ installed normally.
 </p>
 
 <pre>
-$ <b>cd /uri/http/zero-install.sourceforge.net/demo</b>
+$ <b>cd /uri/0install/zero-install.sourceforge.net/demo</b>
 $ <b>./hello_glib</b>
 Hello World from glib!
 </pre>
@@ -199,7 +196,7 @@ window shown on the main page using this command:
 </p>
 
 <pre>
-$ <b>rox /uri/http/zero-install.sourceforge.net/demo</b>
+$ <b>rox /uri/0install/zero-install.sourceforge.net/demo</b>
 </pre>
 
 <p>
@@ -209,7 +206,7 @@ X server itself (or both). Note that you may have to stare at a blank screen for
 a while as the libraries are pulled in.
 </p>
 <pre>
-$ <b>cd /uri/http/zero-install.sourceforge.net/libs/XFree86/4.3.1/Linux-i386/bin</b>
+$ <b>cd /uri/0install/zero-install.sourceforge.net/libs/XFree86/4.3.1/Linux-i386/bin</b>
 $ <b>./XFree86 -version</b>
 XFree86 Version 4.3.0
 Release Date: 27 February 2003

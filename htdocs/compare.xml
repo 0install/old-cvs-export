@@ -203,7 +203,7 @@ example, this command might present the same configuration boxes as 'apt-get
 install apache' does on Debian:
 </p>
 <pre>
-$ sudo /uri/0http/apache.org/apache
+$ sudo /uri/0install/apache.org/apache
 </pre>
 
 </html>

@@ -27,7 +27,7 @@ many other programs):
 </p>
 
 <pre>
-$ cd /uri/http/zero-install.sf.net/demo
+$ cd /uri/0install/zero-install.sourceforge.net/demo
 $ ./hello_glib
 Hello World from glib!
 </pre>
@@ -37,21 +37,6 @@ It compiles using the pkg-config .pc files under /uri (source is in CVS)
 and runs from there too. So you don't need glib installed to compile it,
 and you don't need it installed to run it :-)
 </p>
-
-<pre>
-$ strace -e file ./hello_glib|&amp;grep -v ENOENT
-execve("./hello_glib", ["./hello_glib"], [/* 23 vars */]) = 0
-open("/uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386/lib/libglib-2.0.so.0", O_RDONLY) = 3
-fstat64(3, {st_mode=S_IFREG|0555, st_size=1335762, ...}) = 0
-open("/etc/ld.so.cache", O_RDONLY)      = 3
-fstat64(3, {st_mode=S_IFREG|0644, st_size=73251, ...}) = 0
-open("/lib/libc.so.6", O_RDONLY)        = 3
-fstat64(3, {st_mode=S_IFREG|0755, st_size=1104040, ...}) = 0
-open("/usr/lib/gconv/gconv-modules", O_RDONLY) = 3
-fstat64(3, {st_mode=S_IFREG|0644, st_size=44467, ...}) = 0
-fstat64(1, {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
-Hello World from glib!
-</pre>
 
 <p>
 The changes required were:
@@ -66,7 +51,7 @@ files in Makefile.</li>
 
 <div class='note'>
 For a better approach than using --rpath, see the
-<tt>/uri/0http/zero-install.sourceforge.net/libs/libhello-1.0</tt>
+<tt>/uri/0install/zero-install.sourceforge.net/libs/libhello-1.0</tt>
 example library, which changes the soname to an absolute path.
 </div>
 
