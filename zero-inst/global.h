@@ -12,4 +12,5 @@ typedef struct _Task Task;
 typedef struct _Index Index;
 typedef struct _Element Element;
 
+extern int copy_stderr;
 extern int verbose;

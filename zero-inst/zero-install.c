@@ -58,6 +58,8 @@
 #include "task.h"
 #include "xml.h"
 
+int copy_stderr = 1;	/* False once closed... */
+
 int verbose = 0; /* (debug) */
 
 /* When we need to use an index file, if it was created in the last hour
@@ -377,6 +379,7 @@ int main(int argc, char **argv)
 	int helper;
 	int max_fd;
 	char *pid_file;
+	int background = 1;
 	
 	openlog("zero-install", 0, LOG_DAEMON);
 
@@ -387,8 +390,13 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-	if (argv[1] && strcmp(argv[1], "--debug") == 0)
-		verbose = 1;
+	if (argv[1]) {
+		if (strcmp(argv[1], "--debug") == 0) {
+			verbose = 1;
+			background = 0;
+		} else if (strcmp(argv[1], "--nodaemon") == 0)
+			background = 0;
+	}
 
 	umask(0022);
 	
@@ -466,8 +474,8 @@ int main(int argc, char **argv)
 	else
 		max_fd = helper;
 
-	if (!verbose) {
-		/* Daemon mode if we're not debugging... */
+	if (background) {
+		/* Daemon mode... */
 		pid_t child;
 		int null;
 
@@ -496,6 +504,7 @@ int main(int argc, char **argv)
 		dup2(null, 1);
 		dup2(null, 2);
 		close(null);
+		copy_stderr = 0;
 	} else
 		create_pid_file(getpid());
 

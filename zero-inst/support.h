@@ -1,6 +1,7 @@
 #include <syslog.h>
 
-#define error(x...) syslog(LOG_ERR, x)
+#define error(x...) do {syslog(LOG_ERR, x); if (copy_stderr) { \
+			fprintf(stderr, "zero-install: " x); fputc('\n', stderr);}} while (0)
 
 void *my_malloc(size_t size);
 void *my_realloc(void *old, size_t size);

@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "global.h"
 #include "support.h"
 #include "gpg.h"
 

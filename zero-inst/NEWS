@@ -1,3 +1,9 @@
+Changes since 0.1.19:
+
+* --nodaemon flag to prevent backgrounding (requested by Joachim Kupke).
+
+* Before forking, send errors to stderr (in addition to syslog).
+
 Changes since 0.1.18:
 
 * Use 'su -p -c' instead of 'su -s'. Some systems don't have -s (reported by
