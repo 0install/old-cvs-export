@@ -326,8 +326,9 @@ Several things. <a href="http://www.coda.cs.cmu.edu/">CODA</a> and
 <a href="http://www.gedanken.demon.co.uk/wwwoffle/">wwwoffle</a>
 for showing that caching network filesystems can still work when
 off-line. <a href="http://w3.org">The W3C</a> for using URIs for namespaces.
-Not <a href="http://java.sun.com/products/javawebstart/">Java Web Start</a>,
-though, because I had never heard of it when I started the project.
-</p>
+Not <a href="http://java.sun.com/products/javawebstart/">Java Web Start</a>
+or <a href="http://cr.yp.to/slashpackage.html">D. J. Bernstein's
+slashpackage</a> though, because I had never heard of them when I started the
+project.</p>
 
 </html>
