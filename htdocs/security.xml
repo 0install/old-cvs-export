@@ -33,6 +33,9 @@ allow trojaning of software run via Zero Install, but not of the system
 itself.</li>
 <li>Zero Install does not listen for incoming connections (any attack
 must be initiated by a local user, intentionally or otherwise).</li>
+<li>Bugs in Linux itself, trusted root processes, etc can allow users to damage
+the system, with or without Zero Install (I thought this was obvious, but some
+people complained I didn't mention it).</li>
 </ul>
 
 <h3>User security key points</h3>
