@@ -164,8 +164,6 @@ lazyfs_release_dentry(struct dentry *dentry)
 	if (!list_empty(&info->helper_list))
 		BUG();
 
-	//printk("Putting dentry for '%s'\n", dentry->d_name.name);
-
 	if (info->host_dentry)
 	{
 		dec("info->host_dentry");
@@ -268,8 +266,6 @@ new_dentry(struct super_block *sb, struct dentry *parent_dentry,
 	if (new->d_fsdata)
 		BUG();
 
-	//printk("New dentry '%s' with inode %ld\n", leaf, inode->i_ino);
-
 	info = kmalloc(sizeof(struct lazy_de_info), GFP_KERNEL);
 	if (!info)
 		goto err;
@@ -358,8 +354,6 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sbi->helper_mnt = NULL;
 	INIT_LIST_HEAD(&sbi->to_helper);
 	INIT_LIST_HEAD(&sbi->requests_in_progress);
-
-	printk("Res %d\n", atomic_read(&resource_counter));
 
 	return sb;
 err:
@@ -515,8 +509,6 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 	if (!info)
 		BUG();
 
-//	printk("get_host_dentry: %ld\n", dentry->d_inode->i_ino);
-
 	if (dentry != sb->s_root)
 	{
 		struct lazy_de_info *parent_info = dentry->d_parent->d_fsdata;
@@ -554,7 +546,7 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 		if (had_helper && list_empty(&info->helper_list))
 		{
 			dget(dentry);
-			list_add(&info->helper_list, &sbi->to_helper);
+			list_add_tail(&info->helper_list, &sbi->to_helper);
 			start_fetching = 1;
 		}
 		spin_unlock(&fetching_lock);
@@ -675,6 +667,7 @@ resume:
 	spin_unlock(&dcache_lock);
 }
 
+#if 0
 static void show_refs(struct dentry *dentry, int indent)
 {
 	struct list_head *next;
@@ -694,6 +687,7 @@ static void show_refs(struct dentry *dentry, int indent)
 		next = next->next;
 	}
 }
+#endif
 
 /* Removes dentry from the tree, and any child nodes too */
 static void remove_dentry(struct dentry *dentry)
@@ -952,8 +946,6 @@ static int ensure_cached(struct dentry *dentry)
 	struct super_block *sb = dentry->d_inode->i_sb;
 	struct lazy_sb_info *sbi = sb->u.generic_sbp;
 
-	//printk("ensure_cached: %ld\n", dentry->d_inode->i_ino);
-
 	if (!S_ISDIR(dentry->d_inode->i_mode))
 		BUG();
 
@@ -1113,7 +1105,6 @@ lazyfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 			continue;
 		}
 
-		//printk("Got child '%s'\n", child->d_name.name);
 		file->f_pos++;
 		err = filldir(dirent, child->d_name.name,
 				      child->d_name.len,
@@ -1134,9 +1125,6 @@ static struct dentry *
 lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 {
 	struct dentry *new;
-
-	//printk("lazyfs_lookup: %s : %s\n", dentry->d_parent->d_name.name,
-			//dentry->d_name.name);
 
 	if (dir == dir->i_sb->s_root->d_inode &&
 		strcmp(dentry->d_name.name, ".lazyfs-helper") == 0)
@@ -1446,10 +1434,7 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 
 	/* Make sure the mapping for our inode points to the host file's */
 	if (inode->i_mapping == &inode->i_data)
-	{
-		//printk("lazyfs_file_mmap: Forwarding mapping\n");
 		inode->i_mapping = host_inode->i_mapping;
-	}
 
 	return 0;
 }
