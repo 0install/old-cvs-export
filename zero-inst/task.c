@@ -19,6 +19,7 @@
 #include "support.h"
 #include "task.h"
 #include "index.h"
+#include "control.h"
 
 Task *all_tasks = NULL;
 static int n = 0;
@@ -48,6 +49,7 @@ Task *task_new(TaskType type)
 	task->str = NULL;
 	task->index = NULL;
 	task->size = -1;
+	task->notify_on_end = 0;
 
 	task->next = all_tasks;
 	all_tasks = task;
@@ -101,6 +103,9 @@ void task_destroy(Task *task, int success)
 		} else
 			t = t->next;
 	}
+
+	if (task->notify_on_end)
+		control_notify_end(task);
 
 	task_set_string(task, NULL);
 	task_set_message(task, NULL, NULL);

@@ -64,14 +64,16 @@ void list_remove(ListHead *head, DBusConnection *connection)
 	assert(0);
 out:
 	dbus_connection_set_data(connection, slot, NULL, NULL);
+	dbus_connection_unref(connection);
 	return;
 }
 
-/* Call 'callback(connection)' for each connection in the list.
+/* Call 'callback(connection, task)' for each connection in the list.
  * If empty is 1, the list will be empty at the end.
  */
-void list_foreach(ListHead *head, void (*callback)(DBusConnection *connection),
-		  int empty)
+void list_foreach(ListHead *head,
+		void (*callback)(DBusConnection *connection, Task *task),
+		int empty, Task *task)
 {
 	dbus_int32_t slot = head->slot;
 	DBusConnection *next = head->next;
@@ -85,11 +87,12 @@ void list_foreach(ListHead *head, void (*callback)(DBusConnection *connection),
 	while (next) {
 		DBusConnection *this = next;
 
-		callback(this);
+		callback(this, task);
 
 		next = dbus_connection_get_data(this, slot);
 
-		dbus_connection_unref(this);
+		if (empty)
+			dbus_connection_unref(this);
 	}
 }
 

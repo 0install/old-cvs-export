@@ -130,9 +130,8 @@ out:
 
 static void kernel_got_archive(Task *task, int success)
 {
-	control_notify_end(task);
 	close(task->fd);
-	task_destroy(task, 0);
+ 	task_destroy(task, 0);
 }
 
 /* We have the index to find the item for this task. Start fetching the

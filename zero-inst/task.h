@@ -37,5 +37,7 @@ struct _Task {
 	Index *index;		/* Will be unref'd */
 	long size;
 
+	int notify_on_end;
+
 	Task	*next;		/* In all_tasks */
 };

@@ -85,22 +85,44 @@ static void send_task_start(DBusConnection *connection, Task *task)
 	assert(task->str);
 	assert(task->child_task->str);
 
+	task->notify_on_end = 1;
+
 	message = dbus_message_new(DBUS_Z_NS ".NewTask", NULL);
 
 	if (message &&
 	    dbus_message_append_args(message,
 			DBUS_TYPE_STRING, task->str,
 			DBUS_TYPE_STRING, task->child_task->str,
-			DBUS_TYPE_INT64, task->child_task->size) &&
+			DBUS_TYPE_INT64, (dbus_int64_t) task->child_task->size,
+			DBUS_TYPE_INVALID) &&
 	    dbus_connection_send(connection, message, NULL)) {
-		/* OK */
 	} else {
 		error("Out of memory");
 	}
 
 	if (message)
 		dbus_message_unref(message);
+}
 
+static void send_task_end(DBusConnection *connection, Task *task)
+{
+	DBusMessage *message;
+
+	assert(task->str);
+
+	message = dbus_message_new(DBUS_Z_NS ".EndTask", NULL);
+
+	if (message &&
+	    dbus_message_append_args(message,
+			DBUS_TYPE_STRING, task->str,
+			DBUS_TYPE_INVALID) &&
+	    dbus_connection_send(connection, message, NULL)) {
+	} else {
+		error("Out of memory");
+	}
+
+	if (message)
+		dbus_message_unref(message);
 }
 
 static void dbus_monitor(DBusConnection *connection, DBusError *error)
@@ -268,7 +290,7 @@ void create_control_socket(void)
 	unlink(OLD_SOCKET);
 }
 
-static void dispatch_one(DBusConnection *connection)
+static void dispatch_one(DBusConnection *connection, Task *unused)
 {
 	DBusDispatchStatus status;
 
@@ -291,7 +313,7 @@ int control_add_select(int n, fd_set *rfds, fd_set *wfds)
 {
 	DBusWatch *watch = dbus_watches;
 
-	list_foreach(&dispatches, dispatch_one, 1);
+	list_foreach(&dispatches, dispatch_one, 1, NULL);
 
 	while (watch) {
 		if (dbus_watch_get_enabled(watch)) {
@@ -437,9 +459,34 @@ void control_check_select(fd_set *rfds, fd_set *wfds)
 	current_watch = NULL;
 }
 
+static void may_notify(DBusConnection *connection, Task *task)
+{
+	unsigned long uid;
+
+	if (!dbus_connection_get_unix_user(connection, &uid))
+		return;
+	if (uid != task->uid)
+		return;
+
+	send_task_start(connection, task);
+}
+
+static void may_notify_end(DBusConnection *connection, Task *task)
+{
+	unsigned long uid;
+
+	if (!dbus_connection_get_unix_user(connection, &uid))
+		return;
+	if (uid != task->uid)
+		return;
+
+	send_task_end(connection, task);
+}
+
 void control_notify_start(Task *task)
 {
 	fprintf(stderr, "control_notify_start\n");
+	list_foreach(&monitors, may_notify, 0, task);
 }
 void control_notify_update(Task *task)
 {
@@ -447,7 +494,8 @@ void control_notify_update(Task *task)
 }
 void control_notify_end(Task *task)
 {
-	fprintf(stderr, "control_notify_end\n");
+	fprintf(stderr, "control_notify_end (%s)\n", task->str);
+	list_foreach(&monitors, may_notify_end, 0, task);
 }
 
 void control_drop_clients(void)
