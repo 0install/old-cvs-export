@@ -27,18 +27,28 @@ if not os.path.exists(target):
 
 ZERO_NS = 'http://zero-install.sourceforge.net'
 
-archive_dir = os.path.join(target, '0install')
+archive_dir_leaf = '.0inst-archives'
+archive_dir = os.path.join(target, archive_dir_leaf)
 archive_base = time.strftime('%Y-%b-%d-%H-%M-%S-')
 archive_i = 0
 if not os.path.isdir(archive_dir):
 	print "Creating new directory for archives '%s'" % archive_dir
 	os.mkdir(archive_dir)
 
+def md5sum(path):
+	m = md5.new()
+	f = file(path)
+	while 1:
+		data = f.read(1000)
+		if not data: break
+		m.update(data)
+	return m.hexdigest()
+
 def make_archive_path():
 	global archive_i
 	x = 100
 	while x:
-		rel_path = os.path.join('0install',
+		rel_path = os.path.join(archive_dir_leaf,
 				    archive_base + `archive_i` + '.tgz')
 		path = os.path.join(target, rel_path)
 		archive_i += 1
@@ -59,28 +69,41 @@ class Archive:
 			map(lambda x: '  %s' % x, kids))
 
 	def same_as(self, old):
-		return True
+		def info(e):
+			return (e.getAttributeNS(None, 'name'),
+				long(e.getAttributeNS(None, 'size')),
+				long(e.getAttributeNS(None, 'mtime')),
+				str(e.localName))
+
+		us = [(unicode(f.name), long(f.size), long(f.mtime), f.type)
+			for f in self.kids]
+		other = [info(e) for e in
+			old.getElementsByTagNameNS(ZERO_NS, 'file') +
+			old.getElementsByTagNameNS(ZERO_NS, 'exec')]
+		us.sort()
+		other.sort()
+		return us == other
 
 	def get_old_tgz(self, old):
-		# 'old' is an <archive> with the same contents as us.
+		# 'old' is an <group> with the same contents as us.
 		# Set self.tgz to it's href and prevent the old archive
 		# from being deleted. Sets self.tgz on success.
-		for x in old.getElementsByTagNameNS(ZERO_NS, 'mirror'):
+		for x in old.getElementsByTagNameNS(ZERO_NS, 'archive'):
 			name = x.getAttributeNS(None, 'href')
-			assert name.startswith('0install/')
-			name = name[9:]
+			assert name.startswith(archive_dir_leaf + '/')
+			name = name[len(archive_dir_leaf) + 1:]
 			break
 		else:
-			print "Warning: old archive had no mirrors!"
+			print "Warning: old group had no mirrors!"
 			return
 
-		print "Already archived '%s' as %s" % (self.dir, name)
+		#print "Already archived '%s' as %s" % (self.dir, name)
 
 		if os.path.exists(os.path.join(archive_dir, name)):
 			old_tgz.remove(name)
-			self.tgz = os.path.join('0install', name)
+			self.tgz = os.path.join(archive_dir_leaf, name)
 		else:
-			print "But archive is missing!"
+			print "Old archive is missing!"
 	
 	def build_tgz(self):
 		assert not self.tgz
@@ -95,23 +118,30 @@ class Archive:
 			rel_path = self.dir[1:]
 		for old in old_archives.get(rel_path, []):
 			if self.same_as(old):
+				old_archives[rel_path].remove(old)
 				self.get_old_tgz(old)
 				if self.tgz:
 					return
 
+		print "Creating new archive for", rel_path
 		archive_path, self.tgz = make_archive_path()
 		os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive_path,
 			'-C', self.dir, '--'] + [f.name for f in self.kids])
 
 	def add_xml(self, parent):
 		self.build_tgz()
-		node = parent.ownerDocument.createElementNS(ZERO_NS, 'archive')
+		node = parent.ownerDocument.createElementNS(ZERO_NS, 'group')
 		parent.appendChild(node)
 		for k in self.kids:
 			k.add_xml(node)
-		mirror = node.ownerDocument.createElementNS(ZERO_NS, 'mirror')
+		mirror = node.ownerDocument.createElementNS(ZERO_NS, 'archive')
 		node.appendChild(mirror)
 		mirror.setAttributeNS(None, 'href', self.tgz)
+
+		path = os.path.join(target, self.tgz)
+		node.setAttributeNS(None, 'MD5sum', md5sum(path))
+
+		node.setAttributeNS(None, 'size', str(os.stat(path).st_size))
 
 class Item:
 	def __init__(self, source, root = False):
@@ -148,12 +178,17 @@ class File(Item):
 			self.type = 'file'
 
 class Link(Item):
+	type = 'link'
+
 	def __init__(self, source):
 		Item.__init__(self, source)
 		self.target = os.readlink(source)
 		
 	def __str__(self):
 		return Item.__str__(self) + ' -> ' + self.target
+	
+	def set_xml(self, node):
+		node.setAttributeNS(None, 'target', self.target)
 
 class Dir(Item):
 	type = 'dir'
@@ -204,7 +239,7 @@ class Dir(Item):
 
 def find_archives(archives, node, path = '/'):
 	if node.nodeType != dom.Node.ELEMENT_NODE: return
-	if node.localName == 'archive':
+	if node.localName == 'group':
 		if path not in archives:
 			archives[path] = []
 		archives[path].append(node)
@@ -220,19 +255,17 @@ doc.appendChild(site)
 
 root = Dir('.', root = True)
 
-print root
+#print root
 
-index_path = os.path.join(target, '0install-index.xml')
+index_path = os.path.join(target, '.0install-index.xml')
 old_doc = None
-if index_path:
+if os.path.exists(index_path):
 	old_doc = dom.minidom.parse(index_path)
 old_tgz = [a for a in os.listdir(archive_dir) if a.endswith('.tgz')]
 
 old_archives = {}
 if old_doc:
 	find_archives(old_archives, old_doc.documentElement)
-
-print "Old archives", old_archives
 
 root.add_xml(site)
 doc.writexml(file(index_path, 'w'), addindent='  ', newl='\n')
