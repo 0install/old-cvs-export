@@ -20,7 +20,7 @@ def barrier():
 		accept_barrier(barrier_count)
 		print "Step", barrier_count, "done"
 	else:
-		os.popen('0refresh 0test.%d' % barrier_count)
+		os.popen('0refresh test.%d' % barrier_count)
 
 def check_ls(dir, wanted):
 	got = os.listdir(dir)
@@ -30,11 +30,12 @@ def check_ls(dir, wanted):
 		assert got == wanted
 
 import os
-from __main__ import send_tree, server, accept_barrier
+from __main__ import send_tree, server, accept_barrier, fs, cache
 import stat
+from os.path import join
 
 def refresh():
-	assert os.popen('0refresh 0test').read() == 'OK\n'
+	assert os.popen('0refresh test').read() == 'OK\n'
 
 # Missing path
 if server:
@@ -42,12 +43,12 @@ if server:
 	send_tree('<dir size="1" mtime="2"/>', path = None)
 else:
 	try:
-		os.chdir('/uri/0install/0test')
+		os.chdir(join(fs, 'test'))
 		assert False
 	except OSError:
 		pass
 	try:
-		os.listdir('/uri/0install/0test')
+		os.listdir(join(fs, 'test'))
 		assert False
 	except OSError:
 		pass
@@ -56,17 +57,19 @@ barrier()
 
 # Empty root
 if server:
+	print "Sending tree"
 	send_tree('<dir size="1" mtime="2"/>')
+	print "Sent"
 else:
-	check_ls('/uri/0install/0test', [])
+	check_ls(join(fs, 'test'), [])
 
 # Single symlink
 if server:
 	send_tree('<dir size="1" mtime="2"><link size="3" mtime="2" target="end" name="link"/></dir>')
 else:
-	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
-	check_ls('/uri/0install/0test', ['link'])
-	assert os.readlink('/uri/0install/0test/link') == 'end'
+	assert os.popen('cd /uri/0install/test; 0refresh').read() == 'OK\n'
+	check_ls(join(fs, 'test'), ['link'])
+	assert os.readlink(join(fs, 'test/link')) == 'end'
 
 barrier()
 
@@ -74,8 +77,8 @@ barrier()
 if server:
 	send_tree('<dir size="1" mtime="2"><link size="3" mtime="2" target="end"/></dir>')
 else:
-	assert os.popen('cd /uri/0install/0test; 0refresh').read() != 'FAIL\n'
-	check_ls('/uri/0install/0test', ['link'])
+	assert os.popen('cd /uri/0install/test; 0refresh').read() != 'FAIL\n'
+	check_ls(join(fs, 'test'), ['link'])
 
 barrier()
 
@@ -83,8 +86,8 @@ barrier()
 if server:
 	send_tree('<dir size="1" mtime="2"></dir>')
 else:
-	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
-	check_ls('/uri/0install/0test', [])
+	assert os.popen('cd /uri/0install/test; 0refresh').read() == 'OK\n'
+	check_ls(join(fs, 'test'), [])
 
 barrier()
 
@@ -95,16 +98,16 @@ if server:
 	send_tree('<dir size="1" mtime="2"><dir name="apps" size="0" mtime="1"><dir name="ZeroProgress" size="4" mtime="3"><link name="foo" size="1" mtime="2" target="bar"/></dir></dir></dir>')
 	send_tree('<dir size="3" mtime="2"><dir name="apps" size="1" mtime="2"/></dir>')
 else:
-	assert os.popen('0refresh 0test').read() == 'OK\n'
-	#os.system('ls -R /uri/0install/0test')
-	check_ls("/uri/0install/0test", ['apps'])
-	check_ls("/uri/0install/0test/apps", ["ZeroProgress"])
-	check_ls("/uri/0install/0test/apps/ZeroProgress", ['foo'])
-	os.chdir('/uri/0install/0test/apps/ZeroProgress')
+	assert os.popen('0refresh test').read() == 'OK\n'
+	#os.system('ls -R /uri/0install/test')
+	check_ls(join(fs, "test"), ['apps'])
+	check_ls(join(fs, "test/apps"), ["ZeroProgress"])
+	check_ls(join(fs, "test/apps/ZeroProgress"), ['foo'])
+	os.chdir(join(fs, 'test/apps/ZeroProgress'))
 	check_ls('.', ['foo'])
-	check_ls("/uri/0install/0test", ['apps'])
+	check_ls(join(fs, "test"), ['apps'])
 	assert os.popen('0refresh').read() == 'OK\n'
-	check_ls("/uri/0install/0test", ['apps'])
+	check_ls(join(fs, "test"), ['apps'])
 	os.system("pwd")
 	check_ls('..', [])
 	#print os.listdir('.')
@@ -120,10 +123,10 @@ if server:
 	send_tree('<dir size="3" mtime="2"><link name="link" target="two" size="2" mtime="3"/></dir>')
 else:
 	refresh()
-	check_ls('/uri/0install/0test', ['link'])
-	assert os.readlink('/uri/0install/0test/link') == 'one'
+	check_ls(join(fs, 'test'), ['link'])
+	assert os.readlink(join(fs, 'test/link')) == 'one'
 	refresh()
-	assert os.readlink('/uri/0install/0test/link') == 'two'
+	assert os.readlink(join(fs, 'test/link')) == 'two'
 
 barrier()
 
@@ -131,12 +134,12 @@ if server:
 	send_tree('<dir size="3" mtime="2"><dir name="a" size="2" mtime="3"><dir name="b" size="2" mtime="3"><dir name="c" size="2" mtime="3"><link target="end" name="link" size="2" mtime="3"/></dir></dir></dir></dir>')
 else:
 	refresh()
-	assert os.readlink('/uri/0install/0test/a/b/c/link') == 'end'
-	#os.chdir('/uri/0install/0test/a/b/c')
-	a = open('/uri/0install/0test/a/b')
-	os.system("rm -r /var/cache/zero-inst/0test/a")
-	assert os.readlink('/uri/0install/0test/a/b/c/link') == 'end'
-	assert os.path.exists('/var/cache/zero-inst/0test/a/b/c')
+	assert os.readlink(join(fs, 'test/a/b/c/link')) == 'end'
+	#os.chdir(join(fs, 'test/a/b/c'))
+	a = open(join(fs, 'test/a/b'))
+	os.system("rm -r /var/cache/zero-inst/test/a")
+	assert os.readlink(join(fs, 'test/a/b/c/link')) == 'end'
+	assert os.path.exists('/var/cache/zero-inst/test/a/b/c')
 
 barrier()
 
@@ -150,14 +153,14 @@ if server:
 	send_tree('<dir size="3" mtime="2"><link name="a" size="3" mtime="3" target="new"/></dir>')
 else:
 	refresh()
-	ai = inum('/uri/0install/0test/a')
-	bi = inum('/uri/0install/0test/a/b')
-	assert size('/uri/0install/0test/a') == 2
+	ai = inum(join(fs, 'test/a'))
+	bi = inum(join(fs, 'test/a/b'))
+	assert size(join(fs, 'test/a')) == 2
 	refresh()
-	assert inum('/uri/0install/0test/a') == ai
-	assert inum('/uri/0install/0test/a/b') == bi
-	assert size('/uri/0install/0test/a') == 3
+	assert inum(join(fs, 'test/a')) == ai
+	assert inum(join(fs, 'test/a/b')) == bi
+	assert size(join(fs, 'test/a')) == 3
 	refresh()
-	assert inum('/uri/0install/0test/a') != ai
+	assert inum(join(fs, 'test/a')) != ai
 
 #print "finished", server

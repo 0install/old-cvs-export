@@ -4,7 +4,9 @@ For instructions, see:
 
 But roughly:
 
-* Create a new 'zeroinst' user (or just reuse your own user ID for testing)
+* Make sure lazyfs is already installed.
+
+* Create a new 'zeroinst' user.
 
 * Install:
 
@@ -13,13 +15,9 @@ But roughly:
 	$ su
 	# make install
 
-* Mount:
+* Start it running:
 
-	# mount /uri/0install
-
-* Run helper (as 'zeroinst' user). Leave it running...
-
-	$ zero-install
+	# /etc/init.d/0install start
 
 * Explore /uri/0install:
 

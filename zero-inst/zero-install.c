@@ -60,6 +60,10 @@
 
 int copy_stderr = 1;	/* False once closed... */
 
+/* This is changed only when debugging */
+const char *mnt_dir = "/uri/0install";
+int mnt_dir_len = sizeof("/uri/0install") - 1;
+
 int verbose = 0; /* (debug) */
 
 /* When we need to use an index file, if it was created in the last hour
@@ -78,30 +82,29 @@ static int finished = 0;
 
 static int to_wakeup_pipe = -1;	/* Write here to get noticed */
 
-#ifdef S_SPLINT_S
-#define SA_ONESHOT 0x80000000
-#endif
-
 static int open_helper(void)
 {
 	int helper;
+	char *helper_path;
 
-	helper = open(MNT_DIR "/.lazyfs-helper", O_RDONLY);
+	helper_path = build_string("%s/.lazyfs-helper", mnt_dir);
+	helper = open(helper_path, O_RDONLY);
+	free(helper_path);
+
 	if (helper == -1) {
 		int error = errno;
 
-		error("Error opening " MNT_DIR "/.lazyfs-helper: %m");
+		error("Error opening %s/.lazyfs-helper: %m", mnt_dir);
 
 		if (error == EACCES)
 			error("Ensure that %s is owned "
 				"by the user that runs %s before "
-				MNT_DIR " is mounted.",
-					cache_dir, prog);
+				"%s is mounted.", cache_dir, prog, mnt_dir);
 		else if (error == EBUSY)
 			error("Ensure that zero-install is not "
 					"already running.");
 		else
-			error("Ensure that " MNT_DIR " is mounted.");
+			error("Ensure that %s is mounted.", mnt_dir);
 
 		exit(EXIT_FAILURE);
 	}
@@ -113,6 +116,9 @@ static int open_helper(void)
 static void handle_root_request(int request_fd)
 {
 	FILE *ddd;
+
+	if (verbose)
+		error("handle_root_request()");
 
 	if (chdir(cache_dir))
 		goto err;
@@ -139,7 +145,7 @@ out:
 		abort();
 }
 
-static void kernel_got_archive(/*@dependent@*/ Task *task, /*@null@*/ const char *err)
+static void kernel_got_archive(Task *task, const char *err)
 {
 	if (err)
 		control_notify_error(task, err);
@@ -150,7 +156,7 @@ static void kernel_got_archive(/*@dependent@*/ Task *task, /*@null@*/ const char
 /* We have the index to find the item for this task. Start fetching the
  * item. Free the index and close the request when done.
  */
-static void kernel_got_index(/*@dependent@*/ Task *task)
+static void kernel_got_index(Task *task)
 {
 	Element *item;
 	const char *slash;
@@ -200,7 +206,7 @@ void kernel_cancel_task(Task *task)
 	task_destroy(task, NULL);
 }
 
-static void kernel_task_step(/*@dependent@*/ Task *task, /*@null@*/ const char *err)
+static void kernel_task_step(Task *task, const char *err)
 {
 	if (!err)
 		task_steal_index(task, get_index(task->str, NULL, 0));
@@ -217,6 +223,9 @@ static void kernel_task_step(/*@dependent@*/ Task *task, /*@null@*/ const char *
 static void handle_request(int request_fd, uid_t uid, char *path)
 {
 	Task *task;
+
+	if (verbose)
+		error("handle_request(%s) for %d", path, uid);
 
 	if (strcmp(path, "/") == 0) {
 		handle_root_request(request_fd);
@@ -246,6 +255,8 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 
 	task_steal_index(task, get_index(path, &task->child_task, 0));
 	if (task->child_task) {
+		if (verbose)
+			error("Download now in progress...");
 		assert(!task->index);
 		control_notify_update(task);
 		return;		/* Download in progress */
@@ -253,10 +264,15 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 
 	if (!task->index) {
 		/* Error -- give up */
+		if (verbose)
+			error("Failed to start fetching index");
 		my_close(request_fd);
 		task_destroy(task, "Failed to start fetching index");
 		return;
 	}
+
+	if (verbose)
+		error("Handling using existing index");
 
 	kernel_got_index(task);
 }
@@ -264,15 +280,15 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 /* This is called as a signal handler; simply ensures that
  * child_died_callback() will get called later.
  */
-static void child_died(/*@unused@*/ int signum)
+static void child_died(int signum)
 {
-	(void) write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
+	write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
 }
 
-static void sigint(/*@unused@*/ int signum)
+static void sigint(int signum)
 {
 	finished = 1;
-	(void) write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
+	write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
 }
 
 static void read_from_helper(int helper)
@@ -298,7 +314,7 @@ static void read_from_helper(int helper)
 		exit(EXIT_FAILURE);
 	}
 
-	request_fd = (int) strtol(buffer, &end, 10);
+	request_fd = strtol(buffer, &end, 10);
 	if (strncmp(end, " uid=", 5) != 0 || !end[5]) {
 		error("Internal error: bad request FD '%s'", buffer);
 		exit(EXIT_FAILURE);
@@ -376,7 +392,6 @@ static void create_pid_file(pid_t child)
 		goto err;
 
 	free(pid_file);
-	pid_file = NULL;	/* Quiet splint */
 	return;
 err:
 	if (pid_file)
@@ -386,13 +401,11 @@ err:
 	exit(EXIT_FAILURE);
 }
 
-#define CACHE_LINK MNT_DIR "/.lazyfs-cache"
-
 #define REQUIRE(prog, test) if (system(prog " " test " >/dev/null 2>&1")) { \
 		error("It appears that " prog " isn't installed ('" prog " " test "' " \
 			"returned an error exit status)"); }
 
-int main(/*@unused@*/ int argc, char **argv)
+int main(int argc, char **argv)
 {
 	int wakeup_pipe[2];
 	struct sigaction act;
@@ -400,6 +413,17 @@ int main(/*@unused@*/ int argc, char **argv)
 	int max_fd;
 	char *pid_file;
 	int background = 1;
+	char *cache_link;
+
+	{
+		char *uri_0install;
+
+		uri_0install = getenv("DEBUG_URI_0INSTALL_DIR");
+		if (uri_0install) {
+			mnt_dir = uri_0install;
+			mnt_dir_len = strlen(mnt_dir);
+		}
+	}
 
 	if (1)
 	{
@@ -435,19 +459,22 @@ int main(/*@unused@*/ int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	(void) umask(0022);
+	umask(0022);
 	
 	prog = argv[0];
 
-	cache_dir_len = readlink(CACHE_LINK, cache_dir, sizeof(cache_dir));
+	cache_link = build_string("%s/.lazyfs-cache", mnt_dir);
+	cache_dir_len = readlink(cache_link, cache_dir, sizeof(cache_dir));
 	if (cache_dir_len == -1) {
-		error("readlink(" CACHE_LINK "): %m");
-		error("Can't find location of cache directory."
-			"Make sure " MNT_DIR " is mounted and that you are "
+		error("readlink(%s): %m", cache_link);
+		error("Can't find location of cache directory. "
+			"Make sure %s is mounted and that you are "
 			"running the latest version of the lazyfs kernel "
-			"module.");
+			"module.", mnt_dir);
 		return EXIT_FAILURE;
 	}
+	free(cache_link);
+
 	assert(cache_dir_len >= 1 && cache_dir_len < sizeof(cache_dir));
 	cache_dir[cache_dir_len] = '\0';
 
@@ -494,14 +521,14 @@ int main(/*@unused@*/ int argc, char **argv)
 
 	/* Let child processes die */
 	act.sa_handler = child_died;
-	(void) sigemptyset(&act.sa_mask);
+	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_NOCLDSTOP;
 	if (sigaction(SIGCHLD, &act, NULL))
 		abort();
 
 	/* Catch SIGINT and exit nicely */
 	act.sa_handler = sigint;
-	(void) sigemptyset(&act.sa_mask);
+	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_ONESHOT;
 	if (sigaction(SIGINT, &act, NULL))
 		abort();
@@ -550,6 +577,9 @@ int main(/*@unused@*/ int argc, char **argv)
 		copy_stderr = 0;
 	} else
 		create_pid_file(getpid());
+
+	if (verbose)
+		error("Zero Install now accepting requests...");
 
 	while (!finished) {
 		fd_set rfds, wfds;

@@ -1,0 +1,439 @@
+#!/usr/bin/env python
+
+from xml import dom
+from xml.dom import minidom
+import time
+import os, sys
+import stat
+import md5
+
+fs = os.environ['DEBUG_URI_0INSTALL_DIR']
+
+ignored_names = ('CVS', '.svn', '.', '..', '.0inst-0build')
+warning_names = ('core',)
+meta_names = ('.DirIcon', 'AppInfo.xml')
+archive_dir_leaf = '.0inst-archives'
+index_leaf = '.0inst-index.tgz'
+index_leaf_bz = '.0inst-index.tar.bz2'
+saved_build = '.0inst-0build'
+
+target = None
+host = None
+
+verbose = True
+if '--quiet' in sys.argv:
+	sys.argv.remove('--quiet')
+	verbose = False
+
+if len(sys.argv) == 1:
+	if os.path.exists(saved_build):
+		lines = file(saved_build).readlines()
+		target, = [l[7:-1] for l in lines if l.startswith('target=')]
+		host, = [l[5:-1] for l in lines if l.startswith('host=')]
+elif len(sys.argv) == 3:
+	target = sys.argv[1]
+	host = sys.argv[2]
+
+if not (target and host):
+	print >>sys.stderr, "Usage: 0build <targetdir> <your.host>\n\n" \
+		"The <targetdir>/%s directory will be created/updated,\n" \
+		"along with the index files <targetdir>/%s and\n" \
+		"<targetdir>/%s.\n\n" \
+		"These files should be fetchable as, eg:\n" \
+		"\thttp://<your.host>/%s.\n\n" \
+		"Then the file ./<somefile> will be accessable as\n" \
+		"/uri/0install/<your.host>/<somefile>\n\n" \
+		"Eg: 0build /var/www/ your.host\n" \
+		"or: 0build /var/www/ your.host#~user\n\n" \
+		"The values are saved; in future, just run '0build'" % \
+		(archive_dir_leaf, index_leaf, index_leaf_bz, index_leaf)
+	raise SystemExit(1)
+
+assert "'" not in host
+assert "\\" not in host
+if '#' in host:
+	domain, subsite = host.split('#', 1)
+	key = '=%s <0sub@%s>' % (subsite, domain)
+else:
+	# Be more flexible about name here for compat.
+	domain, subsite = host, None
+	key = '<0install@%s>' % domain
+
+print >> file(saved_build, 'w'), \
+	'target=%s\nhost=%s' % (target, host)
+
+if os.system("gpg --list-secret-keys '%s' >/dev/null" % key):
+	print "\nFailed to find a GPG key for this server."
+	print "\n>> You should create one now, with:\n"
+	if subsite:
+		print "\tReal name: " + subsite
+		print "\tEmail address: 0sub@%s" % domain
+	else:
+		print "\tReal name: Zero Install"
+		print "\tEmail address: 0install@%s" % domain
+	print "\tComment: (leave blank)"
+	print
+	os.system("gpg --gen-key --allow-freeform-uid")
+	if os.system("gpg --list-secret-keys '%s' >/dev/null" % key):
+		print "Key still not found. Aborting..."
+		raise SystemExit
+
+if verbose:
+	print "Building index files for server '%s' in '%s'." % (host, target)
+
+assert '/' not in host
+
+if not os.path.exists(target):
+	print >>sys.stderr, "Target '%s' not found" % target
+	raise SystemExit
+
+ZERO_NS = 'http://zero-install.sourceforge.net'
+
+archive_dir = os.path.join(target, archive_dir_leaf)
+archive_base = time.strftime('%Y-%b-%d-%H-%M-%S-')
+archive_i = 0
+if not os.path.isdir(archive_dir):
+	if verbose:
+		print "Creating new directory for archives '%s'" % archive_dir
+	os.mkdir(archive_dir)
+
+def md5sum(path):
+	m = md5.new()
+	f = file(path)
+	while 1:
+		data = f.read(1000)
+		if not data: break
+		m.update(data)
+	return m.hexdigest()
+
+def make_archive_path(ext = '.tgz'):
+	global archive_i
+	x = 100
+	while x:
+		rel_path = os.path.join(archive_dir_leaf,
+				    archive_base + `archive_i` + ext)
+		path = os.path.join(target, rel_path)
+		archive_i += 1
+		if not os.path.exists(path):
+			return path, rel_path
+		x -=1
+	raise Exception("Can't find a free pathname for archive!")
+
+class Archive:
+	def __init__(self, contents, dir):
+		assert contents
+		self.dir = dir
+		self.tgz = None
+		self.kids = [File(os.path.join(dir, x)) for x in contents]
+	
+	def __str__(self):
+		kids = '\n'.join(map(str, self.kids)).split('\n')
+		return '\n'.join(["Archive:"] +
+			map(lambda x: '  %s' % x, kids))
+
+	def same_as(self, old):
+		def info(e):
+			return (e.getAttributeNS(None, 'name'),
+				long(e.getAttributeNS(None, 'size')),
+				long(e.getAttributeNS(None, 'mtime')),
+				str(e.localName))
+
+		us = [(unicode(f.name), long(f.size), long(f.mtime), f.type)
+			for f in self.kids]
+		other = [info(e) for e in
+			old.getElementsByTagNameNS(ZERO_NS, 'file') +
+			old.getElementsByTagNameNS(ZERO_NS, 'exec')]
+		us.sort()
+		other.sort()
+		return us == other
+
+	def get_old_tgz(self, old):
+		# 'old' is a <group> with the same contents as us.
+		# Set self.tgz to it's href and prevent the old archive
+		# from being deleted. Sets self.tgz on success.
+		for x in old.getElementsByTagNameNS(ZERO_NS, 'archive'):
+			name = x.getAttributeNS(None, 'href')
+			assert name.startswith(archive_dir_leaf + '/')
+			name = name[len(archive_dir_leaf) + 1:]
+			break
+		else:
+			print "Warning: old group had no mirrors!"
+			return
+
+		#print "Already archived '%s' as %s" % (self.dir, name)
+
+		if os.path.exists(os.path.join(archive_dir, name)):
+			old_files.remove(name)
+			self.tgz = os.path.join(archive_dir_leaf, name)
+		else:
+			print "Old archive is missing!"
+	
+	def build_tgz(self):
+		assert not self.tgz
+
+		# Find all the previous archives for this directory.
+		# If one has the same files, times and sizes, don't bother
+		# creating a new archive, but use the old one instead.
+		if self.dir == '.':
+			rel_path = '/'
+		else:
+			assert self.dir.startswith('./')
+			rel_path = self.dir[1:]
+		for old in old_archives.get(rel_path, []):
+			if self.same_as(old):
+				old_archives[rel_path].remove(old)
+				self.get_old_tgz(old)
+				if self.tgz:
+					return
+
+		if verbose:
+			print "Creating new archive for", rel_path
+		archive_path, self.tgz = make_archive_path()
+		r = os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive_path,
+			'-C', self.dir, '--'] + [f.name for f in self.kids])
+		if r:
+			raise Exception('Failed to build archive for %s', self.kids)
+
+	def add_xml(self, parent):
+		self.build_tgz()
+		node = parent.ownerDocument.createElementNS(ZERO_NS, 'group')
+		parent.appendChild(node)
+		for k in self.kids:
+			k.add_xml(node)
+		
+		# For new mirrors.xml
+		node.setAttributeNS(None, 'href', os.path.basename(self.tgz))
+
+		# For old <mirror> elements
+		mirror = node.ownerDocument.createElementNS(ZERO_NS, 'archive')
+		node.appendChild(mirror)
+		mirror.setAttributeNS(None, 'href', self.tgz)
+
+		# For both
+		path = os.path.join(target, self.tgz)
+		node.setAttributeNS(None, 'MD5sum', md5sum(path))
+		node.setAttributeNS(None, 'size', str(os.stat(path).st_size))
+
+class Item:
+	def __init__(self, source, root = False):
+		self.stat = os.lstat(source)
+		if root:
+			self.name = None
+		else:
+			self.name = os.path.basename(source)
+		self.size = self.stat.st_size
+		self.mtime = self.stat.st_mtime
+	
+	def __str__(self):
+		return "%s: %s size=%d mtime=%d" % (self.__class__.__name__,
+				self.name, self.size, self.mtime)
+	
+	def add_xml(self, parent):
+		node = parent.ownerDocument.createElementNS(ZERO_NS, self.type)
+		node.setAttributeNS(None, 'size', str(self.size))
+		node.setAttributeNS(None, 'mtime', str(self.mtime))
+		if self.name:
+			node.setAttributeNS(None, 'name', str(self.name))
+		parent.appendChild(node)
+		self.set_xml(node)
+	
+	def set_xml(self, node):
+		pass
+
+class File(Item):
+	def __init__(self, source):
+		Item.__init__(self, source)
+		if self.stat.st_mode & 0111:
+			self.type = 'exec'
+		else:
+			self.type = 'file'
+
+class Link(Item):
+	type = 'link'
+
+	def __init__(self, source):
+		Item.__init__(self, source)
+		self.target = os.readlink(source)
+		if self.target.startswith('/') and \
+		   not self.target.startswith('/uri/0install/'):
+			print "WARNGING: Symlink %s->%s points outside of Zero Install" % (source, self.target)
+		
+	def __str__(self):
+		return Item.__str__(self) + ' -> ' + self.target
+	
+	def set_xml(self, node):
+		node.setAttributeNS(None, 'target', self.target)
+
+class Dir(Item):
+	type = 'dir'
+
+	def __init__(self, source, root = False):
+		Item.__init__(self, source, root)
+		assert stat.S_ISDIR(self.stat.st_mode)
+		self.kids = []
+		meta = []
+		files = []
+		debug = []
+
+		for name in os.listdir(source):
+			if name in ignored_names: continue
+
+			path = os.path.join(source, name)
+
+			if name.startswith('.'):
+				if name.endswith('.swp') or name.endswith('.swo'):
+					continue
+				if name.startswith('.#'):
+					continue
+				if name.startswith('.0inst'):
+					print "Skipping", name
+					continue
+				if name != '.DirIcon':
+					print "Including hidden file", path
+			if name in warning_names:
+				print "WARNING: Including", path
+
+			if os.path.islink(path):
+				self.kids.append(Link(path))
+			elif os.path.isdir(path):
+				self.kids.append(Dir(path))
+			elif os.path.isfile(path):
+				if name in meta_names:
+					meta.append(name)
+				elif name.endswith('.debug') or \
+				     name.endswith('.dbg'):
+					debug.append(name)
+				else:
+					files.append(name)
+			else:
+				print "Unknown type %s" % path
+		
+		if meta:
+			self.kids.append(Archive(meta, source))
+		if files:
+			self.kids.append(Archive(files, source))
+		if debug:
+			self.kids.append(Archive(debug, source))
+	
+	def __str__(self):
+		kids = '\n'.join(map(str, self.kids)).split('\n')
+		return '\n'.join([Item.__str__(self)] +
+			map(lambda x: '  %s' % x, kids))
+	
+	def set_xml(self, node):
+		for k in self.kids:
+			k.add_xml(node)
+
+def find_archives(archives, node, path = '/'):
+	if node.nodeType != dom.Node.ELEMENT_NODE: return
+	if node.localName == 'group':
+		if path not in archives:
+			archives[path] = []
+		archives[path].append(node)
+	name = node.getAttributeNS(None, 'name')
+	path = os.path.join(path, name)
+	for n in node.childNodes:
+		find_archives(archives, n, path)
+
+doc = minidom.Document()
+site = doc.createElementNS(ZERO_NS, 'site-index')
+site.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
+doc.appendChild(site)
+site.setAttributeNS(None, 'path', '%s/%s' % (fs, host))
+
+root = Dir('.', root = True)
+
+#print root
+index_tgz = os.path.join(target, index_leaf)
+index_bgz = os.path.join(target, index_leaf_bz)
+index_xml = os.path.join(target, '.0inst-index.xml')
+old_doc = None
+if os.path.exists(index_tgz):
+	if os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzf', index_tgz,
+			'-C', target, '.0inst-index.xml']):
+		print "WARNING: old index archive corrupted!"
+	if os.spawnvp(os.P_WAIT, 'tar', ['tar', 'xzf', index_tgz,
+			'-C', target, 'mirrors.xml']):
+		print "No existing mirrors file (old build?)"
+
+if os.path.exists(index_xml):
+	old_doc = dom.minidom.parse(index_xml)
+
+old_files = [a for a in os.listdir(archive_dir)
+			if a.endswith('.tgz') or a.endswith('.bz2')]
+
+old_archives = {}
+if old_doc:
+	find_archives(old_archives, old_doc.documentElement)
+
+root.add_xml(site)
+doc.writexml(file(index_xml, 'w'), addindent='  ', newl='\n')
+
+new_key = os.popen("gpg --export '%s'" % key).read()
+if not new_key:
+	raise Exception("Failed to export public key for '%s'" % key)
+pub_key = os.path.join(target, 'keyring.pub')
+file(pub_key, 'w').write(new_key)
+
+
+sig = os.popen("gpg --detach-sign -o - --default-key '%s' '%s'" % (key, index_xml)).read()
+assert sig
+sig_path = os.path.join(target, 'index.xml.sig')
+file(sig_path, 'w').write(sig)
+
+mirrors_path = os.path.join(target, 'mirrors.xml')
+#import bz2
+#compressed_index = bz2.compress(file(index_xml).read())
+compressed_index = os.popen("bzip2 < '%s'" % index_xml).read()
+try:
+	old_mirrors = minidom.parse(mirrors_path)
+	index_bz_leaf = old_mirrors.documentElement.getAttributeNS(None,
+								'index')
+	index_bz = os.path.join(target, index_bz_leaf)
+	if file(index_bz).read() != compressed_index:
+		print "Index changed"
+		raise Exception('Index changed')
+	print "Using existing index file", index_bz
+except:
+	index_bz, index_bz_leaf = make_archive_path(ext = '.bz2')
+	file(index_bz, 'w').write(compressed_index)
+else:
+	old_files.remove(os.path.basename(index_bz_leaf)) # Don't delete it
+
+def make_mirrors():
+	doc = minidom.Document()
+	root = doc.createElementNS(ZERO_NS, 'mirrors')
+	root.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
+	doc.appendChild(root)
+	root.setAttributeNS(None, 'index', os.path.basename(index_bz_leaf))
+	root.setAttributeNS(None, 'index_size', str(os.stat(index_bz).st_size))
+	mirror = doc.createElementNS(ZERO_NS, 'mirror')
+	if subsite:
+		mirror.setAttributeNS(None, 'base', 'http://%s/%s/%s' %
+					(domain, subsite, archive_dir_leaf))
+	else:
+		mirror.setAttributeNS(None, 'base', 'http://%s/%s' %
+						(host, archive_dir_leaf))
+	root.appendChild(mirror)
+	
+	doc.writexml(file(mirrors_path, 'w'), addindent = ' ', newl = '\n')
+make_mirrors()
+
+if os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', index_tgz, '-C', target,
+	'.0inst-index.xml', 'keyring.pub', 'mirrors.xml', 'index.xml.sig']):
+	raise Exception('tar failed')
+
+if os.spawnvp(os.P_WAIT, 'tar', ['tar', 'cjf', index_bgz, '-C', target,
+	'keyring.pub', 'mirrors.xml', 'index.xml.sig']):
+	raise Exception('tar failed')
+
+os.unlink(index_xml)
+os.unlink(pub_key)
+os.unlink(sig_path)
+os.unlink(mirrors_path)
+
+for x in old_files:
+	path = os.path.join(archive_dir, x)
+	print "Removing unused file:", path
+	assert int(x[:4])
+	os.unlink(path)

@@ -36,7 +36,7 @@ static char *wget_log = NULL;
 static void build_ddd_from_index(Element *dir_node, char *dir);
 
 /* 0 on success (cwd is changed). */
-static int chdir_meta(/*@notnull@*/ const char *site)
+static int chdir_meta(const char *site)
 {
 	char *meta;
 
@@ -60,7 +60,7 @@ static int chdir_meta(/*@notnull@*/ const char *site)
 /* Return the index for site. If index does not exist, or signature does
  * not match (index out-of-date), returns NULL.
  */
-static IndexP load_index(/*@notnull@*/ const char *site)
+static Index *load_index(const char *site)
 {
 	Index *index = NULL;
 	struct stat info;
@@ -78,7 +78,7 @@ static IndexP load_index(/*@notnull@*/ const char *site)
 	if (chdir_meta(site))
 		goto out;
 
-	if (gpg_trusted(site, "index.xml") != NULL)
+	if (gpg_trusted(site, "index.xml", 0) != NULL)
 		goto out;
 		
 	index = parse_index(index_path, 0, site);
@@ -144,7 +144,7 @@ static void recurse_ddd(Element *item, void *data)
 
 static void write_item(Element *item, void *data)
 {
-	FILE *ddd = (FILE *) data;
+	FILE *ddd = data;
 	const char *size, *mtime, *name;
 	char t = item->name[0];
 
@@ -333,7 +333,7 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	}
 
 	if (child == 0) {
-		(void) execvp(argv[0], (char **) argv);
+		execvp(argv[0], (char **) argv);
 		error("Trying to run tar: execvp: %m");
 		_exit(1);
 	}
@@ -384,7 +384,8 @@ static void may_rotate_log(void) {
 static void wget(Task *task, const char *uri, const char *path, int use_cache)
 {
 	const char *argv[] = {"wget", "-O", NULL, uri,
-			"--tries=3", "-a", wget_log,
+			verbose ? "--tries=1" : "--tries=3",
+			"-a", wget_log,
 			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
 
@@ -414,7 +415,7 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 	} else if (task->child_pid)
 		return;
 
-	(void) execvp(argv[0], (char **) argv);
+	execvp(argv[0], (char **) argv);
 
 	error("Trying to run wget: execvp: %m");
 	_exit(1);
@@ -422,17 +423,14 @@ err:
 	task_set_string(task, NULL);
 }
 
-static void got_archive(/*@dependent@*/ Task *task, const char *err)
+static void got_archive(Task *task, const char *err)
 {
 	if (!err) {
 		char *dir;
-		const char *archive_path = task->str;
 
-		assert(archive_path != NULL);
-
-		dir = build_string("%d", archive_path);
+		dir = build_string("%d", task->str);
 		if (dir) {
-			unpack_archive(archive_path, dir, task->data);
+			unpack_archive(task->str, dir, task->data);
 			free(dir);
 		}
 	} else {
@@ -477,10 +475,9 @@ int build_ddds_for_site(Index *index, const char *site)
 /* The index.tar.bz2 file is in site's meta directory.
  * Unpack it. NULL on success, or pointer to error message.
  */
-/*@observer@*/ /*@null@*/ static const char *unpack_site_archive(
-					/*@notnull@*/ const char *site)
+static const char *unpack_site_archive(const char *site)
 {
-	/*@null@*/ const char *err = "Error";
+	const char *err = "Error";
 
 	assert(strchr(site, '/') == NULL);
 
@@ -502,10 +499,7 @@ int build_ddds_for_site(Index *index, const char *site)
  * Check signatures, validates and build all ... files.
  * Returns the new index on success, or NULL on failure (error is set).
  */
-typedef /*@null@*/ /*@shared@*/ const char *MaybeString;
-static /*@null@*/ IndexP unpack_site_index(/*@notnull@*/ const char *site,
-					   /*@shared@*/ MaybeString *err)
-	/*@requires isnull *err@*/
+static Index *unpack_site_index(const char *site, const char **err)
 {
 	Index *index = NULL;
 
@@ -513,7 +507,6 @@ static /*@null@*/ IndexP unpack_site_index(/*@notnull@*/ const char *site,
 	assert(*err == NULL);
 
 	if (chdir_meta(site)) {
-		*err = NULL;
 		return NULL;
 	}
 
@@ -522,10 +515,10 @@ static /*@null@*/ IndexP unpack_site_index(/*@notnull@*/ const char *site,
 		goto out;
 	} else {
 		if (unlink("index.xml.bz2"))
-			error("unlink bz2");
+			error("unlink bz2: %m");
 	}
 
-	*err = gpg_trusted(site, "index.new");
+	*err = gpg_trusted(site, "index.new", 1);
 	if (*err) {
 		if (unlink("index.new"))
 			error("unlink: %m");
@@ -771,7 +764,7 @@ static int valid_site_name(const char *site)
  * the task in 'task'. If task is NULL, never starts a task.
  * On error, both will be NULL.
  */
-IndexP get_index(const char *path, Task **task, int force)
+Index *get_index(const char *path, Task **task, int force)
 {
 	assert(!task || !*task);
 
@@ -781,8 +774,11 @@ IndexP get_index(const char *path, Task **task, int force)
 	assert(path[0] == '/');
 	path++;
 	
-	if (!valid_site_name(path))
+	if (!valid_site_name(path)) {
+		if (verbose)
+			error("Invalid site name '%s'", path);
 		return NULL;	/* Don't waste time looking for these */
+	}
 
 	/* TODO: compare times? */
 	if (!force) {
@@ -888,7 +884,11 @@ out:
  */
 void fetch_set_auto_reject(const char *request, uid_t uid)
 {
-	error("Should reject '%s' for '%d'", request, uid);
+	if (verbose)
+		error("Skipping auto-reject due to --verbose mode");
+	else
+		error("Should reject '%s' for '%d'", request, uid);
+	
 	if (last_reject_request)
 		free(last_reject_request);
 	last_reject_request = my_strdup(request);

@@ -28,16 +28,6 @@ static void get_names(Element *item, void *data)
 	(*name)++;
 }
 
-static void valid_subdirs(Element *item, void *data)
-{
-	int *ok = data;
-
-	if (item->name[0] != 'd')
-		return;
-	if (!dir_valid(item))
-		*ok = 0;
-}
-
 static int compar(const void *a, const void *b)
 {
 	const char *aa = * (const char **) a;
@@ -180,10 +170,6 @@ static int dir_valid(Element *dir)
 	}
 
 	free(names);
-	if (!ok)
-		return 0;
-
-	index_foreach(dir, valid_subdirs, &ok);
 
 	return ok;
 }
@@ -212,8 +198,9 @@ static int index_valid(Index *index)
 		error("No path attribute.");
 		return 0;
 	}
-	if (strncmp(path, MNT_DIR "/", sizeof(MNT_DIR)) != 0) {
-		error("Path attribute must start with '%s'", MNT_DIR);
+	if (strncmp(path, mnt_dir, mnt_dir_len) != 0 ||
+	    path[mnt_dir_len] != '/') {
+		error("Path attribute must start with '%s'", mnt_dir);
 		return 0;
 	}
 
@@ -318,7 +305,7 @@ static int index_merge_overrides(Index *index)
 /* Load 'pathname' as an XML index file. Returns NULL if document is invalid
  * in any way. Ref-count on return is 1.
  */
-IndexP parse_index(const char *pathname, int validate, const char *site)
+Index *parse_index(const char *pathname, int validate, const char *site)
 {
 	Element *doc;
 	Index *index;

@@ -12,12 +12,6 @@
 
 #define ZERO_MNT "/uri/0install"
 
-#ifdef S_SPLINT_S
-extern void gmtime_r(const time_t *time, /*@out@*/ struct tm *date);
-extern /*@exposed@*/ const char *strptime(const char *time,
-					  const char *format, struct tm *date);
-#endif
-
 static time_t parse_date(const char *str)
 {
 	struct tm tm_date;
@@ -84,7 +78,7 @@ static void force_fetch(char *path)
 		slash = strchr(path, '/');
 		if (slash)
 			*slash = '\0';
-		(void) execlp("0refresh", "0refresh", path, NULL);
+		execlp("0refresh", "0refresh", path, NULL);
 		perror("execlp(0refresh)");
 		_exit(1);
 	}
@@ -170,10 +164,9 @@ int main(int argc, char **argv)
 	}
 
 	argv[1] = path;
-	(void) execv(path, argv + 1);
+	execv(path, argv + 1);
 
 	perror("execv");
-	/*@-exitarg@*/
 	exit(127);
 oom:
 	fprintf(stderr, "Out of memory\n");

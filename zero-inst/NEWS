@@ -1,14 +1,16 @@
-Changes since 0.1.25:
+Changes since 0.1.24:
+
+* Added support for D-BUS 0.22 (versions 0.20 and 0.21 are still supported).
+
+* Fixed bug that causes validation of deeply-nested indexes to be very slow
+  (reported by Peter Prohaska).
+
+* Fixed a small memory leak when rotating the log files.
 
 * Removed command to remove 0http and http symlinks. It's been many versions
   since we used those (requested by Peter Prohaska).
 
-* 'make splint' target checks 0refresh.c and 0run.c with splint. Added a couple
-  of checks for unlikely error conditions.
-
 * Compile with -Wwrite-strings (no errors found).
-
-Changes since 0.1.24:
 
 * Stricter checking for valid site names.
 

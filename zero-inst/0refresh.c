@@ -10,17 +10,16 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "mydbus.h"
+#define DBUS_API_SUBJECT_TO_CHANGE
+#include <dbus/dbus.h>
 
 #define MAX_PATH_LEN 4096
 
 #include "interface.h"
 
-#ifdef S_SPLINT_S
-extern void gmtime_r(const time_t *time, /*@out@*/ struct tm *date);
-extern /*@exposed@*/ const char *strptime(const char *time,
-					  const char *format, struct tm *date);
-#endif
+/* This is changed only when debugging */
+static const char *mnt_dir = "/uri/0install";
+static int mnt_dir_len = 0;
 
 static time_t parse_date(const char *str)
 {
@@ -81,22 +80,43 @@ static void usage(const char *prog, int status)
 		"\t\t\t\t missing, or older than 'date')\n"
 		"\n"
 		"Example: %s python.org/python2.2 2003-01-01\n\n"
-		"This checks that " ZERO_MNT "/python.org/python2.2 \n"
+		"This checks that %s/python.org/python2.2 \n"
 		"exists and has a modification time after Jan 1st,\n"
 		"2003, and forces a refresh if not.\n",
-		prog, prog, prog, prog);
+		prog, prog, prog, prog, mnt_dir);
 
 	exit(status);
 }
+
+#define DBUS_SERVER_SOCKET_PRE "unix:path="
+#define DBUS_SERVER_SOCKET_POST "/.lazyfs-cache/.control2"
 
 static void refresh(const char *site, int force)
 {
 	DBusConnection *connection;
 	DBusMessage *message, *reply;
 	DBusError error;
+	char *server_socket;
+	int server_socket_len;
+
+	server_socket_len = sizeof(DBUS_SERVER_SOCKET_PRE) - 1 +
+			    mnt_dir_len +
+			    sizeof(DBUS_SERVER_SOCKET_POST);
+	server_socket = malloc(server_socket_len);
+	if (server_socket == NULL) {
+		fprintf(stderr, "Out of memory");
+		exit(EXIT_FAILURE);
+	}
+
+	if (snprintf(server_socket, server_socket_len,
+			DBUS_SERVER_SOCKET_PRE "%s" DBUS_SERVER_SOCKET_POST,
+			mnt_dir) + 1 != server_socket_len) {
+		abort();
+	}
 
 	dbus_error_init(&error);
-	connection = dbus_connection_open(DBUS_SERVER_SOCKET, &error);
+	connection = dbus_connection_open(server_socket, &error);
+	free(server_socket);
 	if (dbus_error_is_set(&error)) {
 		fprintf(stderr,
 			"Can't connect to Zero Install helper application:\n"
@@ -151,6 +171,17 @@ int main(int argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
 
+	/* For debugging, allow overriding /uri/0install */
+	{
+		char *uri_0install;
+
+		uri_0install = getenv("DEBUG_URI_0INSTALL_DIR");
+		if (uri_0install) {
+			mnt_dir = uri_0install;
+		}
+		mnt_dir_len = strlen(mnt_dir);
+	}
+
 	if (argc == 2 && strcmp(argv[1], "--help") == 0)
 		usage(argv[0], EXIT_SUCCESS);
 
@@ -162,12 +193,13 @@ int main(int argc, char **argv)
 			fprintf(stderr, "getcwd() failed\n");
 			return EXIT_FAILURE;
 		}
-		if (strncmp(path, ZERO_MNT "/", sizeof(ZERO_MNT)) != 0) {
-			fprintf(stderr, "'%s' not under " ZERO_MNT ".\n", path);
+		if (strncmp(path, mnt_dir, mnt_dir_len) != 0 ||
+		    path[mnt_dir_len] != '/') {
+			fprintf(stderr, "'%s' not under %s.\n", path, mnt_dir);
 			return EXIT_FAILURE;
 		}
 
-		site = path + sizeof(ZERO_MNT);
+		site = path + mnt_dir_len + 1;
 		slash = strchr(site, '/');
 		if (slash)
 			*slash = '\0';

@@ -74,8 +74,12 @@ static int ok_for_site(const char *name, const char *site)
  * a trust path to it.
  * If we have no keys yet, trust everything in keyring.pub!
  * NULL if <leafname> looks OK, otherwise returns an error message.
+ *
+ * 'is_new' is just used for reporting messages. It is true if we've just
+ * downloaded the archive for the index (will match, but may be invalid),
+ * otherwise we're just checking that it's not out-of-date.
  */
-const char *gpg_trusted(const char *site, const char *leafname)
+const char *gpg_trusted(const char *site, const char *leafname, int is_new)
 {
 	/* The key used to sign the last accepted version of the index.
 	 * We ultimately trust this key to sign others. The key used to sign
@@ -86,8 +90,8 @@ const char *gpg_trusted(const char *site, const char *leafname)
 	char *command;
 	FILE *out;
 	int trusted = 0;
-	char trusted_key[17] = "\0";
-	char current_key[17] = "\0";
+	char current_key[17];
+	int have_trusted_key = 0;
 
 	/* TODO: escape it somehow */
 	assert(strchr(site, '\'') == NULL);
@@ -100,30 +104,34 @@ const char *gpg_trusted(const char *site, const char *leafname)
 	/* Try to get the key we used last time */
 	{
 		FILE *old_key;
+		char *trusted_key = NULL;
 
 		old_key = fopen("trusted_key", "r");
 		if (old_key) {
 			current_key[16] = '\0';
-			(void) fread(current_key, 1, 17, old_key);
-			if (fclose(old_key))
-				abort();
+			fread(current_key, 1, 17, old_key);
+			fclose(old_key);
 			if (current_key[16] == '\n') {
 				/* Managed to read the key OK */
 				current_key[16] = '\0';
-				memcpy(trusted_key, current_key,
-					sizeof(trusted_key));
-			} else {
+				trusted_key = my_strdup(current_key);
+				if (!trusted_key)
+					return "Out of memory";
+			} else
 				error("Old key corrupted! "
 					"Skipping security check!");
-			}
 		}
 
-		if (*trusted_key) {
+		have_trusted_key = trusted_key != NULL;
+
+		if (trusted_key) {
 			command = build_string("gpg " GPG_OPTIONS
 				" --status-fd 1"
 				" --trusted-key %s"
 				" --verify index.xml.sig '%s'",
 				trusted_key, leafname);
+
+			free(trusted_key);
 		} else {
 			command = build_string("gpg " GPG_OPTIONS
 				" --status-fd 1"
@@ -166,7 +174,7 @@ const char *gpg_trusted(const char *site, const char *leafname)
 		    MATCH("[GNUPG:] TRUST_FULLY\n") ||
 		    MATCH("[GNUPG:] TRUST_MARGINAL\n") ||
 		    (MATCH("[GNUPG:] TRUST_UNDEFINED\n") &&
-		     		!*trusted_key)) {
+		     		!have_trusted_key)) {
 			FILE *new;
 
 			trusted = 1;
@@ -179,25 +187,27 @@ const char *gpg_trusted(const char *site, const char *leafname)
 			}
 
 			fprintf(new, "%s\n", current_key);
-			if (fclose(new))
-				error("fclose: %m");
+			fclose(new);
 		}
 	}
 
-	if (pclose(out))
-		error("pclose: %m");
+	pclose(out);
 
 	if (!trusted) {
-		if (*trusted_key)
+		if (have_trusted_key)
 			return "New index is NOT signed with a key with "
 				"a trust path from the old key!";
 		else
 			return "New index is not correctly signed!";
 	}
 	
-	if (*trusted_key)
-		error("New index is signed OK -- trusting");
-	else 
+	if (have_trusted_key) {
+		if (is_new)
+			error("New index is signed OK -- trusting");
+		/* Else don't log a message if we were just checking that the
+		 * existing index is up-to-date.
+		 */
+	} else 
 		error("Blindly trusting key for new site");
 
 	return NULL;

@@ -21,7 +21,7 @@ zero_install_SOURCES = zero-install.c support.c fetch.c control.c index.c \
 CLEANFILES = 0install
 
 INCLUDES = `pkg-config --cflags dbus-1`
-zero_install_LDFLAGS = `pkg-config --libs dbus-1` -lexpat
+zero_install_LDFLAGS = `pkg-config --libs dbus-1` -lexpat -ldl
 0refresh_LDFLAGS = `pkg-config --libs dbus-1`
 
 install-exec-local: uninstall-local
@@ -53,12 +53,5 @@ uninstall-real:
 	sed "s:\@zero-install\@:${sbindir}/zero-install:" $(srcdir)/0install.in | \
 	 sed "s/\@helper_user\@/${HELPER_USER}/" >0install
 	chmod a+x 0install
-
-SPLINT_FLAGS = +unixlib -predboolint -boolops +boolint +matchanyintegral +voidabstract -predboolothers -I.
-
-splint:
-	splint ${SPLINT_FLAGS} 0refresh.c `pkg-config --cflags dbus-1`
-	splint ${SPLINT_FLAGS} 0run.c
-	splint ${SPLINT_FLAGS} zero-install.c mirrors.c gpg.c `pkg-config --cflags dbus-1`
 
 CFLAGS = -O2 -Wall -Wstrict-prototypes -g -Wmissing-prototypes -Wwrite-strings

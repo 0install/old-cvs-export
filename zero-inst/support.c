@@ -69,7 +69,7 @@ int ensure_dir(const char *path)
 
 	if (strncmp(path, cache_dir, strlen(cache_dir)) != 0) {
 		error("'%s' is not in cache directory!", path);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	
 	if (lstat(path, &info) == 0) {
@@ -77,7 +77,10 @@ int ensure_dir(const char *path)
 			return 1;	/* Already exists */
 		syslog(LOG_INFO, "%s should be a directory... unlinking!",
 				path);
-		unlink(path);
+		if (unlink(path)) {
+			error("unlink(%s): %m", path);
+			return 0;
+		}
 	}
 
 	if (mkdir(path, 0755)) {
@@ -105,7 +108,7 @@ void close_on_exec(int fd, int close)
  * written by Colin Plumb in 1993, and put in the public domain.
  * 
  * Modified to use glib datatypes. Put under GPL to simplify
- * licensing for ROX-Filer. Taken from Debian's dpkg package.
+ * licensing for Zero Install. Taken from Debian's dpkg package.
  */
 
 #define md5byte unsigned char
