@@ -14,26 +14,6 @@
 
 #define ZERO_NS "http://zero-install.sf.net"
 
-typedef struct _Item Item;
-typedef struct _Group Group;
-
-struct _Item {
-	char type;	/* Dir, File, Link, eXec, Archive */
-	char *leafname;
-
-	off_t size;
-	time_t mtime;
-
-	Item *next;
-};
-
-struct _Group {
-	Item	*archives;
-	Item	*items;
-
-	Group	*next;
-};
-
 typedef enum {ERROR, DOC, DIRECTORY, GROUP,
 	      ITEM, GROUP_ITEM, ARCHIVE} ParseState;
 
@@ -124,6 +104,7 @@ static void start_item(Index *index, const XML_Char *type,
 		return;
 	}
 	new->leafname = NULL;
+	new->target = NULL;
 	new->mtime = mtime;
 	new->size = size;
 
@@ -132,6 +113,17 @@ static void start_item(Index *index, const XML_Char *type,
 		new->next = index->no_data;
 		index->no_data = new;
 		index->state = ITEM;
+		if (new->type == 'l') {
+			const XML_Char **a = atts;
+			while (*a) {
+				if (strcmp("target", atts[0]) == 0) {
+					new->target = my_strdup(atts[1]);
+					break;
+				}
+				atts += 2;
+			}
+			/* (will check for not found / OOM later) */
+		}
 	} else if (type[0] == 'f' || type[0] == 'e') {
 		new->type = type[0] == 'f' ? 'f' : 'x';
 		new->next = index->groups->items;
@@ -300,6 +292,8 @@ static int index_valid(Index *index)
 			return 0;
 		if (item->type != 'd' && item->type != 'l')
 			return 0;
+		if (item->type == 'l' && !item->target)
+			return 0;
 		n++;
 	}
 
@@ -429,4 +423,50 @@ void index_dump(Index *index)
 				item->size,
 				ctime(&item->mtime));
 	}
+}
+
+void index_foreach(Index *index,
+		   void (*fn)(Item *item, void *data),
+		   void *data)
+{
+	Item *item;
+	Group *group;
+
+	for (group = index->groups; group; group = group->next) {
+		for (item = group->items; item; item = item->next) {
+			fn(item, data);
+		}
+	}
+
+	for (item = index->no_data; item; item = item->next) {
+		fn(item, data);
+	}
+}
+
+void index_lookup(Index *index, const char *leaf,
+		  Group **group_ret, Item **item_ret)
+{
+	Item *item;
+	Group *group;
+
+	for (group = index->groups; group; group = group->next) {
+		for (item = group->items; item; item = item->next) {
+			if (strcmp(item->leafname, leaf) == 0) {
+				*group_ret = group;
+				*item_ret = item;
+				return;
+			}
+		}
+	}
+
+	*group_ret = NULL;
+
+	for (item = index->no_data; item; item = item->next) {
+		if (strcmp(item->leafname, leaf) == 0) {
+			*item_ret = item;
+			return;
+		}
+	}
+
+	*item_ret = NULL;
 }
