@@ -33,9 +33,9 @@ static int ok_for_site(const char *email, const char *site)
  * Merge keyring.pub into our database of known keys, and check there is
  * a trust path to it.
  * If we have no keys yet, trust everything in keyring.pub!
- * 1 if <leafname> looks OK, 0 to reject it.
+ * NULL if <leafname> looks OK, otherwise returns an error message.
  */
-int gpg_trusted(const char *site, const char *leafname)
+const char *gpg_trusted(const char *site, const char *leafname)
 {
 	/* The key used to sign the last accepted version of the index.
 	 * We ultimately trust this key to sign others. The key used to sign
@@ -54,8 +54,7 @@ int gpg_trusted(const char *site, const char *leafname)
 	assert(strchr(site, '\\') == NULL);
 	
 	if (system("gpg " GPG_OPTIONS " --import keyring.pub")) {
-		error("Failed to merge new keys! Is GPG installed?");
-		return 0;
+		return "Failed to merge new keys! Is GPG installed?";
 	}
 
 	/* Try to get the key we used last time */
@@ -73,7 +72,7 @@ int gpg_trusted(const char *site, const char *leafname)
 				current_key[16] = '\0';
 				trusted_key = my_strdup(current_key);
 				if (!trusted_key)
-					return 0;	/* OOM */
+					return "Out of memory";
 			} else
 				error("Old key corrupted! "
 					"Skipping security check!");
@@ -101,7 +100,7 @@ int gpg_trusted(const char *site, const char *leafname)
 	free(command);
 	if (!out) {
 		error("popen: %m");
-		return 0;
+		return "Failed to pipe through GPG (check error log)";
 	}
 
 	current_key[0] = '\0';
@@ -138,7 +137,8 @@ int gpg_trusted(const char *site, const char *leafname)
 			new = fopen("trusted_key", "w");
 			if (!new) {
 				error("fopen: %m");
-				return 0;
+				return "Failed to save new key "
+					"(check error log)";
 			}
 
 			fprintf(new, "%s\n", current_key);
@@ -148,17 +148,15 @@ int gpg_trusted(const char *site, const char *leafname)
 
 	pclose(out);
 
-	if (!trusted) {
-		error("New index is NOT signed with a key with "
-			"a trust path from the old key!");
-		return 0;
-	}
+	if (!trusted)
+		return "New index is NOT signed with a key with "
+		       "a trust path from the old key!";
 	
 	if (have_trusted_key)
 		error("New index is signed OK -- trusting");
 	else 
 		error("Blindly trusting key for new site");
 
-	return 1;
+	return NULL;
 }
 

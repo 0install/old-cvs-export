@@ -8,7 +8,7 @@ typedef enum {
 } TaskType;
 
 Task *task_new(TaskType type);
-void task_destroy(Task *task, int success);
+void task_destroy(Task *task, const char *error);
 void task_process_done(pid_t pid, int success);
 void task_set_string(Task *task, const char *str);
 void task_set_index(Task *task, Index *index);
@@ -23,8 +23,10 @@ struct _Task {
 	Task	*child_task;	/* A task that must finish first, or NULL */
 	pid_t	child_pid;	/* A process that must finish first, or -1 */
 
-	/* A callback to call when something happens */
-	void (*step)(Task *task, int success);
+	/* A callback to call when something happens.
+	 * err == NULL on success.
+	 */
+	void (*step)(Task *task, const char *err);
 
 	/* Various bits of extra data, dependant on 'type' */
 	DBusConnection *connection;

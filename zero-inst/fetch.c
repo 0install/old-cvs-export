@@ -66,7 +66,7 @@ static Index *load_index(const char *site)
 	if (chdir_meta(site))
 		goto out;
 
-	if (!gpg_trusted(site, "index.xml"))
+	if (gpg_trusted(site, "index.xml") != NULL)
 		goto out;
 		
 	index = parse_index(index_path, 0, site);
@@ -379,9 +379,9 @@ err:
 	task_set_string(task, NULL);
 }
 
-static void got_archive(Task *task, int success)
+static void got_archive(Task *task, const char *err)
 {
-	if (success) {
+	if (!err) {
 		char *dir;
 
 		dir = build_string("%d", task->str);
@@ -395,7 +395,7 @@ static void got_archive(Task *task, int success)
 
 	unlink(task->str);
 
-	task_destroy(task, success);
+	task_destroy(task, err);
 }
 
 /* 1 on success */
@@ -427,50 +427,52 @@ int build_ddds_for_site(Index *index, const char *site)
 }
 
 /* The index.tar.bz2 file is in site's meta directory.
- * Unpack it. 0 on success.
+ * Unpack it. NULL on success, or pointer to error message.
  */
-static int unpack_site_archive(const char *site)
+static const char *unpack_site_archive(const char *site)
 {
-	int success = 0;
+	const char *err = "Error";
 
 	assert(strchr(site, '/') == NULL);
 
 	if (chdir_meta(site))
-		return 1;
+		return "chdir failed";
 
 	if (system("tar xjf index.tar.bz2 keyring.pub mirrors.xml "
 		   "index.xml.sig") == 0)
-		success = 1;
+		err = NULL;
 	else
-		error("Failed to extract GPG signature/keyring/mirrors!");
+		err = "Failed to extract GPG signature/keyring/mirrors!";
 
 	chdir("/");
-	return success;
+	return err;
 }
 
 /* The index.xml.bz2 file is in site's meta directory.
  * Check signatures, validates and build all ... files.
- * Returns the new index on success, or NULL on failure.
+ * Returns the new index on success, or NULL on failure (error is set).
  */
-static Index *unpack_site_index(const char *site)
+static Index *unpack_site_index(const char *site, const char **err)
 {
 	Index *index = NULL;
 
 	assert(strchr(site, '/') == NULL);
+	assert(*err == NULL);
 
-	if (chdir_meta(site))
+	if (chdir_meta(site)) {
 		return NULL;
+	}
 
 	if (system("bunzip2 -c index.xml.bz2 >index.new")) {
-		error("Failed to extract index file");
+		*err = "Failed to extract index file";
 		goto out;
 	} else {
 		if (unlink("index.xml.bz2"))
 			error("unlink bz2");
 	}
 
-	if (!gpg_trusted(site, "index.new")) {
-		error("No valid index found");
+	*err = gpg_trusted(site, "index.new");
+	if (*err) {
 		if (unlink("index.new"))
 			error("unlink: %m");
 		goto out;
@@ -482,39 +484,46 @@ static Index *unpack_site_index(const char *site)
 	}
 
 	index = load_index(site);
-	if (!index)
+	if (!index) {
+		*err = "Index is not valid";
 		goto out;
+	}
 
 	if (!build_ddds_for_site(index, site)) {
+		*err = "Failed to create index files";
 		index_free(index);
 		index = NULL;
 	}
 
 out:
 	chdir("/");
+	if (!index && !*err)
+		*err = "Internal error (check logs)";
 	return index;
 }
 
-static void got_site_index(Task *task, int success)
+static void got_site_index(Task *task, const char *err)
 {
 	assert(task->type == TASK_INDEX);
 	assert(task->child_pid == -1);
 
-	if (!success)
-		error("Failed to fetch site index file");
-	else {
+	if (!err) {
 		char *site = NULL;
 
 		site = build_string("%h", task->str + cache_dir_len + 1);
 		if (site) {
-			task_steal_index(task, unpack_site_index(site));
-			success = task->index != NULL;
+			task_steal_index(task, unpack_site_index(site, &err));
+			if (!err && !task->index)
+				err = "Failed to load index";
 			free(site);
 		} else
-			success = 0;
+			err = "Out of memory";
 	}
 
-	task_destroy(task, success);
+	if (err)
+		error("got_site_index: %s", err);
+
+	task_destroy(task, err);
 }
 
 /* We've downloaded the index archive, but don't have an up-to-date
@@ -546,34 +555,38 @@ static int fetch_index_file(Task *task, const char *site)
 	return 1;
 }
 
-static void got_site_index_archive(Task *task, int success)
+static void got_site_index_archive(Task *task, const char *err)
 {
 	assert(task->type == TASK_INDEX);
 	assert(task->child_pid == -1);
 
-	if (!success)
-		error("Failed to fetch site archive");
-	else {
+	if (err)
+		err = "Failed to fetch index archive";
+
+	if (!err) {
 		char *site = NULL;
 
 		site = build_string("%h", task->str + cache_dir_len + 1);
 		if (site) {
-			if (!unpack_site_archive(site)) {
-				success = 0;
-			} else {
+			err = unpack_site_archive(site);
+			if (!err) {
 				task_steal_index(task, load_index(site));
 				if (!task->index) {
 					if (fetch_index_file(task, site))
 						return;
-					success = 0;
+					err = "Can't fetch index";
 				}
 			}
 			free(site);
-		} else
-			success = 0;
+		} else {
+			err = "Out of memory";
+		}
 	}
 
-	task_destroy(task, success);
+	if (err)
+		error("got_site_index_archive: %s", err);
+
+	task_destroy(task, err);
 }
 
 /* Fetch the index archive for 'path'.

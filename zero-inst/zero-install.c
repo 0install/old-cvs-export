@@ -127,12 +127,12 @@ out:
 	chdir("/");
 }
 
-static void kernel_got_archive(Task *task, int success)
+static void kernel_got_archive(Task *task, const char *err)
 {
-	if (!success)
-		control_notify_error(task, "Failed to fetch archive");
+	if (err)
+		control_notify_error(task, err);
 	close(task->fd);
- 	task_destroy(task, 0);
+ 	task_destroy(task, err);
 }
 
 /* We have the index to find the item for this task. Start fetching the
@@ -155,7 +155,7 @@ static void kernel_got_index(Task *task)
 		/* TODO: rebuild index files? */
 		error("%s not found in index!", task->str);
 		close(task->fd);
-		task_destroy(task, 0);
+		task_destroy(task, "Item not found in index!");
 		return;
 	}
 
@@ -179,7 +179,7 @@ static void kernel_got_index(Task *task)
 	}
 
 	close(task->fd);
-	task_destroy(task, 1);
+	task_destroy(task, NULL);
 }
 
 void kernel_cancel_task(Task *task)
@@ -188,24 +188,17 @@ void kernel_cancel_task(Task *task)
 	task_destroy(task, 0);
 }
 
-static void kernel_task_step(Task *task, int success)
+static void kernel_task_step(Task *task, const char *err)
 {
-	if (success)
+	if (!err)
 		task_steal_index(task, get_index(task->str, NULL, 0));
 
 	if (task->index)
 		kernel_got_index(task);
 	else {
-		char *error;
-		error = build_string("Failed to download index from site '%h'",
-				task->str + 1);
-		control_notify_error(task, error ? error
-						 : "Failed to get index");
-		if (error)
-			free(error);
+		control_notify_error(task, err ? err : "Failed to get index");
 		close(task->fd);
 		task_destroy(task, 0);
-		return;
 	}
 }
 

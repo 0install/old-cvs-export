@@ -1,1 +1,1 @@
-int gpg_trusted(const char *site, const char *leafname);
+const char *gpg_trusted(const char *site, const char *leafname);

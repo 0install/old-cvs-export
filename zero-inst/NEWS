@@ -1,3 +1,7 @@
+* Send better error messages to ZeroProgress.
+
+Changes since 0.1.17:
+
 * Don't compile with -Werror (header files on some systems generate warnings).
   Get rid of compiler warning about an unsigned comparision (reported by 
   Stephen Watson).

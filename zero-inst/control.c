@@ -379,9 +379,9 @@ static void send_ok(Task *task)
 		dbus_message_unref(reply);
 }
 
-static void send_result(Task *task, int success)
+static void send_result(Task *task, const char *err)
 {
-	if (success)
+	if (!err)
 		send_ok(task);
 	else {
 		DBusMessage *reply;
@@ -390,12 +390,12 @@ static void send_result(Task *task, int success)
 				"Failed");
 		if (!reply || !dbus_connection_send(task->connection,
 						reply, NULL))
-			error("Out of memory");
+			err = "Out of memory";
 		if (reply)
 			dbus_message_unref(reply);
 	}	
 
-	task_destroy(task, success);
+	task_destroy(task, err);
 }
 
 /* 1 on success (kernel or client task exists) */

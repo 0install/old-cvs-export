@@ -69,12 +69,13 @@ Task *task_new(TaskType type)
 /* Removes 'task' from all_tasks and calls the 'next' method on every task
  * that depends on this one. Finally, task is freed.
  */
-void task_destroy(Task *task, int success)
+void task_destroy(Task *task, const char *error)
 {
 	Task *t;
 
 	if (verbose)
-		syslog(LOG_DEBUG, "Finished task %d", task->n);
+		syslog(LOG_DEBUG, "Finished task %d (%s)",
+				task->n, error ? error : "OK");
 
 	if (all_tasks == task) {
 		all_tasks = task->next;
@@ -100,7 +101,7 @@ void task_destroy(Task *task, int success)
 #endif
 			t->child_task = NULL;
 			assert(t->step);
-			t->step(t, success);
+			t->step(t, error);
 			t = all_tasks;
 		} else
 			t = t->next;
@@ -128,7 +129,7 @@ void task_process_done(pid_t pid, int success)
 					"Move forward with task %d", t->n);
 #endif
 			t->child_pid = -1;
-			t->step(t, success);
+			t->step(t, success ? NULL : "Bad exit status");
 			return;
 		}
 	}
