@@ -56,8 +56,22 @@
 
       <body>
         <div class='heading' style='border-bottom: 2px dashed black'>
-          <h1>The Zero Install system</h1>
+	  <div style='float:left'>
+	    <a href="http://sourceforge.net/projects/zero-install">
+	      <img width="88" height="31" alt="SF logo"
+     	       src="http://sourceforge.net/sflogo.php?group_id=7023&amp;type=1"/>
+	    </a>
+	  </div>
+          <div style='float:right'>
+	    <a class='outside' href="http://validator.w3.org/check/referer">
+	      <img src="http://www.w3.org/Icons/valid-xhtml10"
+	    	   alt="Valid XHTML 1.0!" height="31" width="88"/>
+	    </a>
+	  </div>
+
+	  <h1>The Zero Install system</h1>
           <p class='author'>Thomas Leonard &lt;<a href="mailto:tal197 at users.sourceforge.net">tal197 at users.sourceforge.net</a>&gt;</p>
+
 	  <xsl:call-template name='make-links'/>
         </div>
         <div class='main'>
@@ -66,19 +80,6 @@
 	
         <div class='heading' style='border-top: 2px dashed black'>
 	  <xsl:call-template name='make-links'/>
-
-	<p>
-	  <a href="http://sourceforge.net/projects/zero-install">
-	    <img width="88" height="31" alt="SF logo"
-     	     src="http://sourceforge.net/sflogo.php?group_id=7023&amp;type=1" />
-	  </a>
-	  <xsl:text> </xsl:text>
-	  <a class='outside' href="http://validator.w3.org/check/referer">
-	    <img src="http://www.w3.org/Icons/valid-xhtml10"
-	    	 alt="Valid XHTML 1.0!" height="31" width="88" />
-	  </a>
-	</p>
-
 	</div>
       </body>
     </html>
