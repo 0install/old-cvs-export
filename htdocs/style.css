@@ -18,7 +18,10 @@ div.main {
 }
 
 div.heading p {
-	text-align: center;
+	text-align: right;
+}
+div.heading p.author a:hover {
+	background: #ffefa1;
 }
 
 div.heading div {
@@ -81,10 +84,6 @@ th {
 td {
 	vertical-align: top;
 	width: 50%;
-}
-
-p.author {
-	/* font-style: italic; */
 }
 
 p.q {
