@@ -7,11 +7,14 @@
 Although the system makes installing other software very easy, the Zero
 Install system itself still requires some work to install. You'll also
 need to have <a href="http://freshmeat.net/depends/download-all/39759/">a few
-other things</a> installed first (libxml to parse the XML index files, wget to
+other things</a> installed first (expat to parse the XML index files, wget to
 download archives, tar and gzip to extract them, and GPG to check they are
 correctly signed). Most systems will have these installed already, although you
-may be missing the header files for libxml (libxml-dev).
-</p>
+may be missing the header files for expat (expat-dev).
+You will also need to have the
+<a href="http://www.freedesktop.org/Software/dbus">DBUS library</a> installed
+(you don't need the bus daemon running, however, you just need the library
+to be installed). </p>
 
 <div class='note'>
 <h3>Security and stability note</h3>
@@ -41,9 +44,9 @@ Kernel</a>.
 </p>
 
 <p>
-Only Linux 2.4 series kernels are currently supported, not the 2.5 series. If
-you want to port the (small) module to other kernels (or BSD, MacOS X, etc)
-please get in touch.
+Only Linux 2.4 series kernels are currently supported, not the 2.6 series. If
+you want to port the (small) module to that or to other kernels (BSD, MacOS
+X, etc) please get in touch.
 </p>
 
 <div class='note'>
@@ -66,14 +69,15 @@ Add<br/><tt>deb http://www-i1.informatik.rwth-aachen.de/~joachimk debian/</tt>
 </div>
 -->
 
-<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.15.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.15.tar.gz.sig">GPG Sig</a> ]
+<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.16.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.16.tar.gz.sig">GPG Sig</a> ]
 (note that the links lead to a list of mirrors).
-Extract it, and move to the new directory (things you type are shown in bold):
+ Extract it, and move to the new directory (things you
+type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.15.tar.gz</b>
-$ <b>cd zero-install-0.1.15</b>
+$ <b>tar xzf zero-install-0.1.16.tar.gz</b>
+$ <b>cd zero-install-0.1.16</b>
 </pre>
 
 <p>
@@ -89,6 +93,7 @@ configure with the name of your chosen user (here called 'zeroinst'):
 $ <b>./configure --with-user=zeroinst</b>
 </pre>
 
+<div class='note'>
 <p>
 If it doesn't work, it may tell you that it can't find the kernel headers.
 You can use --with-kernel to tell it where they are, for example:
@@ -97,6 +102,7 @@ You can use --with-kernel to tell it where they are, for example:
 <pre>
 $ <b>./configure --with-user=zeroinst --with-kernel=/home/fred/linux-2.4.20</b>
 </pre>
+</div>
 
 <div class='note'>
 If you want to test the system under <a
@@ -124,23 +130,21 @@ and loads the new module.
 
 <p>
 Now, run the helper application (it will just wait, without doing anything).
-You need to run the helper as the user you specified at the start.
+You can look at <tt>/var/log/daemon.log</tt> (or whatever your system uses)
+to see what it's doing.
 </p>
 
 <pre>
-$ <b>./zero-install</b>
-Zero Install started: using cache directory '/var/cache/zero-inst'
+$ <b>su -c '/etc/init.d/0install start'</b>
+Starting zero-install...
+$ <b>tail /var/log/daemon.log</b>
+Oct  5 16:00:16 everest zero-install: Started: using cache directory '/var/cache/zero-inst'
 </pre>
-
-<p>
-The helper will print information about what it's doing when it's used.
-</p>
 
 <h2>Testing the installation</h2>
 
 <p>
-With the helper still running, open another window, and try the following
-command:
+With the helper still running, try the following command:
 </p>
 
 <pre>
@@ -160,11 +164,13 @@ utility, itself available via Zero Install:
 </p>
 
 <pre>
-$ <b>/uri/0install/zero-install.sourceforge.net/apps/ZeroProgress/AppRun</b>
+$ <b>/uri/0install/zero-install.sourceforge.net/apps/ZeroProgress/AppRun &amp;</b>
+Starting ZeroProgress...
+Ready and waiting...
 </pre>
 
 <p>
-Nothing appears on the screen when you run this, but any futher downloads
+No windows appear on the screen when you run this, but any futher downloads
 will display a progress box. Note that the GTK library is not yet in
 Zero Install, so you need to have that installed by traditional methods.
 </p>
@@ -186,6 +192,7 @@ $ <b>./Edit/AppRun</b>
 </pre>
 </div>
 
+<!--
 <p>
 You can also find XFree86 4.3.1 in the `libs' directory. You can run either
 the client applications (eg, xterm) with your current X server, or run the
@@ -199,6 +206,7 @@ XFree86 Version 4.3.0
 Release Date: 27 February 2003
 # <b>./XFree86 :1</b>
 </pre>
+-->
 
 <p>
 Lots more software, including Mozilla, Python, Acrobat reader, pkg-config,
