@@ -122,7 +122,8 @@ static void finish_request(Request *request)
 		printf("  Closing request %d for %s\n",
 				request->users[i].fd,
 				request->users[i].leaf);
-		close(request->users[i].fd);
+		if (request->users[i].fd != -1)
+			close(request->users[i].fd);
 		free(request->users[i].leaf);
 
 		control_notify_user(request->users[i].uid);
@@ -364,7 +365,8 @@ static void request_done_head(Request *request)
 	printf("request_done_head(%s : %s)\n",
 			request->path, request->users[0].leaf);
 
-	close(request->users[0].fd);
+	if (request->users[0].fd != -1)
+		close(request->users[0].fd);
 	free(request->users[0].leaf);
 	uid = request->users[0].uid;
 
@@ -529,11 +531,7 @@ err:
 
 static void handle_request(int request_fd, uid_t uid, char *path)
 {
-	Request *request;
 	char *slash;
-
-	printf("Request %d: Fetch '%s' for user %ld\n", request_fd,
-			path, (long) uid);
 
 	if (strcmp(path, "/") == 0) {
 		handle_root_request(request_fd);
@@ -547,23 +545,47 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	}
 	*slash = '\0';
 
+	queue_request(path, slash + 1, uid, request_fd);
+}
+
+/* Fetch 'leaf' in 'path' for user 'uid'. fd is the lazyfs request FD,
+ * or -1 for client requests (no notification of cancellations needed).
+ * 'path' must be relative to /uri, and already checked for safety.
+ * 0 on success. On error, fd is closed.
+ * Not for top-levels (path=/ or /http).
+ */
+int queue_request(const char *path, const char *leaf, uid_t uid, int fd)
+{
+	Request *request;
+
+	printf("Request %d: Fetch '%s'/'%s' for user %ld\n",
+			fd, path, leaf, (long) uid);
+
+	if (path[0] != '/' || strchr(leaf, '/'))
+		goto err;
+
 	request = find_request(path);
 	if (!request) {
 		request = request_new(path);
 		if (!request) {
 			fprintf(stderr, "%s: Out of memory!\n", prog);
-			close(request_fd);
-			return;
+			goto err;
 		}
 		request->next = open_requests;
 		open_requests = request;
 	}
 
-	request_add_user(request, request_fd, uid, slash + 1);
+	request_add_user(request, fd, uid, leaf);
 	if (request->n_users == 0) {
 		finish_request(request);
 	} else if (request->n_users == 1)
 		request_ensure_running(request);
+
+	return 0;
+err:
+	if (fd != -1)
+		close(fd);
+	return -1;
 }
 
 /* This is called as a signal handler; simply ensures that

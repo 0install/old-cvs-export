@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "control.h"
 #include "support.h"
@@ -205,6 +206,38 @@ static void client_send_reply(Client *client, const char *message)
 	strcpy(new + old_len, message);
 }
 
+/* Client requests the 'directory' be refetched */
+static void client_refresh(Client *client, const char *directory)
+{
+	char real[PATH_MAX];
+	char *slash;
+
+	if (!realpath(directory, real)) {
+		if (snprintf(real, sizeof(real),
+				"Bad path: %s\n", strerror(errno)) > 0)
+			client_send_reply(client, real);
+		return;
+	}
+	
+	if (strncmp(real, "/uri/", 5) != 0) {
+		client_send_reply(client, "Not under Zero Install's control\n");
+		return;
+	}
+
+	slash = strrchr(real + 4, '/');
+	if (slash == real + 4 || !slash) {
+		client_send_reply(client, "Can't refresh top-levels!\n");
+		return;
+	}
+
+	*slash = '\0';
+
+	if (queue_request(real + 4, slash + 1, client->uid, -1))
+		client_send_reply(client, "Error\n");
+	else
+		client_send_reply(client, "Request queued\n");
+}
+
 static void client_do_command(Client *client, const char *command)
 {
 	if (client->terminate)
@@ -213,6 +246,8 @@ static void client_do_command(Client *client, const char *command)
 	if (strcmp(command, "MONITOR") == 0) {
 		client->monitor = 1;
 		client_push_update(client);
+	} else if (strncmp(command, "REFRESH ", 8) == 0) {
+		client_refresh(client, command + 8);
 	} else {
 		fprintf(stderr, "Unknown command '%s' from client %d\n",
 				command, client->socket);

@@ -7,6 +7,8 @@ extern char cache_dir[];
 typedef struct _Request Request;
 typedef struct _UserRequest UserRequest;
 
+int queue_request(const char *path, const char *leaf, uid_t uid, int fd);
+
 /* A Request begins in the READY state.
  *
  * It will then be quickly moved to FETCHING_INDEX. When the child process
@@ -33,7 +35,7 @@ struct _Request {
 };
 
 struct _UserRequest {
-	int fd;
+	int fd;		/* -1 => not from kernel */
 	uid_t uid;
 
 	char *leaf;
