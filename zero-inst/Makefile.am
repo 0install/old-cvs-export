@@ -11,7 +11,9 @@ myexecbin_PROGRAMS = 0run
 sbin_PROGRAMS = zero-install
 initd_SCRIPTS = 0install
 
-EXTRA_DIST = Technical 0test.py test_cases.py 0install.in
+EXTRA_DIST = Technical tests/0build tests/0test.py tests/config.py \
+	tests/lazyfs.py tests/multitest.py tests/server.py	   \
+	tests/support.py tests/testtests.py 0install.in
 DISTCHECK_CONFIGURE_FLAGS = --with-user=zeroinst --with-distcheck
 
 zero_install_SOURCES = zero-install.c support.c fetch.c control.c index.c \

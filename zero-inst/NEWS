@@ -1,6 +1,8 @@
-Changes since 0.1.24:
+Changes since 0.1.25:
 
 * Added new unittest suite (though not with many tests in it yet).
+
+* Added new Version D-BUS method.
 
 * Added support for D-BUS 0.22 (versions 0.20 and 0.21 are still supported).
 
@@ -13,6 +15,8 @@ Changes since 0.1.24:
   since we used those (requested by Peter Prohaska).
 
 * Compile with -Wwrite-strings (no errors found).
+
+Changes since 0.1.24:
 
 * Stricter checking for valid site names.
 

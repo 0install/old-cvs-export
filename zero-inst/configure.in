@@ -1,5 +1,5 @@
 AC_INIT(zero-install.c)
-AM_INIT_AUTOMAKE(zero-install, 0.1.25)
+AM_INIT_AUTOMAKE(zero-install, 0.1.26)
 AC_PROG_MAKE_SET
 
 LAZYFS_VERSION=0d1d25
@@ -80,7 +80,7 @@ if [[ "$HELPER_USER" = "yes" ]]; then
   echo "Must specify a user to run the helper as, eg:"
   echo "./configure --with-user=zeroinst"
   echo "(having created a new user called 'zeroinst' for the purpose)"
-  echo "Using 'root' is not recommended, for security reasons."
+  echo "Using 'root' is not allowed, for security reasons."
   exit 1
 fi
 AC_MSG_RESULT($HELPER_USER)

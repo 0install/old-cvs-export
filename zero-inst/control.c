@@ -353,8 +353,6 @@ err:
 
 }
 
-#define DBUS_SERVER_SOCKET 
-
 void create_control_socket(void)
 {
 	DBusError error;
