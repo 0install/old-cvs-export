@@ -88,6 +88,10 @@ Download the kernel module for your operating system:
 <li><a href="http://osdn.dl.sourceforge.net/sourceforge/zero-install/lazyfs-linux-0.1.20.tgz.gpg">lazyfs-linux-0.1.20.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels)</li> 
 </ul>
 
+<ul>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/422">Warning for Linux 2.6.4 users</a></li>
+</ul>
+
 <p>
 Check the GPG signature, unpack the archive, and move to the new directory
 (things you type are shown in bold):
