@@ -19,12 +19,9 @@
 
 /* See the 'Technical' file for details. */
 
-#include <linux/module.h>   /* Needed by all modules */
-#include <linux/kernel.h>   /* Needed for KERN_ALERT */
-#include <linux/init.h>     /* Needed for the macros */
-#include "config.h"
+#include <linux/autoconf.h>
 
-#ifdef USE_MODVERSIONS
+#ifdef CONFIG_MODVERSIONS
 # define MODVERSIONS
 # include <linux/modversions.h>
 #endif
@@ -353,6 +350,8 @@ static struct super_block *
 lazyfs_read_super(struct super_block *sb, void *data, int silent)
 {
 	struct lazy_sb_info *sbi = NULL;
+
+	sb->s_flags |= MS_RDONLY | MS_NODEV | MS_NOSUID;
 
 	sbi = kmalloc(sizeof(struct lazy_sb_info), GFP_KERNEL);
 	if (!sbi)
