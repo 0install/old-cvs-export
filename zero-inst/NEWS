@@ -1,13 +1,13 @@
 Changes since 0.1.15:
 
+* Uses expat instead of libxml for XML parsing (smaller).
+
 * Added version numbers to LazyFS module. Allows easier upgrading.
   (suggested by Joachim Kupke).
 
-* Allow sub-sites (example.com#~bob fetches the index
-  http://example.com/~bob/.0inst-index.tgz).
-  (XXX: can't create GPG key!)
-
 * The helper now runs as a daemon, with output going to syslog.
+
+* init.d/0install script is created to start and stop the daemon.
 
 * 0refresh and other programs now use DBUS to communicate with zero-install.
 

@@ -399,7 +399,7 @@ static void send_result(Task *task, int success)
 static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 			 DBusError *error, int force)
 {
-	const char *site;
+	char *site;
 	Task *task = NULL;
 	unsigned long uid;
 	Index *index;
@@ -410,7 +410,7 @@ static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 
 	if (strchr(site, '/') || site[0] == '.' || !*site) {
 		dbus_set_error_const(error, "Error", "Bad hostname");
-		return;
+		goto done;
 	}
 
 	task = task_new(TASK_CLIENT);
@@ -449,12 +449,15 @@ static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 		goto done;
 	}
 
+	free(site);
 	return;
 oom:
 	dbus_set_error_const(error, "Error", "Out of memory");
 done:
 	if (task)
 		task_destroy(task, 0);
+	if (site)
+		free(site);
 }
 
 void control_check_select(fd_set *rfds, fd_set *wfds)
@@ -502,11 +505,17 @@ void control_notify_error(Task *task, const char *message)
 	current_error = NULL;
 }
 
+static void drop_monitors(DBusConnection *connection, Task *unused)
+{
+	dbus_connection_disconnect(connection);
+}
+
 void control_drop_clients(void)
 {
-	list_destroy(&dispatches);
-	list_destroy(&monitors);
 	dbus_message_handler_unref(handler);
 	dbus_server_disconnect(server);
 	dbus_server_unref(server);
+	list_foreach(&monitors, drop_monitors, 1, NULL);
+	list_destroy(&dispatches);
+	list_destroy(&monitors);
 }
