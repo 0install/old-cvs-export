@@ -1,3 +1,16 @@
+Changes since 0.1.11:
+
+* The index is now fetches as '.0inst-index.tgz' rathen than as '.xml'.
+  This is faster (since it's compressed) and will allow us to send the
+  digital signature and key at the same time in future.
+
+* Make /uri/0install the mount-point, rather than /uri.
+  (compatibility symlinks from /uri/http and /uri/0http are created for
+   the change-over).
+
+* 0test has been updated and slightly improved.
+
+
 Changes since 0.1.10:
 
 * There is now one index file per site, not one per directory.
