@@ -15,6 +15,7 @@
 /* See the 'Technical' file for details. */
 
 #include <linux/autoconf.h>
+#include <linux/version.h>
 
 #define LAZYFS_DEBUG
 
@@ -22,17 +23,22 @@
 
 #include "config.h"
 
-#ifdef LINUX_2_5_SERIES
-	/* 2.5 kernel */
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 70)
+# define LINUX_2_6_SERIES
+#endif
+
+#ifdef LINUX_2_6_SERIES
+	/* 2.6 kernel */
 # define SBI(sb) ((struct lazy_sb_info *) ((sb)->s_fs_info))
 # define TIME_T struct timespec
 /* (... format only stores times to 1 second accuracy anyway) */
 # define TIMES_EQUAL(a, b) ((a).tv_sec == (b).tv_sec)
+# define dcache_dir_ops simple_dir_operations
 #include <linux/dcache.h>
 #include <linux/namei.h>
 #include <linux/mount.h>
 #include <linux/vfs.h>
-#error 2.5 support is completely untested - only compile it you want to help debug it
+//#error 2.6 support is completely untested - only compile it you want to help debug it
 
 #else
 	/* 2.4 kernel */
@@ -56,7 +62,6 @@
 #include <linux/file.h>
 #include <linux/poll.h>
 #include <linux/list.h>
-#include <linux/version.h>
 
 #include <asm/uaccess.h>
 
@@ -407,7 +412,11 @@ lazyfs_put_inode(struct inode *inode)
  * ... file of it's parent directory.
  */
 static int
+#ifdef LINUX_2_6_SERIES
+lazyfs_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
+#else
 lazyfs_dentry_revalidate(struct dentry *dentry, int flags)
+#endif
 {
 	if (!dentry->d_inode)
 		return 1;	/* Negative dentries are always OK */
@@ -594,8 +603,8 @@ host_from_mount_data(struct lazy_sb_info *sbi, const char *cache_dir)
 		return -ENOTDIR;
 	}
 
-#ifdef LINUX_2_5_SERIES
-	if (!path_lookup(cache_dir, LOOKUP_DIRECTORY | LOOKUP_FOLLOW,
+#ifdef LINUX_2_6_SERIES
+	if (path_lookup(cache_dir, LOOKUP_DIRECTORY | LOOKUP_FOLLOW,
 				&host_root)) {
 #else
 	if (!path_init(cache_dir,
@@ -708,7 +717,7 @@ err:
 	return -EINVAL;
 }
 
-#ifdef LINUX_2_5_SERIES
+#ifdef LINUX_2_6_SERIES
 struct super_block *lazyfs_get_sb(struct file_system_type *fs_type,
 				 int flags, const char *dev_name, void *data)
 {
@@ -985,7 +994,8 @@ static void genocide_one(struct dentry *dentry, struct list_head *to_be_removed)
 	/* Unhash it (unhashing seems to be safe provided there are no
 	 * child dentries).
 	 */
-	list_del_init(&dentry->d_hash);
+	//list_del_init(&dentry->d_hash);
+	d_drop(dentry);	/* Takes and releases dcache_lock */
 
 	/* Turn it into its own subtree */
 	list_del_init(&dentry->d_child);
@@ -1168,7 +1178,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 
 		if (!isdigit(*listing))
 			goto bad_list;
-#ifdef LINUX_2_5_SERIES
+#ifdef LINUX_2_6_SERIES
 		time.tv_sec = atoi(&listing);
 		time.tv_nsec = 0;
 #else
@@ -1414,13 +1424,18 @@ lazyfs_put_super(struct super_block *sb)
 }
 
 static int
+#ifdef LINUX_2_6_SERIES
+lazyfs_statfs(struct super_block *sb, struct kstatfs *buf)
+#else
 lazyfs_statfs(struct super_block *sb, struct statfs *buf)
+#endif
 {
 	buf->f_type = LAZYFS_MAGIC;
 	buf->f_bsize = 1024;
 	buf->f_bfree = buf->f_bavail = buf->f_ffree;
 	buf->f_blocks = 100;
 	buf->f_namelen = 1024;
+
 	return 0;
 }
 
@@ -1471,7 +1486,11 @@ lookup_via_helper(struct super_block *sb, struct dentry *dentry)
 
 /* Returning NULL is the same as returning dentry */
 static struct dentry *
+#ifdef LINUX_2_6_SERIES
+lazyfs_lookup(struct inode *dir,struct dentry *dentry, struct nameidata *ni)
+#else
 lazyfs_lookup(struct inode *dir, struct dentry *dentry)
+#endif
 {
 	struct lazy_de_info *parent_info;
 	struct dentry *new;
@@ -2069,9 +2088,9 @@ static struct dentry_operations lazyfs_dentry_ops = {
 	d_revalidate:	lazyfs_dentry_revalidate,
 };
 
-#ifdef LINUX_2_5_SERIES
+#ifdef LINUX_2_6_SERIES
 struct file_system_type lazyfs_fs_type = {
-	.name		= "lazyfs-" VERSION,
+	.name		= "lazyfs",
 	.get_sb		= lazyfs_get_sb,
 	.fs_flags	= 0,
 	.owner		= THIS_MODULE,
@@ -2093,7 +2112,7 @@ static void __exit exit_lazyfs_fs(void)
 	unregister_filesystem(&lazyfs_fs_type);
 }
 
-#ifndef LINUX_2_5_SERIES
+#ifndef LINUX_2_6_SERIES
 EXPORT_NO_SYMBOLS;
 #endif
 

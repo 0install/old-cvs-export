@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),)
-	# We're building for Linux 2.5 from kconfig
+	# We're building for Linux 2.6 from kconfig
 	obj-m	:= lazyfs.o
 else
 
@@ -41,15 +41,15 @@ real-install:
 uninstall:
 	rm -f ${MODULEDIR}/lazyfs*.o
 
-.PHONY: module-Linux_2_4 module-Linux_2_5
+.PHONY: module-Linux_2_4 module-Linux_2_6
 lazyfs.o: lazyfs.c
 	make module-${KERNEL_TYPE}
 
 module-Linux_2_4:
 	${CC} -I. -I$(srcdir) -c ${KERNELFLAGS} ${MODFLAGS} -o lazyfs.o $(srcdir)/lazyfs.c
 
-module-Linux_2_5:
-	$(MAKE) -DLINUX_2_5_SERIES -C $(KERNEL) SUBDIRS=`pwd` modules
+module-Linux_2_6:
+	$(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules
 
 distclean: clean
 

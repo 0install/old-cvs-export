@@ -118,7 +118,7 @@ AC_MSG_RESULT(OK)
 
 AC_MSG_CHECKING(for kernel series)
 if [[ -f "$KERNELDIR/include/linux/compat.h" ]]; then
-  KERNEL_TYPE=Linux_2_5
+  KERNEL_TYPE=Linux_2_6
 else
   KERNEL_TYPE=Linux_2_4
 fi
