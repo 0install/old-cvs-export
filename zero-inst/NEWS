@@ -5,6 +5,11 @@ Changes since 0.1.24:
 * If the user rejects a request, reject duplicate requests for the next
   few seconds.
 
+* Cancelling a request from 0refresh sends it an error, not success.
+
+* Cancelling a request also cancels the download, if no other user is also
+  trying to fetch it.
+
 * Use new version of lazyfs.
 
 Changes since 0.1.23:

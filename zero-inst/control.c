@@ -409,6 +409,27 @@ static void send_result(Task *task, const char *err)
 	task_destroy(task, err);
 }
 
+/* This task is about to be cancelled. If nothing else depends on its child task,
+ * kill the child task too.
+ */
+static void may_kill_child(Task *parent)
+{
+	Task *task;
+	Task *child = parent->child_task;
+
+	for (task = all_tasks; task; task = task->next) {
+		if (task != parent && task->child_task == child) {
+			error("Not cancelling download; another user wants '%s' too", parent->str);
+			return;
+		}
+	}
+	error("Cancelling download for '%s'", parent->str);
+	if (child->child_pid == -1)
+		error("Child process already exited!");
+	else
+		kill(child->child_pid, SIGTERM);
+}
+
 /* 1 on success (kernel or client task exists) */
 static int cancel_download(const char *request, uid_t uid)
 {
@@ -418,8 +439,11 @@ static int cancel_download(const char *request, uid_t uid)
 		if ((task->type == TASK_CLIENT || task->type == TASK_KERNEL) &&
 		    task->child_task && task->uid == uid &&
 		    strcmp(task->str, request) == 0) {
+
+			may_kill_child(task);
+
 			if (task->type == TASK_CLIENT)
-				send_result(task, 0);
+				send_result(task, "Cancelled at user's request");
 			else
 				kernel_cancel_task(task);
 
