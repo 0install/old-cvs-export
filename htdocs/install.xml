@@ -86,6 +86,7 @@ Download the kernel module for your operating system:
 
 <ul>
 <li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.21.tgz.gpg?download">lazyfs-linux-0.1.21.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels) [ <a href="http://www.ecs.soton.ac.uk/%7Etal00r/lazyfs-linux-0.1.21.tgz.gpg">mirrored copy</a> ]</li>
+<li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-fedora-core-1-0.1.21-1.i386.rpm?download">Fedora Core 1 binary RPM</a></li>
 <li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.21-1.src.rpm?download">Source RPM</a> (for RPM-based distributions)</li>
 </ul>
 
