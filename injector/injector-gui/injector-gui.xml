@@ -1,16 +1,17 @@
 <?xml version='1.0'?>
-<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'>
+<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
+	   uri='/uri/0install/zero-install.sourceforge.net/utils/injector-gui/injector-gui.xml'>
   <name>Injector-GUI</name>
   <summary>Graphical interface for the injector</summary>
   <description>
     The injector GUI displays a window showing which versions of various components will be used when running a program, and allows you to alter various policy settings to affect the selection process. You can use this to mark particular versions of libraries as preferred, bugggy, etc.
   </description>
   
-  <group path='injector-gui'>
-    <requires interface='/home/talex/Projects/injector/injector/injector.xml'>
-      <version min='0.1'/>
+  <group path='/uri/0install/zero-install.sourceforge.net/utils/injector-gui'>
+    <requires interface='/uri/0install/zero-install.sourceforge.net/utils/injector/injector.xml'>
       <environment name='PYTHONPATH' insert=''/>
     </requires>
-    <implementation version='0.1' path='head' stability='developer'/>
+    <implementation version='0.1' path='0.1' stability='testing'/>
+    <implementation version='0.1.5' path='head' stability='developer'/>
   </group>
 </interface>
