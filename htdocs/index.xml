@@ -26,13 +26,13 @@ off-line use.
 <p>
 Let's say you're looking for a little desktop reminder application. You
 search <a href="http://freshmeat.net">Freshmeat.net</a> and find
-<a href="http://rox.sf.net/memo.php3">Memo</a>. You open the directory
+<a href="http://rox.sf.net/memo.html">Memo</a>. You open the directory
 containing Memo (on the remote machine) with your file manager (note the
 title-bar):
 </p>
 
 <p style='text-align: center'>
-<img src='memo.png' width='371' height='134'
+<img src='apps.png' width='365' height='152'
      alt='ROX-Filer window showing Memo application on the remote machine' />
 </p>
 
@@ -44,7 +44,7 @@ needs directly from the remote machines where they're stored.
 </p>
 
 <p style='text-align: center'>
-<img src='progress.png' width='435' height='169'
+<img src='progress.png' width='466' height='193'
      alt='GUI progress indicator' />
 </p>
 

@@ -191,7 +191,7 @@ current stable release). Thus, a python script might start with:
 </p>
 
 <pre>
-#!/uri/0install/www.python.org/platform/2.2-or-later
+#!/uri/0install/python.org/platform/2.2-or-later
 print "Hello, I need Python 2.2 or later"
 </pre>
 
@@ -214,6 +214,21 @@ Your application can use other libraries from Zero Install, or it can use
 old-style pathnames (eg, '#!usr/bin/env python'). In that case, the user
 must install Python manually, as if they weren't using Zero Install. This
 is useful for packages that aren't provided through this system.
+</p>
+
+<p>
+There's a handy '0run' command, which gets installed to /bin. This takes
+a program and a date and runs the program, first forcing a refresh if it's
+missing or too old. So a python script might instead start with:
+</p>
+
+<pre>
+	#!/bin/0run python.org/python 2003-07-05
+	print "Hello from python!"
+</pre>
+
+<p>
+(0run lets you leave out the leading /uri/0install)
 </p>
 
 <p>
