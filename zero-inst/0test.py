@@ -5,11 +5,11 @@ import os, socket
 import time
 
 def unmount():
-	if os.path.exists('/uri/.lazyfs-helper'):
+	if os.path.exists('/uri/0install/.lazyfs-helper'):
 		print "Unmounting..."
-		os.system('sudo umount /uri')
-		if os.path.exists('/uri/.lazyfs-helper'):
-			raise Exception("Can't unmount /uri!")
+		os.system('sudo umount /uri/0install')
+		if os.path.exists('/uri/0install/.lazyfs-helper'):
+			raise Exception("Can't unmount /uri/0install!")
 		lines = os.popen('dmesg').readlines()
 		lines.reverse()
 		i = lines.index("lazyfs: Resource usage after put_super:\n")
@@ -19,7 +19,8 @@ def unmount():
 
 unmount()
 os.system('rm -rf /var/cache/zero-inst/0test')
-os.system('sudo mount /uri')
+os.system('sudo mount /uri/0install')
+tmp = '/tmp'
 
 http = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -37,6 +38,12 @@ os.environ['http_proxy'] = 'http://localhost:%d' % port
 
 zero = os.spawnlp(os.P_NOWAIT, './zero-install', './zero-install')
 
+def tgz_containing(name, contents):
+	file(os.path.join(tmp, name), 'w').write(contents)
+	data = os.popen('tar -cz -O -C "%s" "%s"' % (tmp, name)).read()
+	os.unlink(os.path.join(tmp, name))
+	return data
+
 class Request:
 	def __init__(self, want_uri):
 		#print "waiting..."
@@ -48,7 +55,9 @@ class Request:
 		assert uri == want_uri
 
 	def reply(self, message):
-		self.c.send('HTTP/1.0 200 OK\n\n' + message)
+		self.c.send('HTTP/1.0 200 OK\n\n')
+		print "sending!..."
+		self.c.send(tgz_containing('.0inst-index.xml', message))
 		self.close()
 	
 	def close(self):
@@ -73,21 +82,28 @@ if child == 0:
 		os._exit(1)
 else:
 	# Parent
+	ok = False
 	try:
 		server = True
 		test()
-	finally:
-		print "Waiting for test child to finish"
-		http.close()
-		(pid, status) = os.waitpid(child, 0)
-		import signal
-		os.kill(zero, signal.SIGINT)
-		print "Waiting for zero-install to finish"
-		os.waitpid(zero, 0)
-		print
-		if status:
-			print "Error from child (code %d)" % status
-		else:
-			print "All tests passed!"
+		ok = True
+	except:
+		import traceback
+		traceback.print_exc()
+	
+	print "Waiting for test child to finish"
+	http.close()
+	(pid, status) = os.waitpid(child, 0)
+	import signal
+	os.kill(zero, signal.SIGINT)
+	print "Waiting for zero-install to finish"
+	os.waitpid(zero, 0)
+	print
+	if status:
+		print "Error from child (code %d)" % status
+	elif not ok:
+		print "Failed (server error)"
+	else:
+		print "All tests passed!"
 
 unmount()
