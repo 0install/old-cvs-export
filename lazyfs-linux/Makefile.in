@@ -43,11 +43,11 @@ real-install:
 	@echo Installing to ${ROOT_PREFIX}/lib/modules/${KERNEL_VERSION}
 	@echo "(current kernel uses $(ROOT_PREFIX)/lib/modules/`uname -r`)"
 	cp lazyfs@COMMA_VERSION@.$(KOBJECT) ${MODULEDIR}/
-	depmod -a
+	/sbin/depmod -a
 	@echo
 	@echo '*** Testing kernel module ***'
 	@echo
-	@modprobe lazyfs@COMMA_VERSION@ || echo "FAILED: Try 'dmesg' for help"
+	@/sbin/modprobe lazyfs@COMMA_VERSION@ || echo "FAILED: Try 'dmesg' for help"
 
 uninstall:
 	rm -f ${MODULEDIR}/lazyfs@COMMA_VERSION@.${KOBJECT}
