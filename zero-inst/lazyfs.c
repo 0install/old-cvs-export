@@ -114,6 +114,8 @@
 
 #include "lazyfs.h"
 
+static void show_refs(struct dentry *dentry, int indent);
+
 static DECLARE_WAIT_QUEUE_HEAD(lazy_wait);
 
 static DECLARE_WAIT_QUEUE_HEAD(helper_wait);
@@ -185,11 +187,7 @@ lazyfs_release_dentry(struct dentry *dentry)
 	host_dentry = info->host_dentry;
 
 	if (host_dentry)
-	{
-		printk("Putting dentry with host inode %ld\n",
-				host_dentry->d_inode->i_ino);
 		dput(host_dentry);
-	}
 
 	dentry->d_fsdata = NULL;
 	kfree(info);
@@ -353,6 +351,8 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sbi->dirlist_qname.len = 3;
 	sbi->dirlist_qname.hash = full_name_hash(sbi->dirlist_qname.name,
 						 sbi->dirlist_qname.len);
+
+	show_refs(sb->s_root, 0);
 
 	return sb;
 err:
@@ -525,6 +525,75 @@ static void mark_children_may_delete(struct dentry *dentry)
 	spin_unlock(&dcache_lock);
 }
 
+/* Problem: We can't delete a subtree if any of the dentries
+ * in it are still being used. But, we can't rely on a later dput
+ * to remove the subtree either.
+ * Try turning every node into a separate tree...
+ */
+static void my_d_genocide(struct dentry *root)
+{
+	struct dentry *this_parent = root;
+	struct list_head *next;
+
+	spin_lock(&dcache_lock);
+repeat:
+	next = this_parent->d_subdirs.next;
+resume:
+	while (next != &this_parent->d_subdirs) {
+		struct list_head *tmp = next;
+		struct dentry *dentry = list_entry(tmp, struct dentry, d_child);
+		next = tmp->next;
+		if (d_unhashed(dentry)||!dentry->d_inode)
+			continue;
+		if (!list_empty(&dentry->d_subdirs)) {
+			this_parent = dentry;
+			goto repeat;
+		}
+		atomic_dec(&dentry->d_count);
+		atomic_dec(&dentry->d_parent->d_count);
+		dentry->d_parent = dentry;
+	}
+	if (this_parent != root) {
+		next = this_parent->d_child.next; 
+		atomic_dec(&this_parent->d_count);
+		this_parent = this_parent->d_parent;
+		goto resume;
+	}
+	spin_unlock(&dcache_lock);
+}
+
+static void show_refs(struct dentry *dentry, int indent)
+{
+	struct list_head *next;
+	int i;
+
+	for (i = 0; i < indent; i++)
+		printk(" ");
+	printk("'%s' [%d]\n", dentry->d_name.name,
+				atomic_read(&dentry->d_count));
+
+	next = dentry->d_subdirs.next;
+	while (next != &dentry->d_subdirs) {
+		struct dentry *c = list_entry(next, struct dentry, d_child);
+		show_refs(c, indent + 2);
+		next = next->next;
+	}
+}
+
+/* Removes dentry from the tree, and any child nodes too */
+static void remove_dentry(struct dentry *dentry)
+{
+	struct dentry *parent = dget(dentry->d_parent);
+
+	my_d_genocide(dentry);
+
+	d_delete(dentry);
+
+	dput(dentry);
+	printk("Parent has %d\n", atomic_read(&parent->d_count));
+	dput(parent);
+}
+
 static void sweep_marked_children(struct dentry *dentry)
 {
 	struct list_head *head, *next;
@@ -547,12 +616,14 @@ restart:
 			continue;
 
 		spin_unlock(&dcache_lock);
-		d_delete(child);
-		dput(child);
+		remove_dentry(child);
 		goto restart;
 	}
 
 	spin_unlock(&dcache_lock);
+
+	shrink_dcache_parent(dentry);
+	show_refs(dentry->d_inode->i_sb->s_root, 0);
 }
 
 /* The file list for a directory has changed.
@@ -574,6 +645,8 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 	if (size < 7 || strncmp(listing, "LazyFS\n", 7) != 0)
 		return -EIO;
 	listing += 7;
+
+	lock_kernel();
 
 	mark_children_may_delete(dir);
 
@@ -623,8 +696,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 			    i->i_mtime != time)
 			{
 				printk("lazyfs: '%s' changed\n", name.name);
-				d_delete(existing);
-				dput(existing); /* Yes, twice! */
+				remove_dentry(existing);
 				new_dentry(sb, dir, name.name,
 					   mode, size, time);
 			}
@@ -643,12 +715,16 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 
 	sweep_marked_children(dir);
 
+	unlock_kernel();
+
 	if (listing != end)
 		BUG();
 	
 	return 0;
 
 bad_list:
+	unlock_kernel();
+
 	printk("lazyfs: '...' file is invalid\n");
 	return -EIO;
 }
