@@ -8,36 +8,29 @@ Although the system makes installing other software very easy, the Zero
 Install system itself still requires some work to install. You'll also
 need to have <a href="http://freshmeat.net/depends/download-all/39759/">a few
 other things</a> installed first (libxml to parse the XML index files, wget to
-download archives, and tar and gzip to extract them). Most systems will have
-these installed already, although you may be missing the header files for
-libxml (libxml-dev).
+download archives, tar and gzip to extract them, and GPG to check they are
+correctly signed). Most systems will have these installed already, although you
+may be missing the header files for libxml (libxml-dev).
 </p>
 
 <div class='note'>
-Please do not install this software on important machines. It is still
-very much under development and has not yet been well tested.</div>
-
+<h3>Security and stability note</h3>
 <p>
-That said, I'm running it on my machine without any problems so far. Please
-let me know how you get on, and any problems you find. You could also install
-it under <a href="http://user-mode-linux.sf.net">User Mode Linux</a> if you
-want to test it in safety.
+This software is still under development and has not yet been carefully
+audited. Please do not run it on public machines (eg, in a school) where
+malicious users could exploit bugs in it.
+Please let me know if you find any problems. You could also install it under <a
+href="http://user-mode-linux.sf.net">User Mode Linux</a> if you want to test
+the kernel module in safety, although there have been no bugs discovered in
+the last few versions.
 </p>
+</div>
 
 <p>The Zero Install system requires a small Linux kernel module to provide
-the /uri/0install directory. Like all kernel modules, you <strong>must</strong>
+the /uri/0install directory. Like all kernel modules, you must
 compile this using the actual kernel headers for the kernel you're actually
 running. The easiest way to ensure this is to have compiled your own kernel
 (eg, from <a href="http://kernel.org">kernel.org</a>) and be running that.
-</p>
-
-<p>
-Only Linux 2.4 series kernels are currently supported, not the 2.5 series. If
-you want to port the (small) module to other kernels (BSD, MacOS X, etc) please
-get in touch.
-</p>
-
-<p>
 There are plenty of guides on the net if you don't feel confident about
 compiling your own kernel. For example,
 <a href="http://www.osnews.com/story.php?news_id=2949">The Very Verbose Guide
@@ -45,6 +38,12 @@ to Updating and Compiling Your Debian Kernel</a> (which isn't very Debian
 specific, despite the name) and
 <a href="http://www.osnews.com/story.php?news_id=443">Compiling the Linux
 Kernel</a>.
+</p>
+
+<p>
+Only Linux 2.4 series kernels are currently supported, not the 2.5 series. If
+you want to port the (small) module to other kernels (or BSD, MacOS X, etc)
+please get in touch.
 </p>
 
 <div class='note'>
@@ -70,8 +69,9 @@ suggest installing from the source tarballs below instead.
 </div>
 -->
 
-<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.15.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.15.tar.gz.sig">GPG Sig</a> ]. Extract it, and
-move to the new directory (things you type are shown in bold):
+<p>Start by <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.15.tar.gz">downloading Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.15.tar.gz.sig">GPG Sig</a> ]
+(note that the links lead to a list of mirrors).
+Extract it, and move to the new directory (things you type are shown in bold):
 </p>
 
 <pre>
