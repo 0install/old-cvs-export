@@ -1,6 +1,9 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
+- -----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
 <?xml version='1.0'?>
 <interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
 	   uri='http://0install.net/2005/interfaces/injector-gui'
@@ -25,10 +28,17 @@ Hash: SHA1
     <!-- <implementation version='0.3' id='/home/talex/Projects/injector/injector-gui/head' stability='developer'/> -->
   </group>
 </interface>
------BEGIN PGP SIGNATURE-----
+- -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
 iD8DBQFCN12nrgeCgFmlPMERAh4fAJ90Bwl5SijO14yNDhZpRy7lH7v06gCcDMyY
 2voBp0H0eIGrxpVl9AAjS+0=
 =+iYS
+- -----END PGP SIGNATURE-----
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.0 (GNU/Linux)
+
+iD8DBQFCN16KrgeCgFmlPMERApj0AJ9/7/F8d/HRpP4IecQEOO07MtHSlgCgiyIc
+wkRKYQNOSChV5Iiw3U4baPQ=
+=UZog
 -----END PGP SIGNATURE-----
