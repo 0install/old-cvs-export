@@ -3,6 +3,11 @@ import basedir
 from namespaces import *
 import ConfigParser
 import reader
+from logging import debug, info
+import download
+
+#from logging import getLogger, DEBUG
+#getLogger().setLevel(DEBUG)
 
 _interfaces = {}	# URI -> Interface
 
@@ -10,8 +15,9 @@ class Policy(object):
 	__slots__ = ['root', 'implementation', 'watchers',
 		     'help_with_testing', 'network_use', 'updates']
 
-	def __init__(self):
-		self.root = None
+	def __init__(self, root):
+		assert isinstance(root, (str, unicode))
+		self.root = root
 		self.implementation = {}		# Interface -> Implementation
 		self.watchers = []
 		self.help_with_testing = False
@@ -26,11 +32,6 @@ class Policy(object):
 							'help_with_testing')
 			self.network_use = config.get('global', 'network_use')
 			assert self.network_use in network_levels
-
-	def set_root_interface(self, root):
-		assert isinstance(root, (str, unicode))
-		self.root = root
-		self.recalculate()
 
 	def save_config(self):
 		config = ConfigParser.ConfigParser()
@@ -85,13 +86,13 @@ class Policy(object):
 			if r: return r
 
 		# Stability
-		policy = interface.stability_policy
-		if not policy:
-			if self.help_with_testing: policy = testing
-			else: policy = stable
+		stab_policy = interface.stability_policy
+		if not stab_policy:
+			if self.help_with_testing: stab_policy = testing
+			else: stab_policy = stable
 
-		if a_stab >= policy: a_stab = preferred
-		if b_stab >= policy: b_stab = preferred
+		if a_stab >= stab_policy: a_stab = preferred
+		if b_stab >= stab_policy: b_stab = preferred
 
 		r = cmp(a_stab, b_stab)
 		if r: return r
@@ -119,7 +120,7 @@ class Policy(object):
 	
 	def get_interface(self, uri):
 		"""Get the interface for uri. If it's in the cache, read that.
-		If it's not in the cache or network use is full, also download
+		If it's not in the cache or network use is full, start downloading
 		the latest version."""
 		if type(uri) == str:
 			uri = unicode(uri)
@@ -128,14 +129,78 @@ class Policy(object):
 		if uri not in _interfaces:
 			# Haven't used this interface so far. Initialise from cache.
 			_interfaces[uri] = Interface(uri)
-			if not reader.update_from_cache(_interfaces[uri]):
-				# Not in the case. Force update from network.
-				reader.update_from_network(_interfaces[uri])
+			self.init_interface(_interfaces[uri])
 
 		if self.network_use == network_full and not _interfaces[uri].uptodate:
-			reader.update_from_network(_interfaces[uri])
+			self.begin_iface_download(_interfaces[uri])
 
 		return _interfaces[uri]
+	
+	def init_interface(self, iface):
+		"""We've just created a new Interface. Update from disk cache/network."""
+		debug("Created " + iface.uri)
+		cached = reader.update_from_cache(iface)
+		if not cached:
+			if self.network_use != network_offline:
+				debug("Interface not cached and not off-line. Downloading...")
+				self.begin_iface_download(iface)
+			else:
+				debug("Nothing known about interface, but we are off-line.")
+	
+	def begin_iface_download(self, interface, force = False):
+		dl = download.begin_download(interface, force)
+		if not dl:
+			assert not force
+			return		# Already in progress
+
+		# Calls update_interface_from_network eventually on success
+		self.monitor_download(dl)
+	
+	def monitor_download(self, dl):
+		raise NotImplementedError("Abstract method")
+	
+	def update_interface_from_network(self, interface, new_xml):
+		"""xml is the new XML (after the signature has been checked and
+		removed)."""
+		debug("Updating '%s' from network" % (interface.name or interface.uri))
+		assert interface.uri.startswith('/')
+
+		upstream_dir = basedir.save_config_path(config_site, config_prog, 'interfaces')
+		cached = os.path.join(upstream_dir, escape(interface.uri))
+
+		if os.path.exists(cached):
+			old_xml = file(cached).read()
+			if old_xml == new_xml:
+				debug("No change")
+			else:
+				self.confirm_diff(old_xml, new_xml, interface.uri)
+
+		stream = file(cached + '.new', 'w')
+		stream.write(new_xml)
+		stream.close()
+		reader.check_readable(interface.uri, cached + '.new')
+		os.rename(cached + '.new', cached)
+		debug("Saved as " + cached)
+		
+		interface.uptodate = True
+		reader.update_from_cache(interface)
+		self.recalculate()
+
+	def get_implementation(self, interface):
+		if not interface.name:
+			raise SafeException("We don't have enough information to "
+					    "run this program yet. "
+					    "Need to download:\n%s" % interface.uri)
+		try:
+			return self.implementation[interface]
+		except KeyError, ex:
+			if interface.implementations:
+				offline = ""
+				if self.network_use == network_offline:
+					offline = "\nThis may be because 'Network Use' is set to Off-line."
+				raise SafeException("No usable implementation found for '%s'.%s" %
+						(interface.name, offline))
+			raise ex
 
 	def walk_interfaces(self):
 		def walk(iface):
@@ -143,10 +208,60 @@ class Policy(object):
 			impl = self.get_best_implementation(iface)
 			if impl:
 				for d in impl.dependencies.values():
-					for id in walk(self.get_interface(d.interface)):
-						yield id
+					for idep in walk(self.get_interface(d.interface)):
+						yield idep
 		return walk(self.get_interface(self.root))
 
-# Singleton instance used everywhere...
-policy = Policy()
-policy.save_config()
+	def check_signed_data(self, download, signed_data):
+		"""Downloaded data is a GPG-signed message. Check that the signature is trusted
+		and call self.update_interface_from_network() when done."""
+		import gpg
+		from trust import trust_db
+		data, errors, sigs = gpg.check_stream(signed_data)
+		iface_xml = data.read()
+		data.close()
+		if not self.update_interface_if_trusted(download.interface, sigs, iface_xml):
+			self.confirm_trust_keys(download.interface, sigs)
+
+	def update_interface_if_trusted(self, interface, sigs, xml):
+		for s in sigs:
+			if s.is_trusted():
+				self.update_interface_from_network(interface, xml)
+				return True
+		return False
+	
+	def confirm_trust_keys(self, interface, sigs):
+		"""We don't trust any of the signatures yet. Ask the user.
+		When done, call update_interface_if_trusted()."""
+		import gpg
+		valid_sigs = [s for s in sigs if isinstance(s, gpg.ValidSig)]
+		if not valid_sigs:
+			raise SafeException('No valid signatures found')
+
+		print "\nInterface:", interface.uri
+		print "The interface is correctly signed with the following keys:"
+		for x in valid_sigs:
+			print "-", x
+		print "Do you want to trust all of these keys to sign interfaces?"
+		while True:
+			i = raw_input("Trust all [Y/N] ")
+			if not i: continue
+			if i in 'Nn':
+				raise SafeException('Not signed with a trusted key')
+			if i in 'Yy':
+				break
+		from trust import trust_db
+		for key in valid_sigs:
+			print "Trusting", key.fingerprint
+			trust_db.trust_key(key.fingerprint)
+
+		if not self.update_interface_if_trusted(interface, sigs, xml):
+			raise Exception('Bug: still not trusted!!')
+
+	def confirm_diff(self, old, new, uri):
+		import difflib
+		diff = difflib.unified_diff(old.split('\n'), new.split('\n'), uri, "",
+						"", "", 2, "")
+		print "Updates:"
+		for line in diff:
+			print line

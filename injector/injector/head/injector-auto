@@ -13,18 +13,50 @@ prog = sys.argv[2]
 prog_args = sys.argv[3:]
 
 import model
-from policy import policy
+from policy import Policy
+import download
 
-policy.set_root_interface(interface_uri)
+import shutil
+import sys
+import gpg
+
+class AutoPolicy(Policy):
+	monitored_downloads = None
+
+	def __init__(self, interface_uri):
+		Policy.__init__(self, interface_uri)
+		self.monitored_downloads = []
+
+	def monitor_download(self, dl):
+		error_stream = dl.start()
+		self.monitored_downloads.append((error_stream, dl))
+
+# Singleton instance used everywhere...
+policy = AutoPolicy(interface_uri)
+policy.recalculate()
+
+while policy.monitored_downloads:
+	print "Currently downloading:"
+	for e, dl in policy.monitored_downloads:
+		print "- " + dl.url
+
+	for e, dl in policy.monitored_downloads[:]:
+		errors =  e.read()
+		if errors:
+			print "Got errors:", errors
+		e.close()
+		policy.monitored_downloads.remove((e, dl))
+		data = dl.error_stream_closed()
+		policy.check_signed_data(dl, data)
 
 import run
 
 try:
-	run.execute(prog, prog_args)
+	run.execute(policy, prog, prog_args)
 except model.SafeException, ex:
 	print >>sys.stderr, ex
-	if policy.network_use != network_full:
+	if policy.network_use != model.network_full:
 		print >>sys.stderr, "Retrying with network use = full"
 		policy.network_use = model.network_full	
 		policy.recalculate()
-		run.execute(prog, prog_args)
+		run.execute(policy, prog, prog_args)

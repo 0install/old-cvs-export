@@ -119,10 +119,13 @@ class Interface(object):
 	def __init__(self, uri):
 		assert uri
 		self.uri = uri
+		self.uptodate = False		# Did we download this session?
+		self.reset()
+
+	def reset(self):
 		self.implementations = {}	# Path -> Implementation
 		self.name = None
 		self.last_updated = None
-		self.uptodate = False		# Did we download this session?
 		self.summary = None
 		self.description = None
 		self.stability_policy = None
@@ -141,9 +144,6 @@ class Interface(object):
 	def set_stability_policy(self, new):
 		assert new is None or isinstance(new, Stability)
 		self.stability_policy = new
-	
-	def changed(self):
-		for w in self.watchers(): w(self)
 
 def escape(uri):
 	"Convert each space to %20, etc"
