@@ -35,5 +35,5 @@ module-Linux_2_4:
 	${CC} -c ${KERNELFLAGS} ${MODFLAGS} -o lazyfs.o lazyfs.c
 
 module-Linux_2_5:
-	$(MAKE) -C $(KERNEL) SUBDIRS=`pwd` modules
+	$(MAKE) -DLINUX_2_5_SERIES -C $(KERNEL) SUBDIRS=`pwd` modules
 endif

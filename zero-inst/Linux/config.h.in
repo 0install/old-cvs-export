@@ -1,2 +1,11 @@
-#define LAZYFS_PLATFORM "unknown"
-#undef LINUX_2_5_SERIES
+/* Linux/config.h.in.  Generated automatically from configure.in by autoheader 2.13.  */
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION
+
+/* The canonical name for @PLATFORM@ symlinks */
+#undef LAZYFS_PLATFORM
+

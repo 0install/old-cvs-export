@@ -1,5 +1,6 @@
 AC_INIT(zero-install.c)
-AC_CONFIG_HEADER(Linux/config.h)
+AM_INIT_AUTOMAKE
+AM_CONFIG_HEADER(Linux/config.h)
 
 AC_PROG_CC
 
@@ -16,7 +17,6 @@ AC_ARG_WITH(kernel,
   fi
 )
 AC_MSG_RESULT($KERNELDIR)
-AC_DEFINE_UNQUOTED(KERNELDIR, "$kerneldir")
 AC_SUBST(KERNELDIR)
 
 AC_MSG_CHECKING(for user to run helper as)
@@ -73,7 +73,7 @@ case $ARCH in
 esac
 PLATFORM=`uname -s`-$ARCH
 AC_MSG_RESULT($PLATFORM)
-AC_DEFINE_UNQUOTED(LAZYFS_PLATFORM, "$PLATFORM")
+AC_DEFINE_UNQUOTED(LAZYFS_PLATFORM, "$PLATFORM", [The canonical name for @PLATFORM@ symlinks])
 
 AC_OUTPUT(Makefile \
 	  Linux/Makefile)
