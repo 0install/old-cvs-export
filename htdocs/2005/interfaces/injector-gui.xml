@@ -1,0 +1,22 @@
+<?xml version='1.0'?>
+<interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
+	   uri='http://0install.net/2005/interfaces/injector-gui'
+	   last-modified='1110044819'
+	   main='0launch-gui'>
+  <name>Injector-GUI</name>
+  <summary>Graphical interface for the injector</summary>
+  <description>
+    The injector GUI displays a window showing which versions of various components will be used when running a program, and allows you to alter various policy settings to affect the selection process. You can use this to mark particular versions of libraries as preferred, bugggy, etc.
+  </description>
+  
+  <group>
+    <requires interface='http://0install.net/2005/interfaces/injector'>
+      <environment name='PYTHONPATH' insert=''/>
+    </requires>
+    <implementation version='0.2' id='sha1=efec372a590c092d40c3d8503e5dc3db94f25225' stability='testing'>
+      <archive size='9939' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.2.tgz' extract='injector-gui-0.2'/>
+    </implementation>
+
+    <!-- <implementation version='0.3' id='/home/talex/Projects/injector/injector-gui/head' stability='developer'/> -->
+  </group>
+</interface>
