@@ -112,7 +112,9 @@ static void handle_root_request(int request_fd)
 	if (!ddd)
 		goto err;
 	fprintf(ddd, "LazyFS\n"
-		"d 0 %ld 0http%c", now, 0);
+		"d 0 %ld 0http%c"
+		"l 6 %ld http%c0http%c",
+		now, 0, now, 0, 0);
 	if (fclose(ddd))
 		goto err;
 
