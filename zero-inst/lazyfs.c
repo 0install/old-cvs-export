@@ -224,6 +224,7 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 	if (S_ISDIR(mode)) {
 		inode->i_op = &lazyfs_dir_inode_operations;
 		inode->i_fop = &lazyfs_dir_operations;
+		inode->i_mode |= 0111;
 	}
 	else if (S_ISREG(mode))
 		inode->i_fop = &lazyfs_file_operations;
@@ -240,6 +241,7 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 		inode->u.generic_ip = target;
 
 		inode->i_op = &lazyfs_link_operations;
+		inode->i_mode |= 0111;
 	}
 	else
 		BUG();
@@ -369,7 +371,7 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sb->s_magic = LAZYFS_MAGIC;
 	sb->s_op = &lazyfs_ops;
 
-	sb->s_root = new_dentry(sb, NULL, "/", S_IFDIR | 0111, 0,
+	sb->s_root = new_dentry(sb, NULL, "/", S_IFDIR, 0,
 			sbi->host_dentry->d_inode->i_mtime, NULL);
 	if (!sb->s_root)
 		goto err;
@@ -785,7 +787,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		switch (*(listing++)) {
 			case 'f': mode |= S_IFREG; break;
 			case 'x': mode |= S_IFREG | 0111; break;
-			case 'd': mode |= S_IFDIR | 0111; break;
+			case 'd': mode |= S_IFDIR; break;
 			case 'l': mode |= S_IFLNK; break;
 			default: goto bad_list;
 		}
@@ -1491,6 +1493,18 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 }
 
 static int
+lazyfs_link_follow_link(struct dentry *dentry, struct nameidata *nd)
+{
+	const char *target = dentry->d_inode->u.generic_ip;
+
+	if (target)
+		return vfs_follow_link(nd, target);
+
+	printk("lazyfs_link_follow_link: no link target!\n");
+	return -EINVAL;
+}
+
+static int
 lazyfs_link_readlink(struct dentry *dentry, char *buf, int bufsize)
 {
 	char *target = dentry->d_inode->u.generic_ip;
@@ -1581,6 +1595,7 @@ static struct file_operations lazyfs_handle_operations = {
 
 static struct inode_operations lazyfs_link_operations = {
 	readlink:	lazyfs_link_readlink,
+	follow_link:	lazyfs_link_follow_link,
 };
 
 static struct file_operations lazyfs_file_operations = {
