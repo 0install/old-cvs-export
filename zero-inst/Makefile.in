@@ -1,5 +1,4 @@
-# Generated automatically from Makefile.in by configure.
-KERNEL := /home/tal00r/UML/linux-2.4.20
+KERNEL := @KERNELDIR@
 
 all: lazyfs.o zero
 

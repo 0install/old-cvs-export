@@ -12,11 +12,9 @@
  */
 
 
-	/* WARNING: This code is very new, buggy and rapidly changing.
-	 * Also, I've only been doing kernel-level programming for a week
-	 * so far. Locking is sadly lacking. SMP machines WILL break.
-	 * DO NOT run it on anything important (suggest using User Mode
-	 * Linux to test it)
+	/* WARNING: This code is quite new. It may contain bugs, so don't
+	 * run it on anything too important. Please audit and/or stress
+	 * test it and report any bugs!
 	 */
 
 /* See the 'Technical' file for details. */
@@ -1099,7 +1097,7 @@ lazyfs_handle_release(struct inode *inode, struct file *file)
 	if (!info)
 		BUG();
 
-	printk("Helper finished handling '%s'\n", dentry->d_name.name);
+	//printk("Helper finished handling '%s'\n", dentry->d_name.name);
 
 	spin_lock(&fetching_lock);
 	if (list_empty(&info->helper_list))
@@ -1185,7 +1183,7 @@ send_to_helper(char *buffer, size_t count, struct dentry *dentry)
 	int fd;
 	int err = 0;
 
-	printk("Sending '%s' to helper\n", dentry->d_name.name);
+	//printk("Sending '%s' to helper\n", dentry->d_name.name);
 
 	file = get_empty_filp();
 	if (!file)

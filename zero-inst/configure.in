@@ -1,0 +1,34 @@
+AC_INIT(lazyfs.c)
+
+dnl Check for directory with kernel source... (from ALSA)
+AC_MSG_CHECKING(for directory with kernel source)
+AC_ARG_WITH(kernel,
+  [  --with-kernel=dir       give the directory with kernel sources]
+  [                        [/usr/src/linux]],
+  KERNELDIR="$withval",
+  if test -d "/lib/modules/`uname -r`/build" -o -L "/lib/modules/`uname -r`/build"; then
+    KERNELDIR="/lib/modules/`uname -r`/build"
+  else
+    KERNELDIR="/usr/src/linux"
+  fi
+)
+AC_MSG_RESULT($KERNELDIR)
+AC_DEFINE_UNQUOTED(KERNELDIR, "$kerneldir")
+AC_SUBST(KERNELDIR)
+
+dnl Check for kernel version...
+AC_MSG_CHECKING(for kernel headers)
+if ! test -r "$KERNELDIR/include/linux/version.h"; then
+  cat << EOF
+
+
+The file $KERNELDIR/include/linux/version.h does not exist.
+Please, install the package with full kernel sources for your distribution
+or use --with-kernel=dir option to specify another directory with kernel
+sources (default is /usr/src/linux).
+EOF
+  exit 1
+fi
+AC_MSG_RESULT(OK)
+
+AC_OUTPUT(Makefile)
