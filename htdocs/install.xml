@@ -216,7 +216,7 @@ $ <b>cd zero-install-0.1.26</b>
 </pre>
 
 <p>
-For security reasons, it's better not to run zero install as root. So you'll
+For security reasons, zero install does not run as root. So you'll
 now need to choose a user to run it as. This could be your own user
 name, or (<a href="http://sourceforge.net/mailarchive/message.php?msg_id=6386789">ideally</a>) you could create a new user just for this purpose. Run
 configure with the name of your chosen user (here called 'zeroinst'):
