@@ -1,5 +1,7 @@
 Version 0.1.27:
 
+* Use new version of lazyfs.
+
 * Make the URL the last argument for wget, as some versions require this
   (Peter Prohaska).
  
