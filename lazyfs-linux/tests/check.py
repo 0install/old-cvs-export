@@ -3,24 +3,35 @@ import unittest
 import os, signal, time
 import traceback
 
-fs = '/test/0install'
-cache = '/test/cache'
+version = '0.1.22'.replace('.', 'd')
 
-os.system("sudo umount " + fs)
+fs = os.path.expanduser('~/test/0install')
+cache = os.path.expanduser('~/test/cache')
 
-# Note: this test suite is likely to crash older versions!!
-os.system("sudo rmmod lazyfs0d1d22")
+if os.path.ismount(fs):
+	os.system("sudo umount " + fs)
+	assert not os.path.ismount(fs)
 
-assert not os.path.ismount(fs)
+os.system("sudo rmmod lazyfs" + version)
+
+if not os.path.isdir(fs):
+	raise Exception('Create %s first' % fs)
+if not os.path.isdir(cache):
+	raise Exception('Create %s first' % cache)
+uid = os.geteuid()
+cache_uid = os.stat(cache).st_uid 
+if cache_uid != uid:
+	raise Exception('%s must be owned by user %s (not %s)' %
+			(cache, uid, cache_uid))
 
 class LazyFS(unittest.TestCase):
 	def setUp(self):
 		for item in os.listdir(cache):
 			os.system("rm -r '%s'" % os.path.join(cache, item))
-		os.system("sudo mount -t lazyfs0d1d21 lazyfs %s -o %s" % (fs, cache))
+		os.system("sudo mount -t lazyfs%s lazyfs %s -o %s" % (version, fs, cache))
 
 	def tearDown(self):
-		os.system("sudo umount /test/0install")
+		os.system("sudo umount " + fs)
 	
 def cstest(base):
 	def test(self):
