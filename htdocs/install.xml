@@ -87,7 +87,7 @@ a bug report</a>.
 Download the kernel module for your operating system:
 
 <ul>
-<li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.22.tgz.gpg?download">lazyfs-linux-0.1.22.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels)</li>
+<li><a href="http://prdownloads.sourceforge.net/zero-install/lazyfs-linux-0.1.23.tgz.gpg?download">lazyfs-linux-0.1.23.tgz.gpg</a> (Linux 2.4 and 2.6 series kernels)</li>
 </ul>
 
 <p>
@@ -100,11 +100,11 @@ Check the GPG signature, unpack the archive, and move to the new directory
 </p>
 
 <pre>
-$ <b>gpg lazyfs-linux-0.1.22.tgz.gpg</b>
+$ <b>gpg lazyfs-linux-0.1.23.tgz.gpg</b>
 gpg: Signature made Sun 15 Feb 2004 12:46:54 GMT using DSA key ID 59A53CC1
 gpg: Can't check signature: public key not found
-$ <b>tar xzf lazyfs-linux-0.1.22.tgz</b>
-$ <b>cd lazyfs-linux-0.1.22</b>
+$ <b>tar xzf lazyfs-linux-0.1.23.tgz</b>
+$ <b>cd lazyfs-linux-0.1.23</b>
 </pre>
 
 <p>If you have my GPG key (see page header) in your keyring, the first step
@@ -132,26 +132,27 @@ $ <b>su -c 'make install'</b>
 </ul>
 
 <p>
-If you've got Python installed, now would be a good time to run the unit-tests.
-This is optional, but it makes it easier for us to diagnose bugs if they're
-detected here (save your work first!):
+If you've got Python and sudo installed, now would be a good time to run the
+unit-tests. This is optional, but it makes it easier for us to diagnose bugs if
+they're detected here (save your work first!):
 </p>
 
 <pre>
 $ <b>sync</b>
-$ <b>python tests/check.py -v</b>
-testANothing (__main__.TestWithHelper) ... ok
-testDoubleOpen (__main__.TestWithHelper) ... ok
-testDownload (__main__.TestWithHelper) ... ok
-testGetROX (__main__.TestWithHelper) ... ok
-testLsRoot (__main__.TestWithHelper) ... ok
-testReleaseHelper (__main__.TestWithHelper) ... ok
-testCacheLink (__main__.TestWithoutHelper) ... ok
-testUnconnectedEmpty (__main__.TestWithoutHelper) ... ok
-                                                                                
+$ <b>python tests/check.py</b>
+lazyfs0d1d23: Device or resource busy
+test1CacheLink (__main__.Test1WithoutHelper) ... ok
+test2UnconnectedEmpty (__main__.Test1WithoutHelper) ... ok
+test01Nothing (__main__.Test2WithHelper) ... ok
+test02ReleaseHelper (__main__.Test2WithHelper) ... ok
+[...]
+test18ParallelDynamic (__main__.Test2WithHelper) ... ok
+test19BadRead (__main__.Test2WithHelper) ... ok
+test20FMapping (__main__.Test2WithHelper) ... ok
+ 
 ----------------------------------------------------------------------
-Ran 8 tests in 0.955s
-                                                                                
+Ran 22 tests in 4.196s
+ 
 OK
 </pre>
 
@@ -170,7 +171,7 @@ to get diagnostics printed there than from within X. See also
 Install. Download latest version:</p>
 
 <ul>
-<li><a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.23.tar.gz.gpg?download">zero-install-0.1.23.tgz.gpg</a></li> 
+<li><a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.24.tar.gz.gpg?download">zero-install-0.1.24.tgz.gpg</a></li> 
 </ul>
 
 <p>
@@ -178,9 +179,9 @@ Check the GPG signature and unpack as before:
 </p>
 
 <pre>
-$ <b>gpg zero-install-0.1.23.tar.gz.gpg</b>
-$ <b>tar xzf zero-install-0.1.23.tar.gz</b>
-$ <b>cd zero-install-0.1.23</b>
+$ <b>gpg zero-install-0.1.24.tar.gz.gpg</b>
+$ <b>tar xzf zero-install-0.1.24.tar.gz</b>
+$ <b>cd zero-install-0.1.24</b>
 </pre>
 
 <p>
