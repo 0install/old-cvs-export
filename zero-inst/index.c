@@ -20,6 +20,7 @@
 <grammar xmlns:z='" ZERO_NS "' xmlns='http://relaxng.org/ns/structure/1.0'> \
  <start>								\
   <element name='z:site-index'>				\
+   <attribute name='path'/>				\
    <element name='z:dir'>				\
     <ref name='dir'/>				\
    </element>					\

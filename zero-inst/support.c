@@ -98,7 +98,7 @@ int uri_ensure_absolute(const char *uri, const char *base,
 	return 1;
 }
 
-/* /http/www.foo.org/some/path, one, two to
+/* /0http/www.foo.org/some/path, one, two to
  * http://www.foo.org/some/path/one/two
  *
  * The two 'leaf' components are appended, if non-NULL.
@@ -110,8 +110,12 @@ int build_uri(char *buffer, int len, const char *path,
 	int n;
 	char *slash;
 
-	assert(path[0] == '/');
-	path++;
+	if (strncmp(path, "/0http/", 7) != 0) {
+		fprintf(stderr, "Unsupported scheme in %s\n", path);
+		return 0;
+	}
+
+	path += 2;
 
 	slash = strchr(path, '/');
 	assert(slash != NULL && slash != path);

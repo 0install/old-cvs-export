@@ -389,7 +389,7 @@ static void got_site_index(Task *task, int success)
 /* Fetch the index file 'path' (in the cache).
  * path must be in the form <cache>/http/site/ZERO_INSTALL_INDEX.
  */
-static Task *fetch_site_index(const char *path)
+static Task *fetch_site_index(const char *path, int use_cache)
 {
 	Task *task;
 	char buffer[MAX_URI_LEN];
@@ -413,7 +413,7 @@ static Task *fetch_site_index(const char *path)
 
 	task->step = got_site_index;
 
-	wget(task, buffer, path, 0);
+	wget(task, buffer, path, use_cache);
 	if (task->child_pid == -1) {
 		task_destroy(task, 0);
 		task = NULL;
@@ -479,7 +479,7 @@ Index *get_index(const char *path, Task **task, int force)
 	}
 
 	if (task)
-		*task = fetch_site_index(index_path);
+		*task = fetch_site_index(index_path, !force);
 
 	return NULL;
 }

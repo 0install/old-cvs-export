@@ -112,10 +112,7 @@ static void handle_root_request(int request_fd)
 	if (!ddd)
 		goto err;
 	fprintf(ddd, "LazyFS\n"
-		"d 0 %ld http%c"
-		"d 0 %ld ftp%c"
-		"d 0 %ld https%c",
-		now, 0, now, 0, now, 0);
+		"d 0 %ld 0http%c", now, 0);
 	if (fclose(ddd))
 		goto err;
 
@@ -127,7 +124,8 @@ err:
 	perror("handle_root_request");
 	fprintf(stderr, "Unable to write root ... file\n");
 out:
-	close(request_fd);
+	if (request_fd != -1)
+		close(request_fd);
 	chdir("/");
 }
 
@@ -411,6 +409,9 @@ int main(int argc, char **argv)
 	assert(len >= 1 && len < sizeof(cache_dir));
 	cache_dir[len] = '\0';
 	printf("Zero Install started: using cache directory '%s'\n", cache_dir);
+
+	/* Ensure root is uptodate */
+	handle_root_request(-1);
 
 	helper = open_helper();
 
