@@ -110,7 +110,7 @@ web-server. We'll create a script to make this easier, which we'll save as
 alias 0build=/uri/0install/zero-install.sourceforge.net/bin/0build
 cd `dirname "$0"`
 (cd site &amp;&amp; 0build) || exit 1
-rsync -av --delete --rsh="ssh -l fred" export/.0inst-{archives,index.tgz,index.tar.bz2} roxos.sunsite.dk:/path/to/htdocs/
+rsync -av --delete --rsh="ssh -l <b>fred</b>" export/.0inst-{archives,index.tgz,index.tar.bz2} <b>roxos.sunsite.dk</b>:<b>/path/to/htdocs/</b>
 </pre>
 
 <p>
