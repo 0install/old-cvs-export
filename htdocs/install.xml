@@ -178,6 +178,12 @@ were already running an older version, this step also remounts /uri/0install
 and loads the new module.
 </p>
 
+<div class='note'>
+If you're behind an http (web) proxy, you'll need to use
+<pre>export http_proxy=HOST:PORT</pre> in the <tt>/etc/init.d/0install</tt>
+script.
+</div>
+
 <p>
 Now, run the helper application (it will just wait, without doing anything).
 You can look at <tt>/var/log/daemon.log</tt> (or whatever your system uses)
