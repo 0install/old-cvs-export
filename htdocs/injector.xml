@@ -22,7 +22,7 @@ according to rules specified by the user:
 <h2>Trying it out</h2>
 
 <p>
-A prototype of the injector is now available. To try it out, you will need:
+To use the injector, you will need:
 </p>
 
 <ul>
@@ -36,7 +36,7 @@ $ gpg --recv-key --keyserver www.keyserver.net 59A53CC1
 </li>
 </ul>
 
-<div class='note'>The current release (0.7) is an experimental release. It may
+<div class='note'>The current release (0.7) is a developer release. It may
 contain a few bugs.</div>
 
 <p>

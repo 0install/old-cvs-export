@@ -12,7 +12,7 @@ I've noticed that if you describe a security model with digital signatures
 and GPG keys, people start worrying about all kinds of unlikely theoretical
 exploits. Whereas if you just stick software on the web with no security
 what-so-ever, everyone seems happy to download and use it anyway.
-Still, I'll have a go anyway...
+Still, I'll have a go...
 </p>
 
 <h2>Overview</h2>
