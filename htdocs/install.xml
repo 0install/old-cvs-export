@@ -44,6 +44,12 @@ specific, despite the name) and
 Kernel</a>.
 </p>
 
+<div class='note'>
+<strong>RedHat 9 users</strong> who are using the stock RedHat kernel can
+<a href="http://prdownloads.sourceforge.net/zero-install/zero-install-rh9-0.1.7.tgz?download">download the RedHat 9 binary version</a>, then skip the
+'configure' and 'make' steps below, continuing from the install step.
+</div>
+
 <p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-inst-0.1.7.tgz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-inst-0.1.7.tgz.sig">GPG Sig</a> ]. Extract it, and run
 configure (things you type are shown in bold):</p>
 
@@ -88,9 +94,8 @@ in the makefile.
 </div>
 
 <p>
-Then run make and install it (use su to get the root prompt, #):
+Then run make to compile it:
 </p>
-
 <pre>
 $ <b>make</b>
 gcc -c -I/lib/modules/2.4.20/build/include -Wno-trigraphs 
@@ -102,6 +107,14 @@ gcc -O2 -Wall -Wstrict-prototypes -g   -c -o fetch.o fetch.c
 gcc -O2 -Wall -Wstrict-prototypes -g   -c -o control.o control.c
 gcc -o zero-install zero-install.o support.o fetch.o control.o -lexpat
 gcc -O2 -Wall -Wstrict-prototypes -g    0show.c   -o 0show
+</pre>
+
+<div class='note'>People installing a binary version rejoin us here...</div>
+<p>
+Now install it (use su to get the root prompt, #):
+</p>
+
+<pre>
 $ <b>su</b>
 # <b>make install</b>
 mkdir -p /lib/modules/`uname -r`/kernel/fs/lazyfs
