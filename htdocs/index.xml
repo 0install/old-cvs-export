@@ -61,6 +61,18 @@ system automatically cached the remote resources when they were accessed. You
 could have run Memo from a shell prompt, and it would have worked just as well.
 </p>
 
+<div class='note' style='text-align: left'><h3>Key points</h3>
+<ul>
+<li>Software is only ever <i>cached</i>, not <i>installed</i>. Anyone can run
+any software, and nothing is run as root.</li>
+<li>Running a program is done in the same way whether it's cached or not.</li>
+<li>Running cached software is as fast as running traditionally-installed
+software.</li>
+<li>Zero Install is both easier and more secure than traditional packaging
+systems.</li>
+</ul>
+</div>
+
 <p class='q'>What about package management systems like APT?</p>
 
 <p>
