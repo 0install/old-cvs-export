@@ -225,6 +225,8 @@ static void end_element_find(void *userData, const XML_Char *name)
 	else if (strcmp(content, current_leaf) == 0) {
 		printf("Match in %s!\n", name);
 		item_in_group = name[sizeof(ZERO_NS)];
+		if (item_in_group == 'd' || item_in_group == 'l')
+			found_type = item_in_group;
 	}
 	content_len = -1;
 }
@@ -247,6 +249,7 @@ int get_item_info(const char *index_path, const char *leaf, char *uri, int len)
 	index = open(index_path, O_RDONLY);
 	if (index == -1) {
 		perror("open");
+		fprintf(stderr, "(opening %s)\n", index_path);
 		goto out;
 	}
 
@@ -292,12 +295,14 @@ int get_item_info(const char *index_path, const char *leaf, char *uri, int len)
 		fprintf(stderr, "Item '%s' not found in '%s'\n",
 				leaf, index_path);
 		return EINVAL;
+	} else if (found_type == 'd') {
+		return EISDIR;
 	} else if (!*uri) {
-		if (found_type == 'd')
-			return EISDIR;
 		fprintf(stderr, "No archive for '%s'\n", leaf);
 		return EINVAL;
 	}
+
+	assert(found_type == 'f' || found_type == 'e');
 
 	err = 0;
 out:
@@ -307,4 +312,14 @@ out:
 		XML_ParserFree(parser);
 
 	return err;
+}
+
+/* Unpack the archive, which should contain the file 'leaf'. Use the
+ * index file to find out what other files should be there and extract them
+ * too. Ensure types, sizes and MD5SUMs match.
+ */
+void unpack_archive(const char *leaf)
+{
+	printf("TODO: this is just a quick hack!\n");
+	system("tar xzf archive.tgz");
 }

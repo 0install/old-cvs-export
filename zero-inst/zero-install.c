@@ -311,7 +311,8 @@ static int ensure_dir(const char *path)
 static void wget(Request *request, const char *uri, char *path,
 		 int use_cache)
 {
-	const char *argv[] = {"wget", "-q", "-O", path, uri, NULL};
+	const char *argv[] = {"wget", "-v", "-O", path, uri,
+			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
 
 	printf("Fetch '%s'\n", uri);
@@ -345,41 +346,10 @@ static void wget(Request *request, const char *uri, char *path,
 	_exit(1);
 }
 
-/* /http/www.foo.org/some/path, one, two to
- * http://www.foo.org/some/path/one/two
- *
- * The two 'leaf' components are appended, if non-NULL.
- * 0 on error, which will have been already reported.
- */
-static int build_uri(char *buffer, int len, const char *path,
-		     const char *leaf1, const char *leaf2)
+static void request_done_head(Request *request)
 {
-	int n;
-	char *slash;
-
-	assert(path[0] == '/');
-	path++;
-
-	slash = strchr(path, '/');
-	assert(slash != NULL && slash != path);
-
-	n = slash - path;	/* Length of protocol (http=4) */
-	if (n > len)
-		goto too_big;
-	memcpy(buffer, path, n);
-	path += n;
-	buffer += n;
-	len -= n;
-
-	if (snprintf(buffer, len, ":/%s%s%s%s%s", path,
-			leaf1 ? "/" : "", leaf1 ? leaf1 : "",
-			leaf2 ? "/" : "", leaf2 ? leaf2 : "") > len - 1)
-		goto too_big;
-
-	return 1;
-too_big:
-	fprintf(stderr, "Path '%s' too long to convert to URI\n", path);
-	return 0;
+	printf("TODO: only remove the head!\n");
+	finish_request(request);
 }
 
 /* Either do finish_request or start a child process and advance state */
@@ -407,12 +377,25 @@ static void request_ensure_running(Request *request)
 			goto err;
 		}
 		build_ddd_from_index(path);
-		goto err;
+		request_done_head(request);
+		return;
 	}
 
 	if (request->state == FETCHING_ARCHIVE) {
 		fprintf(stderr, "Got archive!\n");
-		exit(EXIT_SUCCESS);
+		if (snprintf(path, sizeof(path), "%s%s/", cache_dir,
+		    request->path) > sizeof(path) - 1) {
+			fprintf(stderr, "Path too long\n");
+			goto err;
+		}
+		if (chdir(path)) {
+			perror("chdir");
+			goto err;
+		}
+		unpack_archive(first_rq->leaf);
+		chdir("/");
+		request_done_head(request);
+		return;
 	}
 
 	if (!strchr(request->path + 1, '/')) {
@@ -458,13 +441,20 @@ static void request_ensure_running(Request *request)
 
 	err = get_item_info(path, first_rq->leaf, uri, sizeof(uri));
 	if (!err) {
+		char base[MAX_URI_LEN];
+
 		request->state = FETCHING_ARCHIVE;
-		if (snprintf(path, sizeof(path),
-			"%s%s/%s/archive.tgz" , cache_dir, request->path, 
-			first_rq->leaf) > sizeof(path) - 1) {
+		if (snprintf(path, sizeof(path), "%s%s/archive.tgz",
+				cache_dir, request->path) > sizeof(path) - 1) {
 			fprintf(stderr, "Path too long\n");
 			goto err;
 		}
+
+		if (!build_uri(base, sizeof(base), request->path, NULL, NULL))
+			goto err;
+
+		if (!uri_ensure_absolute(uri, sizeof(uri), base))
+			goto err;
 
 		wget(request, uri, path, 0);
 		if (!request->child_pid)
