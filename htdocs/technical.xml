@@ -109,9 +109,13 @@ files in Makefile.</li>
 </ul>
 
 <div class='note'>
+<p>
 For a better approach than using --rpath, see the
 <tt>/uri/0install/zero-install.sourceforge.net/libs/libhello-1.0</tt>
 example library, which changes the soname to an absolute path.
+</p>
+<p>
+See <a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/682">this thread</a> for more information.</p>
 </div>
 
 </html>
