@@ -100,11 +100,12 @@ for a more detailed list of the advantages of Zero Install.
 
 <p class='q'>Isn't running stuff off the net a security risk?</p>
 
-<p>Isn't that where you get your software from anyway? Zero Install can
-automatically perform a number of checks for you, and since it doesn't run any
-of the remote code as root, you can try software out safely as a 'guest' user.
-Once downloaded, the programs are run from the cache, without even checking the
-original sites for updates (you have to tell it to update manually).
+<p>Isn't that where you get your software from anyway? Zero Install
+automatically performs a number of checks for you (such as checking MD5 sums
+and GPG signatures), and since it doesn't run any of the remote code as root,
+you can try software out safely as a 'guest' user. Once downloaded, the
+programs are run from the cache, without even checking the original sites for
+updates (you have to tell it to update manually).
 </p>
 
 <p>See the <a href="security.html">security model</a> document for more
