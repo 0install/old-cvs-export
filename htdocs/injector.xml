@@ -178,7 +178,7 @@ is refreshed (which happens when you click on <b>Refresh</b>, or when <b>Network
 to <b>Full</b>).
 </p>
 
-<h3>Versions</h3>
+<h2>Versions</h2>
 
 <p>
 An implementation (in the Zero Install sense) is always some particular
@@ -348,7 +348,7 @@ The injector will also examine the dependancies of ROX-Lib and Python
 recursively.
 </p>
 
-<h3>Running the injector on itself</h3>
+<h2>Running the injector on itself</h2>
 
 <p>(this section is just for fun ;-)</p>
 
