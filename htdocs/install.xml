@@ -5,7 +5,12 @@
 
 <p>
 Although the system makes installing other software very easy, the Zero
-Install system itself still requires some work to install.
+Install system itself still requires some work to install. You'll also
+need to have <a href="http://freshmeat.net/depends/download-all/39759/">a few
+other things</a> installed first (libxml to parse the XML index files, wget to
+download archives, and tar and gzip to extract them). Most systems will have
+these installed already, although you may be missing the header files for
+libxml (libxml-dev).
 </p>
 
 <div class='note'>
