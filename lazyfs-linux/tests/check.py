@@ -713,6 +713,36 @@ class Test2WithHelper(WithHelper):
 		
 	test23SelectFail = cstest('SelectFail')
 
+	def clientChangeMTime(self):
+		self.assertEquals(0, os.stat(fs + '/fred').st_mtime)
+		self.assertEquals("fred", file(fs + '/fred').read())
+		self.assertEquals(1, os.stat(fs + '/fred').st_mtime)
+	
+	def serverChangeMTime(self):
+		self.send_dir('/', ['f 4 0 fred'])
+		fd, path = self.next()
+		self.assertEquals('/fred', path)
+		self.put_dir('/', ['f 4 1 fred'])
+		self.put_file('/fred', 'fred', 0)
+		os.close(fd)
+	
+	test24ChangeMTime = cstest('ChangeMTime')
+
+	def clientChmod(self):
+		self.assertEquals(0644, os.stat(fs + '/fred').st_mode & 0777)
+		self.assertEquals("fred", file(fs + '/fred').read())
+		self.assertEquals(0755, os.stat(fs + '/fred').st_mode & 0777)
+	
+	def serverChmod(self):
+		self.send_dir('/', ['f 4 0 fred'])
+		fd, path = self.next()
+		self.assertEquals('/fred', path)
+		self.put_dir('/', ['x 4 0 fred'])
+		self.put_file('/fred', 'fred', 0)
+		os.close(fd)
+		
+	test24Chmod = cstest('Chmod')
+
 # Run the tests
 sys.argv.append('-v')
 unittest.main()

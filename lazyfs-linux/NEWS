@@ -1,3 +1,6 @@
+* Added unit tests to check that changes to the mtime and permissions trigger
+  an update (permissions bug reported by Wayne Scott).
+
 Version 0.1.26 (changes since 0.1.25)
 
 * Check that check.py is executable (reported by Olivier Kaloudoff).
