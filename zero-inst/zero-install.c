@@ -221,7 +221,7 @@ static void kernel_got_index(Task *task)
 static void kernel_task_step(Task *task, int success)
 {
 	if (success)
-		task_set_index(task, get_index(task->str, NULL, 0));
+		task_steal_index(task, get_index(task->str, NULL, 0));
 
 	if (task->index)
 		kernel_got_index(task);
@@ -263,7 +263,7 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	task->uid = uid;
 	task->fd = request_fd;
 
-	task_set_index(task, get_index(path, &task->child_task, 0));
+	task_steal_index(task, get_index(path, &task->child_task, 0));
 	if (task->child_task) {
 		assert(!task->index);
 		return;		/* Download in progress */

@@ -10,6 +10,7 @@ void task_destroy(Task *task, int success);
 void task_process_done(pid_t pid, int success);
 void task_set_string(Task *task, const char *str);
 void task_set_index(Task *task, Index *index);
+void task_steal_index(Task *task, Index *index);
 
 struct _Task {
 	TaskType type;

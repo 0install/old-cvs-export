@@ -128,13 +128,19 @@ void task_set_string(Task *task, const char *str)
 /* Sets task->index. Ref count is incremented. */
 void task_set_index(Task *task, Index *index)
 {
-	if (index) {
-		assert(index->ref > 0);
+	if (index)
 		index->ref++;
-	}
+	task_steal_index(task, index);
+}
 
+/* Sets task->index. Ref count ownership is transferred. */
+void task_steal_index(Task *task, Index *index)
+{
 	if (task->index)
 		index_free(task->index);
+
+	if (index)
+		assert(index->ref > 0);
 
 	task->index = index;
 }

@@ -355,7 +355,7 @@ static void got_site_index(Task *task, int success)
 	}
 
 	printf("[ got '%s' ]\n", task->str);
-	task_set_index(task, parse_index(task->str));
+	task_steal_index(task, parse_index(task->str));
 
 	if (!task->index) {
 		task_destroy(task, 0);
