@@ -143,7 +143,7 @@ and loads the new module.
 <p>
 Now, run the helper application (it will just wait, without doing anything).
 You can look at <tt>/var/log/daemon.log</tt> (or whatever your system uses)
-to see what it's doing.
+to see what it's doing. SuSE uses <tt>/var/log/messages</tt> instead.
 </p>
 
 <pre>
