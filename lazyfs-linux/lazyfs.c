@@ -1011,6 +1011,10 @@ static inline void mark_children_may_delete(struct dentry *dentry)
 	spin_unlock(&dcache_lock);
 }
 
+/* Drop our reference to dentry. If noone else holds a reference, add it to
+ * the to_be_removed list.
+ * Called with dcache_lock held.
+ */
 static void genocide_one(struct dentry *dentry, struct list_head *to_be_removed)
 {
 	if (dentry->d_parent == dentry)
@@ -1022,9 +1026,14 @@ static void genocide_one(struct dentry *dentry, struct list_head *to_be_removed)
 
 	/* Unhash it (unhashing seems to be safe provided there are no
 	 * child dentries).
+	 * This is identical to d_drop, but without taking dcache_lock again.
 	 */
-	//list_del_init(&dentry->d_hash);
-	d_drop(dentry);	/* Takes and releases dcache_lock */
+#ifdef LINUX_2_6_SERIES
+	__d_drop(dentry);
+#else
+	list_del(&dentry->d_hash);
+	INIT_LIST_HEAD(&dentry->d_hash);
+#endif
 
 	/* Turn it into its own subtree */
 	list_del_init(&dentry->d_child);

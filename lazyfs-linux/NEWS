@@ -1,3 +1,9 @@
+* Bugfix: SMP machines would deadlock in genocide_one due to trying to
+  aquire dcache_lock twice (reported by Taco Buitenhuis and Geraldo).
+
+* Moved the kernel section from the Technical file in
+  zero-install to the HACKING file here, and brought it up-to-date.
+
 Changes since 0.1.22:
 
 * Still set f_mapping when mapping a file even if its inode is already
