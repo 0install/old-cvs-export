@@ -9,6 +9,8 @@ ZERO_NS = 'http://zero-install.sf.net'
 
 def do_dir(path):
 	print "Building index file in", path
+	os.spawnvp(os.P_WAIT, 'python2.2',
+		['python2.2', '/usr/lib/python2.2/compileall.py', '-l', path])
 	doc = minidom.Document()
 	root = doc.createElementNS(ZERO_NS, 'directory')
 	doc.appendChild(root)
@@ -40,14 +42,14 @@ def do_dir(path):
 			files.append(item)
 		elif stat.S_ISLNK(info.st_mode):
 			child = doc.createElementNS(ZERO_NS, 'link')
-			child.setAttributeNS(None, 'target', readlink(item))
+			child.setAttributeNS(None, 'target', os.readlink(full))
 		nl(2)
 		child.appendChild(doc.createTextNode(item))
 		child.setAttributeNS(None, 'size', str(info.st_size))
 		child.setAttributeNS(None, 'mtime', str(info.st_mtime))
 		root.appendChild(child)
 
-	if 0 and files:	# Disabled
+	if files:
 		archive = os.path.join(path, '.0inst-contents.tgz')
 		os.spawnvp(os.P_WAIT, 'tar', ['tar', 'czf', archive,
 			'-C', path, '--'] + files)

@@ -14,7 +14,7 @@ class ListingHandler(ContentHandler):
 		self.dir = []
 
 	def startElement(self, element, attrs):
-		print "Start", `element`, `attrs`
+		#print "Start", `element`, `attrs`
 		self.attrs = attrs
 		self.data = ''
 	
@@ -23,11 +23,13 @@ class ListingHandler(ContentHandler):
 	
 	def endElement(self, element):
 		c = {'file':'f', 'dir': 'd',
-		     'exec':'x', 'link': 's'}.get(element, None)
+		     'exec':'x', 'link': 'l'}.get(element, None)
 		if c:
 			self.dir.append('%s %d %d %s' %
 				(c, int(self.attrs['size']),
 				int(self.attrs['mtime']), self.data))
+		if c == 'l':
+			self.dir[-1] += '\0%s' % self.attrs['target']
 
 def write_dir(dir, entries):
 	if dir == '/':
