@@ -5,7 +5,7 @@ TESTS := hello_glib
 GLIB := /uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386
 PKG_CONFIG_PATH=${GLIB}/lib/pkgconfig
 
-all: lazyfs.o ${TESTS}
+all: lazyfs.o #${TESTS}
 
 CC=gcc
 CFLAGS   := -O2 -Wall -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -g
