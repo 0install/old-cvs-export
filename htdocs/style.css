@@ -101,3 +101,9 @@ pre {
 img {
 	border: none;
 }
+
+p.zero {
+	border-left: 2px solid #888;
+	margin-left: 2em;
+	padding-left: 2em;
+}
