@@ -67,6 +67,7 @@ int verbose = 0;
 #define INDEX_CHECK_TIME (60 * 60)
 
 char cache_dir[MAX_PATH_LEN];
+int cache_dir_len;	/* strlen(cache_dir) */
 
 static const char *prog; /* argv[0] */
 
@@ -349,7 +350,6 @@ int main(int argc, char **argv)
 	int helper;
 	int control_socket;
 	int max_fd;
-	int len;
 
 	index_init();
 
@@ -371,8 +371,8 @@ int main(int argc, char **argv)
 	
 	prog = argv[0];
 
-	len = readlink(CACHE_LINK, cache_dir, sizeof(cache_dir));
-	if (len == -1) {
+	cache_dir_len = readlink(CACHE_LINK, cache_dir, sizeof(cache_dir));
+	if (cache_dir_len == -1) {
 		perror("readlink(" CACHE_LINK ")");
 		fprintf(stderr, "\nCan't find location of cache directory.\n"
 			"Make sure " MNT_DIR " is mounted and that you are \n"
@@ -380,9 +380,28 @@ int main(int argc, char **argv)
 			"module.\n");
 		return EXIT_FAILURE;
 	}
-	assert(len >= 1 && len < sizeof(cache_dir));
-	cache_dir[len] = '\0';
+	assert(cache_dir_len >= 1 && cache_dir_len < sizeof(cache_dir));
+	cache_dir[cache_dir_len] = '\0';
 	printf("Zero Install started: using cache directory '%s'\n", cache_dir);
+
+	if (1) {
+		printf("Literal: %s\n", build_filename("Hello world"));
+		printf("Combine: %s\n", build_filename("%s/%s", "one", "two"));
+		printf("Dir    : %s\n", build_filename("%d/%s", "one/two",
+								"three"));
+		printf("Percent: %s\n", build_filename("%d/%%s", "one/two"));
+		printf("Dot    : %s\n", build_filename("%d/%r.tgz", "one/two",
+							"index.xml"));
+		printf("Cache  : %s\n", build_filename("http://%c/foo",
+						"/var/cache/zero-inst/bob"));
+		printf("Host   : %s\n", build_filename("http://%h/foo",
+						"localhost.org/fred/bob"));
+		printf("Host2  : %s\n", build_filename("http://%h/foo",
+						"localhost.org"));
+
+		//printf("Error  : %s\n", build_filename("%d", "hello"));
+		//printf("Error  : %s\n", build_filename("%f", "hello"));
+	}
 
 	/* Ensure root is uptodate */
 	handle_root_request(-1);

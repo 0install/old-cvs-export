@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #include "global.h"
 #include "support.h"
@@ -96,28 +97,6 @@ int uri_ensure_absolute(const char *uri, const char *base,
 	memcpy(result + base_len + 1, uri, uri_len + 1);
 
 	return 1;
-}
-
-/* /www.foo.org/some/path, one, two to
- * http://www.foo.org/some/path/one/two
- *
- * The two 'leaf' components are appended, if non-NULL.
- * 0 on error, which will have been already reported.
- */
-int build_uri(char *buffer, int len, const char *path,
-		     const char *leaf1, const char *leaf2)
-{
-	assert(path[0] == '/');
-
-	if (snprintf(buffer, len, "http:/%s%s%s%s%s", path,
-			leaf1 ? "/" : "", leaf1 ? leaf1 : "",
-			leaf2 ? "/" : "", leaf2 ? leaf2 : "") > len - 1)
-		goto too_big;
-
-	return 1;
-too_big:
-	fprintf(stderr, "Path '%s' too long to convert to URI\n", path);
-	return 0;
 }
 
 /* Ensure that 'path' is a directory, creating it if not.
@@ -442,3 +421,130 @@ int check_md5(const char *path, const char *md5)
 	return retval;
 }
 
+/* Like g_strdup_printf. Special characters are:
+ * %s - insert string
+ * %d - insert directory (dirname) part (error if no /)
+ * %r - remove extension (must not be a / after last .)
+ * %c - cache path (removes leading "cache_dir/")
+ * %h - first path component (host; everything before the first slash)
+ *
+ * Returns a newly allocated string, or NULL on failure (error reported).
+ * free() the result.
+ */
+char *build_filename(const char *format, ...)
+{
+	va_list	ap;
+	int i;
+	int len = 0;
+	char *new, *out;
+	
+	va_start(ap, format);
+	for (i = 0; format[i]; i++) {
+		const char *str;
+		const char *slash, *dot;
+
+		if (format[i] != '%') {
+			len++;
+			continue;
+		}
+		i++;
+		if (format[i] == '%') {
+			len++;
+			continue;
+		}
+
+		str = va_arg(ap, char *);
+		switch (format[i]) {
+			case 'c':
+				assert(strncmp(cache_dir, str,
+						cache_dir_len) == 0);
+				assert(str[cache_dir_len] == '/');
+				assert(str[cache_dir_len + 1]);
+				assert(str[cache_dir_len + 1] != '/');
+				str += cache_dir_len + 1;
+				/* fallthrough */
+			case 's':
+				len += strlen(str);
+				break;
+			case 'h':
+				slash = strchr(str, '/');
+				if (slash) {
+					assert(slash != str);
+					len += slash - str;
+				} else
+					len += strlen(str);
+				break;
+			case 'd':
+				slash = strrchr(str, '/');
+				assert(slash);
+				len += slash - str;
+				break;
+			case 'r':
+				dot = strrchr(str, '.');
+				assert(dot);
+				assert(!strchr(dot + 1, '/'));
+				len += dot - str;
+				break;
+			default:
+				assert(0);
+		}
+	}
+	va_end(ap);
+
+	out = new = my_malloc(len + 1);
+	if (!new)
+		return NULL;
+
+	va_start(ap, format);
+	for (i = 0; format[i]; i++) {
+		const char *str;
+		const char *slash, *dot;
+		int to_copy = 0;
+
+		if (format[i] != '%') {
+			*(out++) = format[i];
+			continue;
+		}
+		i++;
+		if (format[i] == '%') {
+			*(out++) = '%';
+			continue;
+		}
+
+		str = va_arg(ap, char *);
+		switch (format[i]) {
+			case 'c':
+				str += cache_dir_len + 1;
+				/* fallthrough */
+			case 's':
+				to_copy = strlen(str);
+				break;
+			case 'h':
+				slash = strchr(str, '/');
+				if (slash) {
+					to_copy = slash - str;
+				} else
+					to_copy = strlen(str);
+				break;
+			case 'd':
+				slash = strrchr(str, '/');
+				to_copy = slash - str;
+				break;
+			case 'r':
+				dot = strrchr(str, '.');
+				to_copy = dot - str;
+				break;
+			default:
+				assert(0);
+		}
+		memcpy(out, str, to_copy);
+		out += to_copy;
+	}
+	va_end(ap);
+
+	assert(out = new + len);
+
+	*out = '\0';
+
+	return new;
+}

@@ -346,14 +346,10 @@ err:
 static void got_archive(Task *task, int success)
 {
 	if (success) {
-		char *slash = strrchr(task->str, '/');
 		char *dir;
 
-		dir = my_malloc(slash - task->str + 1);
+		dir = build_filename("%d", task->str);
 		if (dir) {
-			memcpy(dir, task->str, slash - task->str);
-			dir[slash - task->str] = '\0';
-
 			unpack_archive(task->str, dir, task->data);
 			free(dir);
 		}
@@ -443,47 +439,52 @@ err:
  */
 static Task *fetch_site_index(const char *path, int use_cache)
 {
-	Task *task;
-	char buffer[MAX_URI_LEN];
-	char *tgz;
-	int l;
+	Task *task = NULL;
+	char *tgz = NULL, *uri = NULL;
 
 	assert(strncmp(path, cache_dir, strlen(cache_dir)) == 0);
 
-	tgz = my_strdup(path);
-	l = strlen(path);
-	assert(strcmp(path + l - 4, ".xml") == 0);
-	strcpy(tgz + l - 4, ".tgz");
+	tgz = build_filename("%r.tgz", path);
+	if (!tgz)
+		goto out;
+	printf("[ archive for '%s' is '%s' ]\n", path, tgz);
 
 	for (task = all_tasks; task; task = task->next) {
 		if (task->type == TASK_INDEX && strcmp(task->str, tgz) == 0) {
 			fprintf(stderr, "Merging with task %d\n", task->n);
-			return task;
+			goto out;
 		}
 	}
 	
-	if (!build_uri(buffer, sizeof(buffer),
-			tgz + strlen(cache_dir), NULL, NULL))
-		return NULL;
+	assert(!task);
+
+	uri = build_filename("http://%c", tgz);
+	if (!uri)
+		goto out;
 
 	task = task_new(TASK_INDEX);
 	if (!task)
-		return NULL;
+		goto out;
 
 	task->step = got_site_index;
 
-	wget(task, buffer, tgz, use_cache);
+	wget(task, uri, tgz, use_cache);
 	if (task->child_pid == -1) {
 		task_destroy(task, 0);
 		task = NULL;
 	}
 
+out:
+	if (tgz)
+		free(tgz);
+	if (uri)
+		free(uri);
 	return task;
 }
 
 /* Returns the parsed index for site containing 'path'.
  * If the index needs to be fetched (or force is set), returns NULL and returns
- * the task in 'task'. If task is NULL, never start a task.
+ * the task in 'task'. If task is NULL, never starts a task.
  * On error, both will be NULL.
  */
 Index *get_index(const char *path, Task **task, int force)
@@ -542,65 +543,67 @@ Index *get_index(const char *path, Task **task, int force)
 	return NULL;
 }
 
+/* Decide the URI where the archive is to be downloaded from.
+ * file is the cache-relative path of a file in the group.
+ * free() the result.
+ */
+static char *get_uri_for_archive(const char *file, xmlNode *archive)
+{
+	xmlChar *href;
+	char *uri;
+
+	href = xmlGetNsProp(archive, "href", NULL);
+	assert(href);
+
+	/* Make URI absolute if needed */
+	if (!strstr(href, "://")) {
+		uri = build_filename("http://%h/%s", file + 1, href);
+	} else
+		uri = my_strdup(href);
+	xmlFree(href);
+
+	return uri;
+}
+/* file is the cache-relative path of a file in the group.
+ * Returns a full path for the new tmp file. The MD5sum is used
+ * to make the name unique within the directory.
+ * free() the result.
+ */
+static char *get_tmp_path_for_group(const char *file, xmlNode *group)
+{
+	xmlChar *md5 = NULL;
+	char *tgz;
+
+	md5 = xmlGetNsProp(group, "MD5sum", NULL);
+	assert(strlen(md5) == 32);
+	assert(strchr(md5, '/') == NULL);
+
+	tgz = build_filename("%s%d/" TMP_PREFIX "%s", cache_dir, file, md5);
+	xmlFree(md5);
+
+	return tgz;
+}
+
 /* 'file' is the path of a file within the archive */
 Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 {
 	Task *task = NULL;
-	char uri[MAX_URI_LEN];
-	char path[MAX_PATH_LEN];
-	char *slash;
-	int cache_len;
-	int stem_len;
-	char *relative_uri;
-	const char *abs_uri = NULL;
-	xmlChar *size_s, *md5 = NULL;
+	char *uri = NULL;
+	char *tgz = NULL;
 
-	cache_len = strlen(cache_dir);
-	slash = strrchr(file, '/');
-	stem_len = slash - file;
+	uri = get_uri_for_archive(file, archive);
+	tgz = get_tmp_path_for_group(file, archive->parent);
 
-	md5 = xmlGetNsProp(archive->parent, "MD5sum", NULL);
-	assert(strlen(md5) == 32);
-	assert(strchr(md5, '/') == NULL);
-	
-	if (cache_len + stem_len + sizeof(TMP_PREFIX) + 33 >= sizeof(path)) {
-		fprintf(stderr, "Path %s too long\n", file);
-		xmlFree(md5);
-		return NULL;
-	}
-	
-	memcpy(path, cache_dir, cache_len);
-	memcpy(path + cache_len, file, stem_len);
-	path[cache_len + stem_len] = '\0';
-
-	relative_uri = xmlGetNsProp(archive, "href", NULL);
-	assert(relative_uri);
-
-	if (!strstr(relative_uri, "://")) {
-		/* Make URI absolute */
-		slash = strchr(path + cache_len + 1, '/');
-		if (slash)
-			*slash = '\0';
-		
-		if (!build_uri(uri, sizeof(uri),
-				path + cache_len, relative_uri, NULL))
-			goto out;
-		abs_uri = uri;
-
-		if (slash)
-			*slash = '/';
-	} else
-		abs_uri = relative_uri;
-
-	strcpy(path + cache_len + stem_len, "/" TMP_PREFIX);
-	strcpy(path + cache_len + stem_len + sizeof(TMP_PREFIX), md5);
+	if (!tgz || !uri)
+		goto out;
 
 	if (verbose)
-		printf("Fetch archive as '%s'\n", path);
+		printf("Fetch archive as '%s'\n", tgz);
 	
+	/* Check that we're not already downloading it */
 	for (task = all_tasks; task; task = task->next) {
 		if (task->type == TASK_ARCHIVE &&
-				strcmp(task->str, path) == 0) {
+				strcmp(task->str, tgz) == 0) {
 			fprintf(stderr, "Merging with task %d\n", task->n);
 			goto out;
 		}
@@ -612,12 +615,16 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	task_set_index(task, index);
 
 	task->step = got_archive;
-	wget(task, abs_uri, path, 1);
+	wget(task, uri, tgz, 1);
 	task->data = archive;
 
-	size_s = xmlGetNsProp(archive->parent, "size", NULL);
-	task->size = atol(size_s);
-	xmlFree(size_s);
+	/* Store the size, for progress indicators */
+	{
+		xmlChar *size_s;
+		size_s = xmlGetNsProp(archive->parent, "size", NULL);
+		task->size = atol(size_s);
+		xmlFree(size_s);
+	}
 
 	if (task->child_pid == -1) {
 		task_destroy(task, 0);
@@ -625,9 +632,9 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	}
 
 out:
-	if (relative_uri)
-		xmlFree(relative_uri);
-	if (md5)
-		xmlFree(md5);
+	if (uri)
+		xmlFree(uri);
+	if (tgz)
+		xmlFree(tgz);
 	return task;
 }
