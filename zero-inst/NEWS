@@ -1,4 +1,12 @@
-* Fix nasty kernel bug (see 0test).
+* Fixed dentry leaks in lazyfs.
+
+* Lazyfs now notices updates to directories without needing them to be
+  explicitly opened.
+
+* When a directory has changed size or mtime, don't create a new inode.
+
+* Lots more test cases to check each of the fixed bugs.
+
 
 Changes since 0.1.11:
 

@@ -207,8 +207,6 @@ static void show_resources(void)
 	int any_non_zero = 0;
 	struct list_head *pos;
 
-	printk("Lazyfs current resource usage:\n");
-
 	for (i = 0; i < N_RESOURCES; i++) {
 		int j = atomic_read(&resources[i]);
 		if (j) {
@@ -217,15 +215,16 @@ static void show_resources(void)
 		}
 	}
 	if (!any_non_zero)
-		printk("No resources still in use.\n");
+		printk("lazyfs: No resources still in use.\n");
 
 	list_for_each(pos, &all_dinfo) {
 		struct lazy_de_info *info = 
 			list_entry(pos, struct lazy_de_info, all_dinfo);
 
-		printk("Dentry still allocated: '%s' (%s)\n",
+		printk("Dentry still allocated: '%s' (%s) at %p\n",
 				info->dentry->d_name.name,
-				info->dentry->d_inode ? "real" : "negative");
+				info->dentry->d_inode ? "real" : "negative",
+				info->dentry);
 	}
 }
 
@@ -246,10 +245,11 @@ static void show_refs(struct dentry *dentry, int indent)
 
 	for (i = 0; i < indent; i++)
 		printk(" ");
-	printk("'%s' [%d] %s %s\n", dentry->d_name.name,
+	printk("'%s' [%d] %s %s at %p\n", dentry->d_name.name,
 			atomic_read(&dentry->d_count),
 			indent != 0 && d_unhashed(dentry) ? "(unhashed)" : "",
-			!dentry->d_inode ? "(negative)" : "");
+			!dentry->d_inode ? "(negative)" : "",
+			dentry);
 
 	next = dentry->d_subdirs.next;
 	while (next != &dentry->d_subdirs) {
@@ -286,7 +286,6 @@ struct lazy_user_request {
 };
 
 static struct super_operations lazyfs_ops;
-static struct file_operations lazyfs_dir_operations;
 static struct inode_operations lazyfs_dir_inode_operations;
 static struct dentry_operations lazyfs_dentry_ops;
 static struct file_operations lazyfs_file_operations;
@@ -397,15 +396,39 @@ lazyfs_put_inode(struct inode *inode)
 	}
 }
 
+/* All information about an inode (size, mtime, etc) is stored in the
+ * ... file of it's parent directory.
+ */
+static int
+lazyfs_dentry_revalidate(struct dentry *dentry, int flags)
+{
+	if (dentry->d_parent == dentry) {
+		printk("lazyfs_dentry_revalidate: Root!\n");
+	} else {
+		ensure_cached(dentry->d_parent);
+
+		/* For directories, we also make sure the child list is
+		 * up-to-date for following.
+		 */
+		if (S_ISDIR(dentry->d_inode->i_mode))
+			ensure_cached(dentry);
+	}
+	return 1;
+}
+
 static void
 lazyfs_release_dentry(struct dentry *dentry)
 {
 	struct lazy_de_info *info = dentry->d_fsdata;
-	
+
 	if (dentry->d_inode)
 		BUG();
-	if (!info)
-		BUG();
+	if (!info) {
+		/* (could happen on OOM) */
+		printk("Warning: lazyfs_release_dentry '%s' has no info\n",
+				dentry->d_name.name);
+		return;
+	}
 	if (!list_empty(&info->request_list))
 		BUG();
 
@@ -451,7 +474,7 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 	inode->i_ctime = inode->i_mtime = mtime;
 	if (S_ISDIR(mode)) {
 		inode->i_op = &lazyfs_dir_inode_operations;
-		inode->i_fop = &lazyfs_dir_operations;
+		inode->i_fop = &dcache_dir_ops;
 		inode->i_mode |= 0111;
 	}
 	else if (S_ISREG(mode))
@@ -737,32 +760,48 @@ fetch:
 	return NULL;
 }
 
+static void recache_host_dentries(struct dentry *dentry)
+{
+	printk("recache_host_dentries(%s)\n", dentry->d_name.name);
+	/* XXX */
+}
+
 /* Try to open parent_host/dentry.name. If it works, and it has the correct
  * type, and (for directories) has a '...' file, return it (or the '...').
  *
  * Returns NULL if there is no error, but the host does not exist yet, or
  * if it exists, but is the wrong type of object.
- *
- * If parent_host is NULL, get the root of the cache.
  */
-static struct dentry *try_get_host_dentry(struct dentry *dentry,
-					  struct dentry *parent_host)
+static struct dentry *try_get_host_dentry(struct dentry *dentry)
 {
 	struct dentry *host_dentry;
 	mode_t mode, host_mode;
 	struct qstr name = dentry->d_name;	/* Copy, for hash */
 	struct super_block *sb = dentry->d_inode->i_sb;
 
-	if ((!parent_host) != (dentry == sb->s_root))
-		BUG();
-	
-	if (!parent_host) {
-		struct lazy_sb_info *sbi = SBI(sb);
-		host_dentry = dget(sbi->host_dentry);
-	} else {
+	if (dentry != sb->s_root) {
+		struct lazy_de_info *parent_info = dentry->d_parent->d_fsdata;
+		struct dentry *parent_host;
+
+		/* parent_host can't be NULL, but it can change under us */
+		parent_host = dget(parent_info->host_dentry);
+		if (!parent_host)
+			BUG();
+		inc(R_PARENT_HOST);
+
+		if (d_unhashed(parent_host))
+			recache_host_dentries(parent_host);
+
 		down(&parent_host->d_inode->i_sem);
 		host_dentry = lookup_hash(&name, parent_host);
 		up(&parent_host->d_inode->i_sem);
+
+		dput(parent_host);
+		dec(R_PARENT_HOST);
+	} else {
+		/* Looking up the root */
+		struct lazy_sb_info *sbi = SBI(sb);
+		host_dentry = dget(sbi->host_dentry);
 	}
 
 	if (IS_ERR(host_dentry))
@@ -823,7 +862,6 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 	struct super_block *sb = dentry->d_inode->i_sb;
 	struct lazy_sb_info *sbi = SBI(sb);
 	struct dentry *host_dentry;
-	struct dentry *parent_host = NULL;
 	struct lazy_de_info *info = dentry->d_fsdata;
 	int first_try = 1;
 	DECLARE_WAITQUEUE(wait, current);
@@ -831,21 +869,11 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 	if (!info)
 		BUG();
 
-	if (dentry != sb->s_root) {
-		struct lazy_de_info *parent_info = dentry->d_parent->d_fsdata;
-
-		/* parent_host can't be NULL, but it can change under us */
-		parent_host = dget(parent_info->host_dentry);
-		if (!parent_host)
-			BUG();
-		inc(R_PARENT_HOST);
-	}
-
 	add_wait_queue(&lazy_wait, &wait);
 	do {
 		int start_fetching = 0;
 
-		host_dentry = try_get_host_dentry(dentry, parent_host);
+		host_dentry = try_get_host_dentry(dentry);
 		if (host_dentry)
 			goto out;	/* Success or fatal error */
 	
@@ -901,10 +929,6 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 	} while (1);
 
 out:
-	if (parent_host) {
-		dput(parent_host);
-		dec(R_PARENT_HOST);
-	}
         current->state = TASK_RUNNING;
         remove_wait_queue(&lazy_wait, &wait);
 
@@ -948,15 +972,53 @@ static inline void mark_children_may_delete(struct dentry *dentry)
 	spin_unlock(&dcache_lock);
 }
 
+static void genocide_one(struct dentry *dentry)
+{
+	if (dentry->d_parent == dentry) {
+		printk("[ genocide_one: '%s' ]\n", dentry->d_name.name);
+		return;
+	}
+
+	/* Don't force it to stay */
+	atomic_dec(&dentry->d_count);
+
+	/* Don't allow listing, etc of this directory */
+	if (S_ISDIR(dentry->d_inode->i_mode))
+		dentry->d_inode->i_flags |= S_DEAD;
+
+	/* Unhash, only if unused */
+	if (atomic_read(&dentry->d_count)) {
+		printk("Dentry '%s' will be freed later\n",
+				dentry->d_name.name);
+		/* Break link from parent */
+		atomic_dec(&dentry->d_parent->d_count);
+		dentry->d_parent = dentry;
+		list_del_init(&dentry->d_child);
+	} else {
+		printk("Unhashing unused dentry '%s' now\n",
+				dentry->d_name.name);
+		list_del_init(&dentry->d_hash);
+	}
+}
+
 /* Problem: We can't delete a subtree if any of the dentries
  * in it are still being used. But, we can't rely on a later dput
  * to remove the subtree either.
  * Try turning every node into a separate tree, by unhashing every dentry
  * and setting their parents to themselves.
+ * (a count of zero means that the dentry can be freed at any time; this
+ * the the normal case for other filesystems, but we keep it non-zero
+ * normally to prevent losing bits)
+ *
+ * We scan through the whole tree. For each leaf node we drop the count
+ * by one, since we don't want to force it to stay. Then we shrink the
+ * dcache, which will free any dentries that have a count of zero.
+ *
+ * Anything with a non-zero count will eventually be dput() from elsewhere.
  */
 static void my_d_genocide(struct dentry *root)
 {
-	struct dentry *this_parent = root;
+	struct dentry *this_parent = root, *parent;
 	struct list_head *next;
 
 	spin_lock(&dcache_lock);
@@ -973,21 +1035,19 @@ resume:
 			this_parent = dentry;
 			goto repeat;
 		}
-		list_del(&dentry->d_hash);	/* Unhash */
-		INIT_LIST_HEAD(&dentry->d_hash);
-
-		atomic_dec(&dentry->d_count);
-		atomic_dec(&dentry->d_parent->d_count);
-		dentry->d_parent = dentry;
+		genocide_one(dentry);
 	}
-	if (this_parent != root) {
-		next = this_parent->d_child.next; 
-		
-		list_del(&this_parent->d_hash);	/* Unhash */
-		INIT_LIST_HEAD(&this_parent->d_hash);
 
-		atomic_dec(&this_parent->d_count);
-		this_parent = this_parent->d_parent;
+	/* Moving up to parent */
+
+	shrink_dcache_parent(this_parent);
+
+	next = this_parent->d_child.next; 
+	parent = this_parent->d_parent;
+	genocide_one(this_parent);
+		
+	if (this_parent != root) {
+		this_parent = parent;
 		goto resume;
 	}
 	spin_unlock(&dcache_lock);
@@ -999,9 +1059,13 @@ resume:
  */
 static void remove_dentry(struct dentry *dentry)
 {
+	struct super_block *sb = dentry->d_inode->i_sb;
+
+	printk("Before remove_dentry(%s)\n", dentry->d_name.name);
+	show_refs(sb->s_root, 0);
 	my_d_genocide(dentry);
-	d_delete(dentry);
-	dput(dentry);
+	printk("After remove_dentry(%s)\n", dentry->d_name.name);
+	show_refs(sb->s_root, 0);
 }
 
 static void sweep_marked_children(struct dentry *dentry)
@@ -1034,12 +1098,21 @@ restart:
 	shrink_dcache_parent(dentry);
 }
 
+/* For directories, returns false but updates time */
 static inline int
 has_changed(struct inode *i, mode_t mode, size_t size, TIME_T time,
 	    struct qstr *link_target)
 {
-	if (i->i_mode != mode || i->i_size != size ||
-			!TIMES_EQUAL(i->i_mtime, time))
+	if ((i->i_mode & ~0777) != (mode & ~0777))
+		return 1;
+
+	if (S_ISDIR(mode)) {
+		i->i_size = size;
+		i->i_mtime = time;
+		return 0;
+	}
+
+	if (i->i_size != size || !TIMES_EQUAL(i->i_mtime, time))
 		return 1;
 
 	if (S_ISLNK(mode)) {
@@ -1151,7 +1224,6 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		existing = d_lookup(dir, &name);
 		if (existing && existing->d_inode) {
 			struct inode *i = existing->d_inode;
-			/* TODO: for directories, just update time/size */
 			if (has_changed(i, mode, size, time, &link_target)) {
 				remove_dentry(existing);
 				new_dentry(sb, dir, name.name,
@@ -1173,6 +1245,8 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 
 	if (listing != end)
 		BUG();
+
+	shrink_dcache_sb(dir->d_sb);
 
 	//show_refs(dir->d_inode->i_sb->s_root, 0);
 	
@@ -1314,22 +1388,15 @@ static int ensure_cached(struct dentry *dentry)
 	return err;
 }
 
-static int
-lazyfs_dir_open(struct inode *inode, struct file *file)
-{
-	int err;
-
-	err = ensure_cached(file->f_dentry);
-	if (err)
-		return err;
-
-	return dcache_dir_open(inode, file);
-}
-
 static void
 lazyfs_put_super(struct super_block *sb)
 {
 	struct lazy_sb_info *sbi = SBI(sb);
+
+	/* We may have moved some dentries to the unused list.
+	 * Need to free them here (Linux doesn't do it for us).
+	 */
+	shrink_dcache_sb(sb);
 
 	if (sbi) {
 		if (!list_empty(&sbi->to_helper))
@@ -1433,6 +1500,7 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 			return dget(sbi->cache_dentry);
 	}
 
+	printk("[ ensure lookup ]\n");
 	err = ensure_cached(dentry->d_parent);
 	if (err)
 		return ERR_PTR(err);
@@ -2007,17 +2075,9 @@ static struct file_operations lazyfs_file_operations = {
 	/* TODO: poll:	lazyfs_file_poll, */
 };
 
-static struct file_operations lazyfs_dir_operations = {
-	open:		lazyfs_dir_open, /* -> dcache_dir_open */
-	release:	dcache_dir_close,
-	llseek:		dcache_dir_lseek,
-	read:		generic_read_dir,
-	readdir:	dcache_readdir,
-	fsync:		dcache_dir_fsync,
-};
-
 static struct dentry_operations lazyfs_dentry_ops = {
 	d_release:	lazyfs_release_dentry,
+	d_revalidate:	lazyfs_dentry_revalidate,
 };
 
 #ifdef LINUX_2_5_SERIES

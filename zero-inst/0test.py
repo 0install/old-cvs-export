@@ -67,6 +67,14 @@ class Request:
 	def close(self):
 		self.c.close()
 
+def send_tree(xml, path='/uri/0install/0test'):
+	if path is not None:
+		path = "path='%s'" % path
+	else:
+		path = ""
+	r = Request('http://0test/.0inst-index.tgz')
+	r.reply('<?xml version="1.0"?>\n<site-index xmlns="http://zero-install.sourceforge.net" %s>%s</site-index>' % (path, xml))
+
 def test():
 	if not server:
 		# Helper might not have started yet...

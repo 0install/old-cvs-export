@@ -12,15 +12,17 @@
 #
 # The two branches of the if execute in parallel in the two processes.
 
-from __main__ import server, Request
 import os
+from __main__ import send_tree, server
+import stat
 
-# Missing path=
+def refresh():
+	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
+
+# Missing path
 if server:
-	r = Request('http://0test/.0inst-index.tgz')
-	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net"><dir size="1" mtime="2"/></site-index>')
-	r = Request('http://0test/.0inst-index.tgz')
-	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net"><dir size="1" mtime="2"/></site-index>')
+	send_tree('<dir size="1" mtime="2"/>', path = None)
+	send_tree('<dir size="1" mtime="2"/>', path = None)
 else:
 	try:
 		os.chdir('/uri/0install/0test')
@@ -35,15 +37,13 @@ else:
 
 # Empty root
 if server:
-	r = Request('http://0test/.0inst-index.tgz')
-	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net" path="/uri/0install/0test"><dir size="1" mtime="2"/></site-index>')
+	send_tree('<dir size="1" mtime="2"/>')
 else:
 	assert os.listdir('/uri/0install/0test') == []
 
 # Single symlink
 if server:
-	r = Request('http://0test/.0inst-index.tgz')
-	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net" path="/uri/0install/0test"><dir size="1" mtime="2"><link size="3" mtime="2" target="end" name="link"/></dir></site-index>')
+	send_tree('<dir size="1" mtime="2"><link size="3" mtime="2" target="end" name="link"/></dir>')
 else:
 	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
 	assert os.listdir('/uri/0install/0test') == ['link']
@@ -51,18 +51,14 @@ else:
 
 # Update to invalid index
 if server:
-	r = Request('http://0test/.0inst-index.tgz')
-	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net" path="/uri/0install/0test"><dir size="1" mtime="2"><link size="3" mtime="2" target="end"/></dir></site-index>')
+	send_tree('<dir size="1" mtime="2"><link size="3" mtime="2" target="end"/></dir>')
 else:
 	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'FAIL\n'
 	assert os.listdir('/uri/0install/0test') == ['link']
 
-print "finished", server
-
 # Update back to empty
 if server:
-	r = Request('http://0test/.0inst-index.tgz')
-	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net" path="/uri/0install/0test"><dir size="1" mtime="2"></dir></site-index>')
+	send_tree('<dir size="1" mtime="2"></dir>')
 else:
 	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
 	assert os.listdir('/uri/0install/0test') == []
@@ -71,12 +67,10 @@ else:
 # containing a file B, and an ancestor of A got removed from the tree,
 # then the count on B went down to zero, but it remained hashed.
 if server:
-	r = Request('http://0test/.0inst-index.tgz')
-	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net" path="/uri/0install/0test"><dir size="1" mtime="2"><dir name="apps" size="0" mtime="1"><dir name="ZeroProgress" size="4" mtime="3"><link name="foo" size="1" mtime="2" target="bar"/></dir></dir></dir></site-index>')
-	r = Request('http://0test/.0inst-index.tgz')
-	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net" path="/uri/0install/0test"><dir size="3" mtime="2"><dir name="apps" size="1" mtime="2"/></dir></site-index>')
+	send_tree('<dir size="1" mtime="2"><dir name="apps" size="0" mtime="1"><dir name="ZeroProgress" size="4" mtime="3"><link name="foo" size="1" mtime="2" target="bar"/></dir></dir></dir>')
+	send_tree('<dir size="3" mtime="2"><dir name="apps" size="1" mtime="2"/></dir>')
 else:
-	assert os.popen('cd /uri/0install/0test; 0refresh').read() == 'OK\n'
+	refresh()
 	assert os.listdir("/uri/0install/0test") == ['apps']
 	os.chdir('/uri/0install/0test/apps/ZeroProgress')
 	assert os.listdir('.') == ['foo']
@@ -88,4 +82,46 @@ else:
 	#file('foo') (forces creation of a negative dentry)
 	os.chdir('/')
 
-print "finished", server
+# Now make sure the kernel module notices that it's cache isn't uptodate...
+if server:
+	send_tree('<dir size="3" mtime="2"><link name="link" target="one" size="2" mtime="3"/></dir>')
+	send_tree('<dir size="3" mtime="2"><link name="link" target="two" size="2" mtime="3"/></dir>')
+else:
+	refresh()
+	assert os.listdir('/uri/0install/0test') == ['link']
+	assert os.readlink('/uri/0install/0test/link') == 'one'
+	refresh()
+	assert os.readlink('/uri/0install/0test/link') == 'two'
+
+if server:
+	send_tree('<dir size="3" mtime="2"><dir name="a" size="2" mtime="3"><dir name="b" size="2" mtime="3"><dir name="c" size="2" mtime="3"><link target="end" name="link" size="2" mtime="3"/></dir></dir></dir></dir>')
+else:
+	refresh()
+	assert os.readlink('/uri/0install/0test/a/b/c/link') == 'end'
+	#os.chdir('/uri/0install/0test/a/b/c')
+	a = open('/uri/0install/0test/a/b')
+	os.system("rm -r /var/cache/zero-inst/0test/a")
+	assert os.readlink('/uri/0install/0test/a/b/c/link') == 'end'
+	assert os.path.exists('/var/cache/zero-inst/0test/a/b/c')
+
+def inum(file): return os.lstat(file)[stat.ST_INO]
+def size(file): return os.lstat(file)[stat.ST_SIZE]
+
+# Check that we don't create new inodes without reason
+if server:
+	send_tree('<dir size="3" mtime="2"><dir name="a" size="2" mtime="3"><link name="b" size="2" mtime="3" target="one"/></dir></dir>')
+	send_tree('<dir size="3" mtime="2"><dir name="a" size="3" mtime="3"><link name="b" size="2" mtime="3" target="one"/></dir></dir>')
+	send_tree('<dir size="3" mtime="2"><link name="a" size="3" mtime="3" target="new"/></dir>')
+else:
+	refresh()
+	ai = inum('/uri/0install/0test/a')
+	bi = inum('/uri/0install/0test/a/b')
+	assert size('/uri/0install/0test/a') == 2
+	refresh()
+	assert inum('/uri/0install/0test/a') == ai
+	assert inum('/uri/0install/0test/a/b') == bi
+	assert size('/uri/0install/0test/a') == 3
+	refresh()
+	assert inum('/uri/0install/0test/a') != ai
+
+#print "finished", server
