@@ -1,3 +1,20 @@
+Changes since 0.1.9:
+
+* Lots of changes to the build process and layout:
+
+  - Linux subdirectory with Linux-specific bits.
+  - Uses automake.
+  - 'make install' target unloads old module an unmounts /uri
+  - 'make uninstall' removes entry from fstab
+  - 0show, 0refresh and zero-install binaries are installed
+  - 0build has been moved out -- it is now provided via zero-install itself
+
+* Zero-install now uses cached index files without refetching if they
+  were downloaded less than five minutes ago.
+
+* Fix permissions on control socket (0show and 0refresh didn't work for
+  anyone except the zero install user).
+
 Changes since 0.1.8:
 
 * Change to the control interface: lines are now terminated by \0, not \n.
