@@ -216,10 +216,10 @@ $ <b>cd zero-install-0.1.26</b>
 </pre>
 
 <p>
-For security reasons, zero install does not run as root. So you'll
-now need to choose a user to run it as. This could be your own user
-name, or (<a href="http://sourceforge.net/mailarchive/message.php?msg_id=6386789">ideally</a>) you could create a new user just for this purpose. Run
-configure with the name of your chosen user (here called 'zeroinst'):
+For <a href="http://sourceforge.net/mailarchive/message.php?msg_id=6386789">security reasons</a>,
+zero-install does not run as root. So you'll now need to create a new user for
+it (eg, using the <b>adduser</b> command, or with a tool such as SuSE's YaST).
+Run configure with the name of your chosen user (here called 'zeroinst'):
 </p>
 
 <pre>
