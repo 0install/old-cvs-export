@@ -1,3 +1,6 @@
+* Disconnect before unreffing connection (anonymous PPC porter; reported by
+  Adam S Many and Algardas Pelakauskas).
+
 Version 0.1.27:
 
 * Use new version of lazyfs.

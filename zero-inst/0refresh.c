@@ -153,7 +153,7 @@ static void refresh(const char *site, int force)
 
 	printf("OK\n");
 	dbus_message_unref(reply);
-
+	dbus_connection_disconnect(connection);
 	dbus_connection_unref(connection);
 }
 
