@@ -217,6 +217,8 @@ It worked!
 /etc/passwd is /bin/false; use /bin/sh)</li>
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/438">Using a web-proxy with http_proxy</a></li>
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/452">Multi-processor SMP machines</a></li>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/469">zero-install: handle_root_request: Unable to write ...</a>
+(check permissions and don't use libtrash)</li>
 </ul>
 
 <p>
