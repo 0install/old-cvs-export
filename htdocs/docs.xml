@@ -223,7 +223,7 @@ missing or too old. So a python script might instead start with:
 </p>
 
 <pre>
-	#!/bin/0run python.org/python 2003-07-05
+	#!/bin/0run python.org/python2.2 2003-07-05
 	print "Hello from python!"
 </pre>
 

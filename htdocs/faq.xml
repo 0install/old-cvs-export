@@ -152,15 +152,6 @@ See the <a href="security.html">security issues</a> document for
 more information.
 </p>
 
-<h3>Apps will run very slowly on the first load... users might think
-they've crashed</h3>
-
-<p>The system can provide a visual indication that software is being
-downloaded. Eg, a small box appears at the bottom of the screen saying
-"Fetching resources from www.gimp.org. Please wait..." when the Gimp
-is run for the first time. This can have progress bars, and maybe even
-a cancel button (the system knows which user triggered the download).</p>
-
 <h3>How do you do integration (eg, making a Start menu show all
 installed software)?</h3>
 

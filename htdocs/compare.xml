@@ -184,6 +184,24 @@ not for every site in the world. Thus, increasing the total amount of software
 available through Zero Install does not slow the system down.
 </p>
 
+<h3>Upgrading is very slow</h3>
+
+<p>
+Debian allows users to upgrade all their packages at once (with 'apt-get
+upgrade'). This allows users to keep up with security fixes and all the
+latest features. However, it requires downloading a vast amount of software,
+most of which won't be used before it's upgraded again.
+</p>
+
+<p class='zero'>
+Upgrading software in Zero Install only requires refetching the indexes. Thus,
+upgrading the whole system is very fast, and the actual software is only
+downloaded if it's used. It's also possible to 'upgrade' by simply deleting all
+the index files, causing them to be refetched on demand too. However, this may
+slow down other users of the computer, since they have to wait for each index
+to be refetched even if the software hasn't been updated.
+</p>
+
 <h2>Closing remarks</h2>
 
 <p>
