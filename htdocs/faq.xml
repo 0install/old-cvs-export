@@ -216,4 +216,13 @@ The <a href="http://www.autopackage.org">Autopackage</a> project is working
 on these issues; see their FAQ for a detailed look at the problems faced.
 </p>
 
+<h3>What happens if there are two programs which may not be run simultaneuosly
+for some reason?</h3>
+<p>
+Running and installing are separate. In Debian, for example, installing some
+software (eg, exim) may also cause it to run, but in zero install there is no
+install step, only the running step. So, you can 'install' any number of
+conflicting packages, but you can still only run one mail system at once.
+</p>
+
 </html>
