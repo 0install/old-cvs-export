@@ -19,7 +19,7 @@
 
 #define ZERO_INSTALL_INDEX ".0inst-index.xml"
 
-#define TMP_NAME ".0inst-archive.tgz"
+#define TMP_PREFIX ".0inst-tmp-"
 
 static void build_ddd_from_index(xmlNode *dir_node, char *dir);
 
@@ -217,23 +217,25 @@ out:
  * there and extract them too. Ensures types, sizes and MD5 sums match.
  * Changes cwd.
  */
-static void unpack_archive(const char *archive_dir, xmlNode *archive)
+static void unpack_archive(const char *archive_path, const char *archive_dir,
+				xmlNode *archive)
 {
 	int status = 0;
 	struct stat info;
 	pid_t child;
-	const char *argv[] = {"tar", "-xzf", "../" TMP_NAME, NULL};
+	const char *argv[] = {"tar", "-xzf", ".tgz", NULL};
 	xmlChar *size;
 	xmlNode *group = archive->parent;
 	
-	printf("\t(unpacking '%s/" TMP_NAME "')\n", archive_dir);
+	printf("\t(unpacking %s)\n", archive_path);
+	argv[2] = archive_path;
 
 	if (chdir(archive_dir)) {
 		perror("chdir");
 		return;
 	}
 
-	if (lstat(TMP_NAME, &info)) {
+	if (lstat(archive_path, &info)) {
 		perror("lstat");
 		return;
 	}
@@ -337,9 +339,17 @@ err:
 static void got_archive(Task *task, int success)
 {
 	if (success) {
-		task->str[strlen(task->str) - sizeof(TMP_NAME)] = '\0';
-		unpack_archive(task->str, task->data);
-		task->str[strlen(task->str)] = '/';
+		char *slash = strrchr(task->str, '/');
+		char *dir;
+
+		dir = my_malloc(slash - task->str + 1);
+		if (dir) {
+			memcpy(dir, task->str, slash - task->str);
+			dir[slash - task->str] = '\0';
+
+			unpack_archive(task->str, dir, task->data);
+			free(dir);
+		}
 	}
 
 	unlink(task->str);
@@ -495,14 +505,19 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	int stem_len;
 	char *relative_uri;
 	const char *abs_uri = NULL;
-	xmlChar *size_s;
+	xmlChar *size_s, *md5 = NULL;
 
 	cache_len = strlen(cache_dir);
 	slash = strrchr(file, '/');
 	stem_len = slash - file;
+
+	md5 = xmlGetNsProp(archive->parent, "MD5sum", NULL);
+	assert(strlen(md5) == 32);
+	assert(strchr(md5, '/') == NULL);
 	
-	if (cache_len + stem_len + sizeof(TMP_NAME) + 1 >= sizeof(path)) {
+	if (cache_len + stem_len + sizeof(TMP_PREFIX) + 33 >= sizeof(path)) {
 		fprintf(stderr, "Path %s too long\n", file);
+		xmlFree(md5);
 		return NULL;
 	}
 	
@@ -528,7 +543,8 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	} else
 		abs_uri = relative_uri;
 
-	strcpy(path + cache_len + stem_len, "/" TMP_NAME);
+	strcpy(path + cache_len + stem_len, "/" TMP_PREFIX);
+	strcpy(path + cache_len + stem_len + sizeof(TMP_PREFIX), md5);
 
 	printf("Fetch archive as '%s'\n", path);
 	
@@ -561,5 +577,7 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 out:
 	if (relative_uri)
 		xmlFree(relative_uri);
+	if (md5)
+		xmlFree(md5);
 	return task;
 }
