@@ -54,13 +54,13 @@ Kernel</a>.
 </div>
 -->
 
-<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-inst-0.1.9.tgz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-inst-0.1.9.tgz.sig">GPG Sig</a> ]. Extract it, and
+<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.10.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.10.tar.gz.sig">GPG Sig</a> ]. Extract it, and
 move to the new directory (things you type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-inst-0.1.9.tgz</b>
-$ <b>cd zero-inst-0.1.9</b>
+$ <b>tar xzf zero-install-0.1.10.tar.gz</b>
+$ <b>cd zero-install-0.1.10</b>
 </pre>
 
 <p>
@@ -74,21 +74,6 @@ configure with the name of your chosen user (here called 'zeroinst'):
 
 <pre>
 $ <b>./configure --with-user=zeroinst</b>
-creating cache ./config.cache
-checking for gcc... gcc
-checking whether the C compiler (gcc  ) works... yes
-checking whether the C compiler (gcc  ) is a cross-compiler... no
-checking whether we are using GNU C... yes
-checking whether gcc accepts -g... yes
-checking for directory with kernel source... /lib/modules/2.4.20/build
-checking for user to run helper as... zeroinst
-checking for kernel headers... OK
-checking for kernel series... Linux-2.4 series
-checking for platform type... Linux-ix86
-updating cache ./config.cache
-creating ./config.status
-creating Makefile
-creating config.h
 </pre>
 
 <p>
@@ -113,18 +98,6 @@ Then run make to compile it:
 </p>
 <pre>
 $ <b>make</b>
-if [ -n "" ]; then make -C /lib/modules/2.4.20/build SUBDIRS=`pwd` modules;
-  else gcc -c -I/lib/modules/2.4.20/build/include -Wno-trigraphs
-  -fno-strict-aliasing -fno-common -Wall -Wstrict-prototypes -O2 -Wall
-  -DMODULE -D__KERNEL__ -o lazyfs.o lazyfs.c; fi
-gcc -O2 -Wall -Wstrict-prototypes -g   -c -o zero-install.o zero-install.c
-gcc -O2 -Wall -Wstrict-prototypes -g   -c -o support.o support.c
-gcc -O2 -Wall -Wstrict-prototypes -g   -c -o fetch.o fetch.c
-gcc -O2 -Wall -Wstrict-prototypes -g   -c -o control.o control.c
-gcc -O2 -Wall -Wstrict-prototypes -g   -c -o index.o index.c
-gcc -o zero-install zero-install.o support.o fetch.o control.o index.o -lexpat
-gcc -O2 -Wall -Wstrict-prototypes -g    0show.c   -o 0show
-gcc -O2 -Wall -Wstrict-prototypes -g    0refresh.c   -o 0refresh
 </pre>
 
 <!--
@@ -138,30 +111,15 @@ Now install it (use su to get the root prompt, #):
 <pre>
 $ <b>su</b>
 # <b>make install</b>
-mkdir -p /lib/modules/`uname -r`/kernel/fs/lazyfs
-cp lazyfs.o /lib/modules/`uname -r`/kernel/fs/lazyfs/
-depmod -a
-[ -d /uri ] || mkdir /uri
-[ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst
-chown "zeroinst" /var/cache/zero-inst
-grep -q "^lazyfs" /etc/fstab ||
-  echo "lazyfs /uri lazyfs /var/cache/zero-inst 0 0" >> /etc/fstab
 </pre>
 
 <p>
 This will copy the new lazyfs module under /lib/modules/, and create the /uri
 mount point and the /var/cache/zero-inst cache directory. It will also add
-an entry to /etc/fstab to allow mounting /uri easily.
+an entry to /etc/fstab to allow mounting /uri easily. If you were already
+running an older version, this step also unmounts /uri and unloads the old
+module.
 </p>
-
-<p>
-If you're upgrading from a previous version, you'll need to unload
-the old lazyfs module at this point:
-</p>
-<pre>
-# <b>umount /uri</b>
-# <b>rmmod lazyfs</b>
-</pre>
 
 <p>
 Now mount /uri. Since the helper is not yet running, you won't be able to
