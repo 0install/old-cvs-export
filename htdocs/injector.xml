@@ -131,12 +131,12 @@ Adding impl with digest: sha1=aaeb7112bfe60523d1ea96936a636635f8fa794c
 
 <p>
 The injector selected suitable implementations of the two interfaces (injector-gui version 0.2 and
-injector version 0.3), it downloaded the archives from sourceforge and unpacked
-them into the cache directory (after checking that the signatures were correct).
+injector version 0.3). It then downloaded the archives from sourceforge, unpacked
+them, checked that their signatures were correct, and moved them into the cache directory.
 </p>
 
 <div class='note'>TODO: Archives are currently unpacked to your home directory, in
-<b>~/.cache/0install.net/implementations/</b>. In future, they will unpack to
+<b>~/.cache/0install.net/implementations</b>. In future, they will unpack to
 a shared directory under <b>/var/cache</b>, using a setuid helper (which will
 check the cryptographic digest first, of course).</div>
 
