@@ -30,7 +30,7 @@ static void do_mount(const char *cache_dir, const char *mount_dir)
 			0xC0ED0000 | MS_RDONLY | MS_NOSUID | MS_NODEV, &data))
 	{
 		perror("mount");
-		_exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 }
 
