@@ -58,10 +58,35 @@ def check_host(host):
 		return
 	handler = ListingHandler()
 	sax.parse(urllib2.urlopen('http://%s/%s' % (host, info_xml)), handler)
-	dir = os.path.join(cache, 'http', host)
-	if not os.path.exists(dir):
-		os.makedirs(dir)
 	write_dir('/http/%s/' % host, handler.dir)
+
+def check_res(path, host, resource):
+	leaf = os.path.basename(resource)
+	ddd = os.path.join(cache, 'http', host, os.path.dirname(resource),
+				'...')
+	link = 0
+	f = file(ddd)
+	assert f.read(7) == 'LazyFS\n'
+	for line in f.read().split('\0'):
+		if link:
+			link = 0
+			continue
+		if line[0] == 'l':
+			link = 1
+		print "got", line
+		if line.endswith(' ' + leaf):
+			break
+	else:
+		raise Exception('Nothing known about %s!' % resource)
+	print "cached", ddd
+	print line
+	if line[0] == 'd':
+		print "write", path
+		handler = ListingHandler()
+		uri = 'http://%s/%s/%s' % (host, resource, info_xml)
+		print "Fetch", uri
+		sax.parse(urllib2.urlopen(uri), handler)
+		write_dir(path, handler.dir)
 
 def handle(path):
 	if path == '/':
@@ -73,7 +98,7 @@ def handle(path):
 		if len(rest) == 1:
 			check_host(rest[0])
 		else:
-			print "Host %s, Res %s" % (rest[0], rest[1])
+			check_res(path, rest[0], rest[1])
 	else:
 		print "'%s'" % path
 

@@ -6,146 +6,69 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
 <head>
-<style type='text/css'>
-body { padding: 0.5cm; }
-div {
-	border: 1px solid black;
-	color: black;
-	background: #eee;
-	padding: .2cm;
-	text-align: center;
-}
-pre {
-	background: #eee;
-	color: black;
-	padding: 0.2cm;
-}
-img {
-	border: none;
-}
-</style>
-<title>The Zero Installation System</title>
+<link rel='stylesheet' type='text/css' href='style.css' />
+<title>The Zero Install system</title>
 </head>
 <body>
 
-<h1>The Zero Installation System</h1>
+<h1>The Zero Install system</h1>
+<p class='author'>Thomas Leonard &lt;tal197 at users.sf.net&gt;, 2003</p>
 
-<p>Thomas Leonard &lt;tal00r at ecs.soton.ac.uk&gt;, 2003</p>
+<h2>Introduction</h2>
 
-<h2>Overview</h2>
+<p class='q'>What is it?</p>
+
 <p>
-Software installation has always been a difficult issue. There are
-many different approaches to the problem. All the common ones have
-serious problems. This page is mainly aimed at Linux users, although
-other systems have similar issues.
-</p>
-<p>
-The zero-installation system makes software installation not merely
+The Zero Install system makes software installation not merely
 easy, but unnecessary. Users run their applications directly from the
 internet from the software author's pages. Caching makes this as fast
 as running a normal application after the first time, and allows
 off-line use.
 </p>
-<p>
-First, we'll take a look at the current packaging systems used on
-Linux and see what problems they have. Then we'll try using the
-zero-installation system to run some software (you can use any recent
-Linux system to try it out).
-</p>
-<div>
-This is a very early prototype proof-of-concept system. There are many
-details to be worked out.
-</div>
 
-<h2>Review of current systems</h2>
+<p class='q'>Show me an example.</p>
 
 <p>
-The basic problem is: software authors want to put their software on
-their web site and let users easily get it and run it. Software is
-generally distributed in a variety of formats under Linux:
+Let's say you're looking for a little desktop reminder application. You
+search <a href="http://freshmeat.net">Freshmeat.net</a> and find
+<a href="http://rox.sf.net/memo.php3">Memo</a>. You open the directory
+containing Memo (on the remote machine) with your file manager:
 </p>
 
-<dl>
-<dt>Source tarballs</dt>
-<dd>Installing from a source tarball typically requires:
-  <ol>
-   <li>Downloading an archive</li>
-   <li>Extracting the archive</li>
-   <li>Running ./configure; make</li>
-   <li>Fetching any libraries this software requires and performing
-this whole sequence on each one, recursively.</li>
-   <li>Entering the root password</li>
-   <li>Running make install</li>
-  </ol>
 <p>
-If installed to a system-wide location (so that other users can use
-the program easily) then the install step must typically be done as
-'root', making this method of installation a major security risk (if
-the software is just normal application software, such as a word
-processor, which doesn't otherwise require root privileges).
+Click on Memo to run it, and it will run. Now, Memo depends on ROX-Lib2,
+which requires pygtk, with needs python2.2 and GTK+-2, which needs glib,
+pango, AKT and pkg-config. But that's OK, Memo runs everything it
+needs directly from the remote machines where they're stored.
 </p>
-<p>
-If installed to the user's home directory then the user must do all
-the above, except:
-</p>
- <ul>
-  <li>They don't have to enter the root password.</li>
-  <li>They must choose a location for all the files, cluttering their
-home directories.</li>
-  <li>They must edit their PATH, LD_LIBRARY_PATH, MANPATH and similar
-environment variables.</li>
- </ul>
-<p>
-Uninstallation can also be rather tricky, depending on how well the
-author has tested it.
-</p>
-</dd>
-
-<dt>Binary tarballs</dt>
-<dd>These are similar to source tarballs, except:
-  <ul>
-    <li>You don't need a compiler.</li>
-    <li>You often need to have exactly the same library versions as the
-person who made the binary.</li>
-  </ul>
-</dd>
-
-<dt>RPMs, Debs, etc</dt>
-<dd>Similar to binary tarballs, but your system has to match a
-particular well-known system (eg, RedHat 8.0) rather than whatever the
-developer is using. Generally they can't be shared across
-distributions, although alien tries to help with this.
-</dd>
-
-<dt>ROX application directories</dt>
-<dd>These packages only need to be unpacked; there is no install step
-and so security is better. They can also be installed by users without
-modifying environment variables. However, they are still not shared
-automatically between users, and users must install libraries
-manually.
-</dd>
-
-<dt>apt-get, and similar</dt>
-<dd>
-<p>
-This uses packages such as Debs (see above) but handles dependancies
-by automatically installing the packages that it depends upon.
-</p>
-<p>
-This requires a central authority to produce the packages. If the user
-wants to use a third-party product, they must edit their sources.list
-file and refresh their database. Such packages often become
-out-of-date quickly.
-</p>
-</dd>
-</dl>
 
 <p>
-All the above methods are either a lot of work, or run the install
-(unnecessarily) as root.
+The first time you ran Memo, a progress indicator appeared showing the
+download progress. If you quit it and run it again, it will start instantly,
+because the Zero Install system has cached everything locally.
+</p>
+
+<p class='q'>What about package management systems like APT?</p>
+
+These require a central authority to maintain the database. For example, you
+can't install Memo using the Debian, because they don't package it. The best an
+author can do is provide Debian .deb packages on the site. But then the user
+still has to do the manual dependancy resolution above for everything not in
+Debian's system.
+</p><p>
+Also, a user installing from a .deb, .rpm, etc still has to enter the root
+password and run a script as root. This is inconvenient and a security risk.
+Zero Install allows uses to run software without root privileges.
+</p>
+See the <a href="compare.html">comparison with other systems</a> document
+for a more detailed list of the advantages of Zero Install.
 </p>
 
 <h2>Setting up the zero-installation system</h2>
+
+<p>
+<a href="http://www.osnews.com/story.php?news_id=2949">The Very Verbose Guide to Updating and Compiling Your Debian Kernel</a>
+</p>
 
 <p>
 Although it allows other software to be run easily, the
@@ -301,226 +224,6 @@ Hello World from C!
 <p>
 The .0inst-platform is a symlink whose target is "Linux-ix86" (or
 whatever platform the user is running on).
-</p>
-
-<h2>The future</h2>
-<p>
-To save bandwidth, because most people will be running these examples
-from normal Linux systems, they use the copy of /bin/sh, python and
-pygtk currently on your machine. In a full Zero-Installation system,
-even those things would be pulled in automatically.
-</p>
-<p>
-We can use this system to provide binaries, shared libraries and so
-on. There needs to be a way to easily update the cache (currently, you
-have to unmount the filesystem and quit 'lazy', wipe the area of the
-cache you want to update and restart everything).
-</p>
-
-<h2>FAQ</h2>
-
-<h3>I haven't tried it yet, but it sounds really complicated</h3>
-<p>It isn't. Try it. Now.</p>
-
-<h3>Why are you abandoning application directories after supporting
-them all these years?</h3>
-<p>I'm not. This system is built on application directories. It would
-never work without them. You didn't try it out, did you?</p>
-
-<h3>Isn't fetching stuff over the web really slow?</h3>
-<p>You have to get stuff over the web anyway the first time. The
-system caches everything, and will never even check that the cache is
-up-to-date if it can satisfy a request without updating.
-</p><p>
-There is effectively no speed hit to using stuff once it's downloaded.
-The fact that everything is referenced by fixed URIs instead of
-having to search means that this system can actually be faster in some
-cases. Consider loading a shared library. At the moment, a program
-must, on startup:
-</p>
-<ol>
- <li>Load /etc/ld.so.cache and find the full path of each library from
-that.</li>
- <li>Load the actual library by it's path.</li>
-</ol>
-
-<p>With Zero-installation, this becomes:</p>
-
-<ol>
- <li>Load the actual library by it's path.</li>
-</ol>
-<p>
-It also removes the need to run ldconfig at install time (handy,
-since there is no 'install time' ;-), losing a major source of errors
-and user confusion.
-</p>
-<p>
-As far as network bandwidth goes, the worst-case situation is that you
-downloaded the entire archive, which is what you'd have had to do
-anyway. However, by default each file is downloaded on demand. Thus,
-if you want to run a ROX-Lib2 application like Archive, but you don't
-want to read the ROX-Lib2 developer reference documentation then it
-doesn't get downloaded (until you try to access it).
-</p>
-
-<h3>What about people without internet connections?</h3>
-<p>You can still install from CD. Either install an application in the
-normal AppDir fashion (ie, by dragging to your home directory), or by
-providing a web-cache on the CD and merging it with the master one (we
-could provide software to do this easily).
-</p>
-
-<h3>This is just a network filesystem, isn't it?</h3>
-<p>Yes. It's currently using HTTP because pretty much everyone can put
-stuff on a webserver, whereas it's often hard to find someone who will
-host other types of server. The scheme can use other methods if
-required.</p>
-<p>The main difference between this and standard shares is the way the
-paths use the internet DNS system. This allows us to link to resources
-by fixed paths, in the same way that I can put up a link to
-<a href="http://rox.sourceforge.net">ROX</a> on this web page without
-worrying about where the user has 'installed' the web page.
-</p>
-
-<h3>Isn't is really hard to find applications if you always have to
-type URIs for them?</h3>
-<p>Yes. As with the web, that works but it's not the intended way to
-do it. Like the web, you have links to the URIs, and you use the links
-normally.</p>
-<p>
-For example, having opened the ROX-Filer directory showing Archive in
-the walk-through above, you can drag Archive from the window onto your
-panel. Now you access it by dragging things to compress to the panel
-icon as usual; no URIs.
-</p><p>
-You could also put it on the pinboard, bookmark the directory, add
-Archive to your Send To menu, or whatever. Web pages can provide the
-URIs in a clickable form (so clicking on a link opens the filer
-window). A 'distribution' could be nothing more than a web page
-listing links to high quality software for a particular audience.
-</p><p>
-Finally, if you want to get a newer version, or find related software,
-traditional systems mean you have to try and remember where you got it
-from, or hunt through the documentation. With the URI scheme, just
-select 'Show Location' from the panel menu and the directory
-containing Archive (on the remote server) will be opened.
-</p>
-
-<h3>What about dial-up users? They don't want on-demand loading when
-they're off-line.</h3>
-
-<p>Various levels of granularity can be used. A user could tell the
-system to cache an entire application, for example. Of course, dial-up
-users might also appreciate that they have to download a lot less
-stuff in total. A user with a slow, but easy to start, internet
-connection will probably prefer this scheme. A user who wants to take
-their laptop up a mountain, however, would probably want to get as
-much software as possible first.
-</p><p>
-However, knowing
-how much to download requires knowing what software the user may want
-to run in the future. Even the user doesn't know that. It's not a new
-problem. No modern system is 'closed'. There will always be an
-application that says "This program works well with 'foo'. You can get
-it from this web site...". Should installing the program also install
-'foo'? Should installing ROX-Lib also install the README? The
-developer documentation? The python tutorial at python.org?
-</p>
-
-<h3>I understand that when I browse the web my computer caches the
-pages, images and stylesheets automatically so I don't need to
-manually 'install' multiple PNG images to see a page, but software is
-different!</h3>
-<p>Why?</p>
-
-<h3>Isn't this like Windows Update?</h3>
-<p>From what I've heard, that's something completely different. That
-tells you when something needs upgrading (which this scheme doesn't
-do) and then does a traditional download-unpack-setup.</p>
-
-<h3>What about when resources move?</h3>
-<p>Everything you've already accessed at least once will continue to
-work. Users trying software for the first time will find that it
-doesn't work due to broken links. This is not new, either. The download
-instructions for ROX-Filer tell users that they need to get GTK from
-www.gtk.org and libxml from www.xmlsoft.org. If those sites change
-their names, the download instructions will be broken. It really
-doesn't make any
-difference.
-</p><p>
-As with the regular web, people can leave redirections to the new
-site. Users will also be able to specify a list of redirections
-manually if required (this also allows all access to a particular
-library to use the user's modified version, for example).
-</p>
-
-<h3>How secure is this?</h3>
-<p>About as secure as any system which ultimately involves running
-software written by people you don't know who live in far away
-countries. However, since the downloading is automatic, there are more
-chances for automatic checking (eg, verifying GPG signatures, etc).
-</p>
-<p>
-To be more precise, it has all the advantages of application
-directories (no install step, so no chance for anything to run as
-root). In addition, if two users try to run the same application, they
-both automatically get the same cached copy, whereas without this each
-would have to install a separate copy to their home directory, or one
-user has to trust the other user not to have modified his copy, and
-use that.
-</p>
-
-<h3>Apps will run very slowly on the first load... users might think
-they've crashed</h3>
-
-<p>The system can provide a visual indication that software is being
-downloaded. Eg, a small box appears at the bottom of the screen saying
-"Fetching resources from www.gimp.org. Please wait..." when the Gimp
-is run for the first time. This can have progress bars, and maybe even
-a cancel button (the system knows which user triggered the download).</p>
-
-<h3>How do you do integration (eg, making a Start menu show all
-installed software)?</h3>
-
-<p>Since there is no concept of software being 'installed' or
-'not-installed', this is not required. The menu (or other launching
-device) simply shows applications that the user may want to run. They
-will be fetched on demand.</p>
-<p>For example, the set of applications your system shows you on first
-install is the applications the distribution author thinks you might
-like. They may be already in the cache, or they may be loaded on
-demand (depending on the distribution's installer).
-</p>
-<p>Indeed, the question is backwards. The menu doesn't show installed
-software; rather, the 'installed' software is what the user has put on
-the menu.
-</p>
-
-<h3>What if something gets automatically removed from the cache while
-I'm up a mountain with my laptop?</h3>
-<p>Currently, nothing is ever automatically removed from the cache.
-Users can choose the purging scheme that suits them. For users with
-broadband, that might mean removing anything that hasn't been accessed
-for a year. For users with dial-up and 80Gb disks, that probably means
-never ever removing anything.
-</p><p>
-Possibly, running gimp-1.2.3 could check for, and offer to remove,
-gimp-1.2.2, etc. It would also be possible to start from the user's
-list of applications (menu, panel, etc) and see which resources in the
-cache were 'reachable' and offer to delete any that weren't.
-</p>
-
-<h3>How do I link against a library such that when it's upgraded I get
-the new version automatically?</h3>
-
-<p>Link against .../libfoo/latest-1.2.x. This is a symlink to, eg
-libfoo/1.2.3. If the user enters the 'libfoo' directory and does a
-refresh, the link will now point to 1.2.4 and that will be fetched on
-demand.</p>
-<p>
-If a program relies on a bugfix in libfoo-1.2.6 then it can check that
-'latest-1.2.x' points to that version or later, and force a refresh if
-not.
 </p>
 
 <p style='float: right;'>

@@ -10,7 +10,7 @@ MODFLAGS := -DMODULE -D__KERNEL__
 UMFLAGS := -I${KERNEL}/arch/um/include -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
 
 clean:
-	rm lazyfs.o zero
+	rm -f lazyfs.o zero
 
 KERNELFLAGS := -I${KERNEL}/include
 
