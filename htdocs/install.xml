@@ -114,6 +114,19 @@ You can use --with-kernel to tell it where they are, for example:
 <pre>
 $ <b>./configure --with-user=zeroinst --with-kernel=/home/fred/linux-2.4.20</b>
 </pre>
+
+<p>
+If it can't find
+<a href="http://freshmeat.net/projects/d-bus/?topic_id=809">D-BUS</a>,
+you may need to do:
+</p>
+<pre>
+$ <b>export PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/local/lib/pkgconfig</b>
+</pre>
+<p>
+first, if that's where you installed libdbus (for the bash shell; replace
+<b>export</b> with <b>setenv</b> and replace '=' with a space if using tcsh).
+</p>
 </div>
 
 <div class='note'>
