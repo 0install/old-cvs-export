@@ -1,3 +1,5 @@
+* Send errors when a kernel request fails.
+
 * Configure check for missing expat.h.
 
 * Fixed some cases of using GFP_KERNEL with a spinlock held (reported by

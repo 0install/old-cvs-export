@@ -129,6 +129,8 @@ out:
 
 static void kernel_got_archive(Task *task, int success)
 {
+	if (!success)
+		control_notify_error(task, "Failed to fetch archive");
 	close(task->fd);
  	task_destroy(task, 0);
 }
@@ -188,6 +190,13 @@ static void kernel_task_step(Task *task, int success)
 	if (task->index)
 		kernel_got_index(task);
 	else {
+		char *error;
+		error = build_string("Failed to download index from site '%h'",
+				task->str + 1);
+		control_notify_error(task, error ? error
+						 : "Failed to get index");
+		if (error)
+			free(error);
 		close(task->fd);
 		task_destroy(task, 0);
 		return;
