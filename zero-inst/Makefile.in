@@ -10,7 +10,7 @@ TESTS := hello_glib
 CORE := /uri/http/zero-install.sourceforge.net/libs/core/1.0/Linux-i386
 PKG_CONFIG_PATH=${CORE}/lib/pkgconfig
 
-ZERO_OBJECTS := zero-install.o support.o fetch.o control.o
+ZERO_OBJECTS := zero-install.o support.o fetch.o control.o index.o
 
 all: lazyfs.o zero-install 0show 0refresh #${TESTS}
 

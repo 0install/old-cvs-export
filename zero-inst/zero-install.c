@@ -51,6 +51,7 @@
 #include "support.h"
 #include "control.h"
 #include "fetch.h"
+#include "index.h"
 #include "zero-install.h"
 
 #define MAX_URI_LEN 4096
@@ -701,6 +702,16 @@ int main(int argc, char **argv)
 	int control_socket;
 	int max_fd;
 	int len;
+
+	if (0)
+	{
+		Index *index = parse_index("index.xml");
+		if (index) {
+			index_dump(index);
+			index_free(index);
+		}
+		return 0;
+	}
 
 	umask(0022);
 	
