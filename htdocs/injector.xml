@@ -22,7 +22,7 @@ Some examples of ways to choose:
 One way to organise things is to have a component link directly to particular
 versions of the components on which it depends. So, running Memo 2.0.0 might
 always use pygtk-2.0.0 and Python 2.2.0. But we often want to use the same component
-with different versions of its dependancies. For example, when Python 2.2.1
+with different versions of its dependencies. For example, when Python 2.2.1
 comes out with bug-fixes, we will want Memo to use it automatically. 
 </p>
 
@@ -122,7 +122,7 @@ However, the interface could have implementations in other places, eg:
 <p>
 When we run a program (like Edit) we need to choose an implementation of every
 interface on which it depends. Then, we need to tell the program where to find
-them all; this process is known as <i>Dependancy Injection</i> (or <i>Inversion
+them all; this process is known as <i>Dependency Injection</i> (or <i>Inversion
 of Control</i>).</p>
 
 <p>
@@ -182,7 +182,7 @@ to <b>Full</b>).
 
 <p>
 An implementation (in the Zero Install sense) is always some particular
-version. In future, we will identify implementations with a crypographic hash
+version. In future, we will identify implementations with a cryptographic hash
 of their contents in addition to their version number. Therefore, two releases
 with the same version number are still considered as separate implementations
 if they differ in any way.
@@ -239,7 +239,7 @@ levels are allowed:
 </ul>
 
 <p>
-Stability ratings are kept independantly of the implementations, and are expected to change over
+Stability ratings are kept independently of the implementations, and are expected to change over
 time. When any new release is made, its stability should be set to <b>Testing</b>. Users who
 have selected <b>Help test new versions</b> will then start using it. Other users will continue
 with the previous stable release. After a while (days, weeks or months, depending on the project)
@@ -292,25 +292,25 @@ Using groups is simply a short-hand notation. Eg:
   </group>
 ]]></pre>
  
-<h2>Dependancies</h2>
+<h2>Dependencies</h2>
 
 <p>
 So far, our example XML doesn't mention that Edit needs ROX-Lib (Edit
 will have to find ROX-Lib itself in this case). If we list the
-dependancies of an implementation in its interface file, the injector
-will locate implementations of them too. All information about dependancies is
+dependencies of an implementation in its interface file, the injector
+will locate implementations of them too. All information about dependencies is
 handled at the interface level; this is because the same implementation may be
 used in different ways. Also, for software not specially designed for use with
 the injector, it allows us to keep the implementation in its original form.
 </p>
 
 <p>
-This diagram shows some dependancies for Memo (the dotted lines):
+This diagram shows some dependencies for Memo (the dotted lines):
 </p>
 
 <p style='text-align: center'>
 <img width="554" height="345" src="depend.png"
-     alt='Interface files give implementations and dependancies' />
+     alt='Interface files give implementations and dependencies' />
 </p>
 
 <p>
@@ -344,7 +344,7 @@ choice known to Edit. In this case, it is by inserting
 </p>
 
 <p>
-The injector will also examine the dependancies of ROX-Lib and Python
+The injector will also examine the dependencies of ROX-Lib and Python
 recursively.
 </p>
 
