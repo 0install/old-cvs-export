@@ -562,14 +562,16 @@ Task *fetch_archive(const char *file, xmlNode *archive, Index *index)
 	if (!strstr(relative_uri, "://")) {
 		/* Make URI absolute */
 		slash = strchr(path + cache_len + 1, '/');
-		*slash = '\0';
+		if (slash)
+			*slash = '\0';
 		
 		if (!build_uri(uri, sizeof(uri),
 				path + cache_len, relative_uri, NULL))
 			goto out;
 		abs_uri = uri;
 
-		*slash = '/';
+		if (slash)
+			*slash = '/';
 	} else
 		abs_uri = relative_uri;
 

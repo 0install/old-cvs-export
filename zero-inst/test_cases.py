@@ -17,9 +17,9 @@ import os
 
 # Missing path=
 if server:
-	r = Request('http://0test/.0inst-index.xml')
+	r = Request('http://0test/.0inst-index.tgz')
 	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net"><dir size="1" mtime="2"/></site-index>')
-	r = Request('http://0test/.0inst-index.xml')
+	r = Request('http://0test/.0inst-index.tgz')
 	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net"><dir size="1" mtime="2"/></site-index>')
 else:
 	try:
@@ -42,7 +42,7 @@ else:
 
 # Single symlink
 if server:
-	r = Request('http://0test/.0inst-index.xml')
+	r = Request('http://0test/.0inst-index.tgz')
 	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net" path="/uri/0http/0test"><dir size="1" mtime="2"><link size="3" mtime="2" target="end" name="link"/></dir></site-index>')
 else:
 	assert os.popen('cd /uri/0http/0test; 0refresh').read() == 'OK\n'
@@ -51,7 +51,7 @@ else:
 
 # Update to invalid index
 if server:
-	r = Request('http://0test/.0inst-index.xml')
+	r = Request('http://0test/.0inst-index.tgz')
 	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net" path="/uri/0http/0test"><dir size="1" mtime="2"><link size="3" mtime="2" target="end"/></dir></site-index>')
 else:
 	assert os.popen('cd /uri/0http/0test; 0refresh').read() == 'FAIL\n'
@@ -61,7 +61,7 @@ print "finished", server
 
 # Update back to empty
 if server:
-	r = Request('http://0test/.0inst-index.xml')
+	r = Request('http://0test/.0inst-index.tgz')
 	r.reply('<?xml version="1.0"?><site-index xmlns="http://zero-install.sourceforge.net" path="/uri/0http/0test"><dir size="1" mtime="2"></dir></site-index>')
 else:
 	assert os.popen('cd /uri/0http/0test; 0refresh').read() == 'OK\n'

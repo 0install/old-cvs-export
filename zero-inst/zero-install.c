@@ -57,6 +57,8 @@
 #include "zero-install.h"
 #include "task.h"
 
+int verbose = 0;
+
 /* When we need to use an index file, if it was created in the last hour
  * then don't bother to fetch it again. Otherwise, the overhead
  * of fetching the index again is pretty small compared to fetching the
@@ -345,6 +347,9 @@ int main(int argc, char **argv)
 		index_shutdown();
 		return 0;
 	}
+
+	if (argv[1] && strcmp(argv[1], "--verbose") == 0)
+		verbose = 1;
 
 	umask(0022);
 	

@@ -1643,6 +1643,8 @@ lazyfs_helper_release(struct inode *inode, struct file *file)
 		/* TODO: delete temp directories (lookup) */
 	}
 
+	show_refs(sb->s_root, 0);
+
 	spin_unlock(&fetching_lock);
 
 	wake_up_interruptible(&lazy_wait);
