@@ -171,6 +171,22 @@ latest: symbolic link to `ROX-Lib-1.9.9'
 You can create a directory for the build and use <tt>0divert</tt> to create a
 platform symlink to it, then build there.</p>
 
+<h3>Dist-upgrade</h3>
+
+<p>
+If you want to upgrade everything, run 0refresh on every cached site:
+</p>
+
+<pre>
+$ cd /var/cache/zero-inst
+$ for x in *; do 0refresh "$x"; done
+</pre>
+
+<p>
+This will update every cached index file. The actual data will be fetched on
+demand.
+</p>
+
 <h2>Documentation for packagers</h2>
 
 <p>If you'd like to make software available via Zero Install then you should
