@@ -32,6 +32,10 @@ div {
 	text-align: center;
 }
 
+div h3 {
+	text-align: center;
+}
+
 pre {
 	background: #eee;
 	color: black;
