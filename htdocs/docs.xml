@@ -111,6 +111,21 @@ each subdirectory. Of course, the actual files are still only downloaded when
 you try to access them.
 </p>
 
+<div class='note'>
+<h3>GPG errors with 0refresh?</h3>
+<p>
+When updating a site, zero-install checks that the new index is signed by
+a trusted key (either the last key to sign the index, or a key signed by
+that key). If it doesn't work, you should notify the site owner that their
+site may have been broken in to.
+</p>
+<p>
+If you are <strong>sure</strong> that the site is valid despite the warning,
+you can bypass the check by deleting the file
+<tt>/var/cache/zero-inst/SITE/.0inst-meta/trusted_key</tt>.
+</p>
+</div>
+
 </dd>
 </dl>
 

@@ -151,6 +151,12 @@ $ <b>cat /uri/0install/zero-install.sourceforge.net/demo/test.txt</b>
 It worked!
 </pre>
 
+<div class='note'>
+If you can't mount the /uri/0install filesystem, try running the 'dmesg'
+command to view the kernel log. Usually, it means you've compiled the module
+with different kernel headers, or with a different compiler version.
+</div>
+
 <p>
 Users can see what they are currently downloading with the ZeroProgress
 utility, itself available via Zero Install:
