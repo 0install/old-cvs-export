@@ -71,7 +71,6 @@ class Request:
 		#print "Got connection", self.c
 		data = self.c.recv(1024)
 		uri = data.split('\n', 1)[0].split()[1]
-		print "[s] Zero-Install requested", uri
 		if uri != want_uri:
 			raise Exception('URI error\n'
 					'Wanted: %s\n'

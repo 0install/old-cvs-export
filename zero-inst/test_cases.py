@@ -18,6 +18,7 @@ def barrier():
 	barrier_count += 1
 	if server:
 		accept_barrier(barrier_count)
+		print "Step", barrier_count, "done"
 	else:
 		os.popen('0refresh 0test.%d' % barrier_count)
 
@@ -95,7 +96,7 @@ if server:
 	send_tree('<dir size="3" mtime="2"><dir name="apps" size="1" mtime="2"/></dir>')
 else:
 	assert os.popen('0refresh 0test').read() == 'OK\n'
-	os.system('ls -R /uri/0install/0test')
+	#os.system('ls -R /uri/0install/0test')
 	check_ls("/uri/0install/0test", ['apps'])
 	check_ls("/uri/0install/0test/apps", ["ZeroProgress"])
 	check_ls("/uri/0install/0test/apps/ZeroProgress", ['foo'])
