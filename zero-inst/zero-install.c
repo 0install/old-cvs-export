@@ -341,6 +341,33 @@ static void read_from_wakeup(int wakeup)
 	}
 }
 
+/* Returns the pathname of the created file. On error, doesn't return. */
+static char *create_pid_file(void)
+{
+	char *pid_file = NULL;
+	FILE *file;
+
+	pid_file = build_string("%s/.0inst-pid", cache_dir);
+	if (!pid_file)
+		goto err;
+
+	file = fopen(pid_file, "w");
+	if (!file)
+		goto err;
+
+	fprintf(file, "%ld\n", (long) getpid());
+	if (fclose(file))
+		goto err;
+
+	return pid_file;
+err:
+	if (pid_file)
+		free(pid_file);
+	perror("Creating PID file");
+	fprintf(stderr, "Unable to create zero-install.pid file!\n");
+	exit(EXIT_FAILURE);
+}
+
 #define CACHE_LINK MNT_DIR "/.lazyfs-cache"
 
 int main(int argc, char **argv)
@@ -350,6 +377,7 @@ int main(int argc, char **argv)
 	int helper;
 	int control_socket;
 	int max_fd;
+	char *pid_file;
 
 	index_init();
 
@@ -371,7 +399,9 @@ int main(int argc, char **argv)
 	}
 	assert(cache_dir_len >= 1 && cache_dir_len < sizeof(cache_dir));
 	cache_dir[cache_dir_len] = '\0';
-	printf("Zero Install started: using cache directory '%s'\n", cache_dir);
+	if (verbose)
+		printf("Zero Install started: using cache directory '%s'\n",
+				cache_dir);
 
 	if (0) {
 		printf("Literal: %s\n", build_string("Hello world"));
@@ -431,6 +461,8 @@ int main(int argc, char **argv)
 	if (control_socket > max_fd)
 		max_fd = control_socket;
 
+	pid_file = create_pid_file();
+
 	while (!finished) {
 		fd_set rfds, wfds;
 		int n = max_fd + 1;
@@ -469,6 +501,9 @@ int main(int argc, char **argv)
 	printf("%s: Got SIGINT... terminating...\n", prog);
 
 	control_drop_clients();
+
+	if (unlink(pid_file))
+		perror("unlink pid file");
 
 	close(helper);
 

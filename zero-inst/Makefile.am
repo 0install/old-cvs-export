@@ -2,12 +2,14 @@ HELPER_USER := @HELPER_USER@
 ROOT_PREFIX = @ROOT_PREFIX@
 FSTAB := /etc/fstab
 myexecbindir := ${ROOT_PREFIX}/bin
+initddir := ${ROOT_PREFIX}/etc/init.d
 
 AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = 0refresh
 myexecbin_PROGRAMS = 0run
 sbin_PROGRAMS = zero-install
+initd_SCRIPTS = 0install
 
 SUBDIRS = Linux
 
@@ -44,15 +46,9 @@ uninstall-local:
 	  grep -v "^lazyfs[ 	]*/uri" "${FSTAB}" > "${FSTAB}.new" && \
 	  mv "${FSTAB}.new" "${FSTAB}"; fi
 
+0install: 0install.in config.status
+	sed "s:\@zero-install\@:${sbindir}/zero-install:" 0install.in | \
+	 sed "s/\@helper_user\@/${HELPER_USER}/" >0install
+	chmod a+x 0install
+
 CFLAGS = -O2 -Wall -Wstrict-prototypes -g
-
-# Test program using glib
-
-# CORE := /uri/http/zero-install.sourceforge.net/libs/core/1.0/Linux-i386
-# 
-# hello_glib.o: hello_glib.c
-# 	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} ${CC} -c -Wall `${CORE}/bin/pkg-config --cflags glib-2.0` -o $@ $<
-# 
-# hello_glib: hello_glib.o
-# 	PKG_CONFIG_PATH=${PKG_CONFIG_PATH} gcc `${CORE}/bin/pkg-config --libs glib-2.0` -o $@ $<
-# EXTRA_DIST = hello_glib.c

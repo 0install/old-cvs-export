@@ -1,0 +1,27 @@
+#! /bin/sh
+# /etc/init.d/0install
+#
+# Written by Thomas Leonard, tal197 at users.sourceforge.net.
+
+test -f "@zero-install@" || exit 0
+
+case "$1" in
+  start)
+    echo Starting zero-install...
+    su "@helper_user@" -s "@zero-install@" &
+    ;;
+  stop)
+    echo Stopping zero-install...
+    PID_FILE=/uri/0install/.lazyfs-cache/.0inst-pid
+    if [ -f $PID_FILE ]; then
+      kill -INT "`cat $PID_FILE`"
+    else
+      echo Zero-install does not appear to be running >&2
+      echo "(file $PID_FILE not found)" >&2
+    fi
+    ;;
+  *)
+    echo "Usage: /etc/init.d/0install {start|stop}" >&2
+    exit 1
+    ;;
+esac
