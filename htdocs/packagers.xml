@@ -43,7 +43,8 @@ $ <b>/uri/0install/myhost.com/MyProg/foo</b>
 <p>
 Note that <a href="http://freshmeat.net/articles/view/1049/">Zero Install and
 the Web of Software</a> also has a longer tutorial on providing software via
-Zero Install.
+Zero Install, and there's an even more detailed guide in
+<a href="#study1">Case Study #1</a> below.
 </p>
 
 <h3>Suggested directory layout</h3>
@@ -198,7 +199,7 @@ changing the API. See <a href="http://www.w3.org/Provider/Style/URI.html">
 Cool URIs don't change</a> for more thoughts on stable URIs.
 </p>
 
-<h2>Case study #1: packaging Contacts for Zero Install</h2>
+<h2 id="study1">Case study #1: packaging Contacts for Zero Install</h2>
 
 <p><a href="http://roxos.sunsite.dk/dev-contrib/guido/Contacts/">Contacts</a>
 is simple address-book application. In this case study, we go though the
