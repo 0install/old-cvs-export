@@ -14,7 +14,9 @@ heavy developement and has not yet been well tested.</div>
 
 <p>
 That said, I'm running it on my machine without any problems so far. Please
-let me know how you get on, and any problems you find.
+let me know how you get on, and any problems you find. You could also install
+it under <a href="http://user-mode-linux.sf.net">User Mode Linux</a> if you
+want to test it in safely.
 </p>
 
 <p>The Zero Install system requires a small Linux kernel module to provide
@@ -70,6 +72,14 @@ You can use --with-kernel to tell it where they are, for example:
 <pre>
 $ <b>./configure --with-kernel=/home/fred/linux-2.4.20</b>
 </pre>
+
+<div class='note'>
+If you want to test the system under <a
+href="http://user-mode-linux.sf.net">User Mode Linux</a>, you'll need to use
+the above command to tell it where the UML kernel sources are. After the
+configure step, add <tt>${UMFLAGS}</tt> to the end of <tt>KERNELFLAGS</tt>
+in the makefile.
+</div>
 
 <p>
 Then run make and install it (use su to get the root prompt, #):
