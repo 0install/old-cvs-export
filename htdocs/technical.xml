@@ -64,6 +64,12 @@ files in Makefile.</li>
 <li>Pass --rpath option to linker, giving /uri/.../lib directory.</li>
 </ul>
 
+<div class='note'>
+I'm still trying to work out how to set NEEDED to the full path name, rather
+than using rpath (which is rather slow, by comparison). Any linker gurus
+out there?
+</div>
+
 <p>
 Version 0.1.6 of zero-install also handles downloading using .tgz files
 a directory at a time (so is much faster than before).
