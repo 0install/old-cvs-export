@@ -72,6 +72,16 @@ See the <a href="compare.html">comparison with other systems</a> document
 for a more detailed list of the advantages of Zero Install.
 </p>
 
+<p class='q'>Isn't running stuff off the net a security risk?</p>
+
+<p>Isn't that where you get your software from anyway? You're quite free
+to verify GPG signatures, only use trusted web-sites, etc under this scheme.
+And since it doesn't run any of the remote code as root, you can try software
+out safely as a 'guest' user. Once downloaded, the programs are run from the
+cache, without even checking the original sites for updates (you have to
+tell it to update manually).
+</p>
+
 <p class='q'>Can I try it out?</p>
 
 <p>
@@ -81,6 +91,31 @@ Install system itself still requires some work to install. Please read this:
 <ul>
 <li> <a href="install.html">Step-by-step installation walkthough</a>.</li>
 </ul>
+
+<p class='q'>Is it fully working yet?</p>
+
+<p>No, it's still under developement, although the examples given here already
+work. You can run Memo as shown above, and it will get ROX-Lib via Zero
+Install. However, the other libraries are not yet in Zero Install, so you
+will need to install pygtk, etc, as normal for now.
+</p>
+
+<p>
+Refreshing currently requires deleting stuff from the cache directory manually.
+In the finished system, clicking on the filer's refresh button will do this.
+Also the progress indicator mentioned above could use some work ;-)
+</p>
+
+<p class='q'>Do I have to enter the full URI everytime I want to run a
+program?</p>
+
+<p>No, create a shortcut to it instead. For example, you could drag Memo
+from the window above onto a panel or the desktop background, or set it to load
+when you log in. You can assign a keyboard shortcut to an application, add it
+to the Send To menu, bookmark it, stick it on a `Start' menu, put it in PATH,
+make a shell alias or use any other normal method of making something easier to
+get to.
+</p>
 
 <p class='q'>I have more questions!</p>
 
