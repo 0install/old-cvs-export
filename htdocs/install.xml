@@ -198,6 +198,7 @@ $ <b>su -c 'make install'</b>
 </pre>
 
 <ul>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/521">undefined reference to `dbus_error_init'</a></li>
 <li>Can't find D-BUS? Try setting PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/local/lib/pkgconfig</li>
 </ul>
 
