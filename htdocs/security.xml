@@ -150,11 +150,6 @@ Can we trust the mirror?</p></li>
 software replaced with a trojaned version.</p></li>
 </ul>
 
-<div class='note'>
-The following is a description of how it <i>will</i> work. This is not yet
-implemented.
-</div>
-
 <p>
 To solve the mirror problem, Zero Install creates index files which list
 every file available from the site, alternative download locations for the

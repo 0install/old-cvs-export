@@ -122,6 +122,40 @@ detail in the <a href="install.html">Install Guide</a>.</p>
 <p>You may also be interested in the <a href="security.html">security model</a>
 essay.</p>
 
+<p>Generally, you don't need to do anything to install software. That
+all happens automatically and safely. However, you can override any
+particular resource using the <tt>0divert</tt> command. This command
+creates a symlink in the /uri/0install filesystem, allowing you to replace
+resources. For example, if the new ROX-Lib is buggy:</p>
+
+<pre>
+$ <b>alias 0divert=/uri/0install/zero-install.sourceforge.net/bin/0divert</b>
+$ <b>cd /uri/0install/rox.sourceforge.net/lib/ROX-Lib2</b>
+$ <b>file latest</b>
+latest: symbolic link to `ROX-Lib-1.9.9'
+$ <b>0divert latest ROX-Lib-1.9.8</b>
+$ <b>file latest</b>
+latest: symbolic link to `ROX-Lib-1.9.8'
+</pre>
+
+<p>
+You can remove the diversion with <tt>0divert -r</tt>, and can get a list
+of current diversions with <tt>0divert -l [site]</tt>. Removing a diversion
+puts things back the way they were:
+</p>
+
+<pre>
+$ <b>0divert -l rox.sourceforge.net</b>
+/lib/ROX-Lib2/latest -> ROX-Lib-1.9.8 (set Sat Aug 23 14:38:39 2003)
+$ <b>0divert -r latest</b>
+$ <b>file latest</b>
+latest: symbolic link to `ROX-Lib-1.9.9'
+</pre>
+
+<p>0divert is also useful if there is no binary available for your platform.
+You can create a directory for the build and use <tt>0divert</tt> to create a
+platform symlink to it, then build there.</p>
+
 <h2>Documentation for packagers</h2>
 
 <p>If you'd like to make software available via Zero Install then you should
