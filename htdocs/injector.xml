@@ -95,6 +95,10 @@ Currently downloading:
 - http://0install.net/2005/interfaces/injector
 </pre>
 
+<ul>
+<li><a href="http://sourceforge.net/tracker/index.php?func=detail&amp;aid=1163184&amp;group_id=76468&amp;atid=547191">ConfigParser.NoOptionError: No option 'freshness' in section: 'global'</a></li>
+</ul>
+
 <p>
 The <b>0launch-gui</b> command actually just invokes the non-graphical <b>0launch</b>
 command, giving it the interface for the GUI
