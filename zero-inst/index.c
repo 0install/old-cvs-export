@@ -237,6 +237,13 @@ static void index_link(Index *index, xmlNode *node)
 	leaf++;
 
 	old = index_lookup(index, src);
+	if (old) {
+		xmlUnlinkNode(old);
+		xmlFreeNode(old);
+	}
+
+	leaf[-1] = '\0';
+	old = index_lookup(index, src);
 	if (!old) {
 		fprintf(stderr, "Can't override '%s'; doesn't exist!\n", src);
 		goto out;
@@ -251,10 +258,7 @@ static void index_link(Index *index, xmlNode *node)
 	xmlSetNsProp(new, NULL, "target", target);
 	xmlSetNsProp(new, NULL, "name", leaf);
 
-	xmlAddNextSibling(old, new);
-
-	xmlUnlinkNode(old);
-	xmlFreeNode(old);
+	xmlAddChild(old, new);
 out:
 	if (src)
 		xmlFree(src);
