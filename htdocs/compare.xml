@@ -229,7 +229,10 @@ There is another tool, auto-apt, which tries to install Debian packages
 when files they contain are accessed. However, this does not solve the
 problems of security (installation still happens as root), scalability
 (only trusted packages can be used) or speed (if fact it's slower, as it must
-build an additional database).
+build an additional database). It also has the problem that resources don't
+appear until you access them, so you can't click on an application until it's
+installed... but you can't install it until you click on it, so it's mainly
+useful from the shell prompt.
 </p>
 
 <p>
