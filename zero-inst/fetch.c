@@ -629,7 +629,7 @@ static Task *fetch_site_index(const char *path, int use_cache)
 
 	wget(task, uri, tbz, use_cache);
 	if (task->child_pid == -1) {
-		task_destroy(task, 0);
+		task_destroy(task, "Failed to fork child process");
 		task = NULL;
 	}
 
@@ -748,7 +748,7 @@ Task *fetch_archive(const char *file, Element *group, Index *index)
 	}
 
 	if (task->child_pid == -1) {
-		task_destroy(task, 0);
+		task_destroy(task, "Failed to fork child process");
 		task = NULL;
 	}
 

@@ -509,7 +509,7 @@ oom:
 	dbus_set_error_const(error, "Error", "Out of memory");
 done:
 	if (task)
-		task_destroy(task, 0);
+		task_destroy(task, error ? error->message : NULL);
 	if (site)
 		free(site);
 }

@@ -185,7 +185,7 @@ static void kernel_got_index(Task *task)
 void kernel_cancel_task(Task *task)
 {
 	close(task->fd);
-	task_destroy(task, 0);
+	task_destroy(task, NULL);
 }
 
 static void kernel_task_step(Task *task, const char *err)
@@ -198,7 +198,7 @@ static void kernel_task_step(Task *task, const char *err)
 	else {
 		control_notify_error(task, err ? err : "Failed to get index");
 		close(task->fd);
-		task_destroy(task, 0);
+		task_destroy(task, NULL);
 	}
 }
 
@@ -219,7 +219,7 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	task_set_string(task, path);
 	if (!task->str) {
 		close(request_fd);
-		task_destroy(task, 0);
+		task_destroy(task, "Out of memory");
 		return;
 	}
 	task->step = kernel_task_step;
@@ -237,7 +237,7 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	if (!task->index) {
 		/* Error -- give up */
 		close(request_fd);
-		task_destroy(task, 0);
+		task_destroy(task, "Failed to start fetching index");
 		return;
 	}
 
