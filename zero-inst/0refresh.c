@@ -102,16 +102,18 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	{
+	send_command(control, "REFRESH ");
+
+	if (argc == 1) {
 		char cwd[4096];
 		if (!getcwd(cwd, sizeof(cwd))) {
 			fprintf(stderr, "getcwd() failed\n");
 			return 1;
 		}
-		send_command(control, "REFRESH ");
 		send_command(control, cwd);
-		send_command(control, "\n");
-	}
+	} else
+		send_command(control, argv[1]);
+	send_command(control, "\n");
 
 	read_reply(control);
 

@@ -1,3 +1,14 @@
+Changes since 0.1.12:
+
+* New /bin/0run program to be used in scripts, eg:
+	#!/bin/0run example.com/myprog 2003-01-01
+
+* 0refresh can be given an argument to use instead of `pwd`.
+
+* New --verbose option for zero-install.
+
+* Fix crash when fetching a top-level file.
+
 * Fixed dentry leaks in lazyfs.
 
 * Lazyfs now notices updates to directories without needing them to be

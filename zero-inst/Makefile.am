@@ -1,10 +1,12 @@
 HELPER_USER := @HELPER_USER@
 ROOT_PREFIX = @ROOT_PREFIX@
 FSTAB := /etc/fstab
+myexecbindir := /bin
 
 AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = 0show 0refresh
+myexecbin_PROGRAMS = 0run
 sbin_PROGRAMS = zero-install
 
 SUBDIRS = Linux
