@@ -1,3 +1,8 @@
+Changes since 0.1.25:
+
+* Removed command to remove 0http and http symlinks. It's been many versions
+  since we used those (requested by Peter Prohaska).
+
 Changes since 0.1.24:
 
 * Stricter checking for valid site names.
@@ -9,6 +14,8 @@ Changes since 0.1.24:
 
 * Cancelling a request also cancels the download, if no other user is also
   trying to fetch it.
+
+* Added support for chkconfig to the init.d script.
 
 * Use new version of lazyfs.
 

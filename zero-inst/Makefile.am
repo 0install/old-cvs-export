@@ -35,7 +35,6 @@ install-real:
 	@echo Creating directories...
 	[ -d /uri ] || mkdir /uri
 	[ -d /uri/0install ] || mkdir /uri/0install
-	rm -f /uri/0http /uri/http
 	[ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst
 	chown "${HELPER_USER}" /var/cache/zero-inst
 	@echo
