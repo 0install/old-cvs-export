@@ -163,13 +163,6 @@ static int ensure_cached(struct dentry *dentry);
 static LIST_HEAD(pending_helper);
 
 static void
-lazyfs_put_inode(struct inode *inode)
-{
-	//printk("Putting inode %ld\n", inode->i_ino);
-	return;
-}
-
-static void
 lazyfs_release_dentry(struct dentry *dentry)
 {
 	struct lazy_de_info *info = (struct lazy_de_info *) dentry->d_fsdata;
@@ -182,7 +175,7 @@ lazyfs_release_dentry(struct dentry *dentry)
 	if (!list_empty(&info->to_helper))
 		BUG();
 
-	printk("Putting dentry for '%s'\n", dentry->d_name.name);
+	//printk("Putting dentry for '%s'\n", dentry->d_name.name);
 
 	host_dentry = info->host_dentry;
 
@@ -247,7 +240,7 @@ static struct dentry *new_dentry(struct super_block *sb,
 	if (new->d_fsdata)
 		BUG();
 
-	printk("New dentry '%s' with inode %ld\n", leaf, inode->i_ino);
+	//printk("New dentry '%s' with inode %ld\n", leaf, inode->i_ino);
 
 	info = kmalloc(sizeof(struct lazy_de_info), GFP_KERNEL);
 	if (!info)
@@ -339,8 +332,9 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	set_host_dentry(sb->s_root, sbi->host_file->f_dentry);
 
 	sbi->helper_dentry = new_dentry(sb, sb->s_root, ".lazyfs-helper",
-			S_IFREG | 0600, 0, CURRENT_TIME);
+			0, 0, CURRENT_TIME);
 	sbi->helper_dentry->d_inode->i_fop = &lazyfs_helper_operations;
+	sbi->helper_dentry->d_inode->i_mode = S_IFREG | 0600;
 	sbi->have_helper = 0;
 	sbi->helper_mnt = NULL;
 
@@ -351,8 +345,6 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sbi->dirlist_qname.len = 3;
 	sbi->dirlist_qname.hash = full_name_hash(sbi->dirlist_qname.name,
 						 sbi->dirlist_qname.len);
-
-	show_refs(sb->s_root, 0);
 
 	return sb;
 err:
@@ -569,8 +561,10 @@ static void show_refs(struct dentry *dentry, int indent)
 
 	for (i = 0; i < indent; i++)
 		printk(" ");
-	printk("'%s' [%d]\n", dentry->d_name.name,
-				atomic_read(&dentry->d_count));
+	printk("'%s' [%d] %s %s\n", dentry->d_name.name,
+			atomic_read(&dentry->d_count),
+			indent != 0 && d_unhashed(dentry) ? "(unhashed)" : "",
+			!dentry->d_inode ? "(negative)" : "");
 
 	next = dentry->d_subdirs.next;
 	while (next != &dentry->d_subdirs) {
@@ -583,15 +577,9 @@ static void show_refs(struct dentry *dentry, int indent)
 /* Removes dentry from the tree, and any child nodes too */
 static void remove_dentry(struct dentry *dentry)
 {
-	struct dentry *parent = dget(dentry->d_parent);
-
 	my_d_genocide(dentry);
-
 	d_delete(dentry);
-
 	dput(dentry);
-	printk("Parent has %d\n", atomic_read(&parent->d_count));
-	dput(parent);
 }
 
 static void sweep_marked_children(struct dentry *dentry)
@@ -623,7 +611,6 @@ restart:
 	spin_unlock(&dcache_lock);
 
 	shrink_dcache_parent(dentry);
-	show_refs(dentry->d_inode->i_sb->s_root, 0);
 }
 
 /* The file list for a directory has changed.
@@ -695,7 +682,6 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 			if (i->i_mode != mode || i->i_size != size ||
 			    i->i_mtime != time)
 			{
-				printk("lazyfs: '%s' changed\n", name.name);
 				remove_dentry(existing);
 				new_dentry(sb, dir, name.name,
 					   mode, size, time);
@@ -719,6 +705,8 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 
 	if (listing != end)
 		BUG();
+
+	show_refs(dir->d_inode->i_sb->s_root, 0);
 	
 	return 0;
 
@@ -865,7 +853,6 @@ lazyfs_put_super(struct super_block *sb)
 	if (sbi)
 	{
 		struct file *file = sbi->host_file;
-		printk("Freeing sbi\n");
 		dput(sbi->helper_dentry);
 		sbi->helper_dentry = NULL;
 		sbi->host_file = NULL;
@@ -1062,10 +1049,7 @@ lazyfs_helper_open(struct inode *inode, struct file *file)
 	spin_unlock(&fetching_lock);
 
 	if (!err)
-	{
-		printk("lazyfs: New helper arrived!\n");
 		sbi->helper_mnt = mntget(file->f_vfsmnt);
-	}
 
 	return err;
 }
@@ -1075,8 +1059,6 @@ lazyfs_helper_release(struct inode *inode, struct file *file)
 {
 	struct super_block *sb = inode->i_sb;
 	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
-
-	printk("lazyfs: Helper left\n");
 
 	if (!sbi)
 		BUG();
@@ -1118,14 +1100,11 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	if (count < 20)
 		return -EINVAL;
 
-	//printk("Helper reading...\n");
-
 	add_wait_queue(&helper_wait, &wait);
 	current->state = TASK_INTERRUPTIBLE;
 	do {
 		struct lazy_de_info *info = NULL;
 
-		//printk("Handle list entries...\n");
 		spin_lock(&fetching_lock);
 		if (!list_empty(&to_helper)) {
 
@@ -1206,8 +1185,6 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 	inode = file->f_dentry->d_inode;
 	host_inode = host_file->f_dentry->d_inode;
 
-	//printk("lazyfs_file_mmap: %ld -> %ld\n", inode->i_ino, host_inode->i_ino);
-
 	if (inode->i_mapping != &inode->i_data &&
 	    inode->i_mapping != host_inode->i_mapping)
 	{
@@ -1243,8 +1220,6 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 	struct dentry *host_dentry;
 	struct file *host_file;
 
-	//printk("lazyfs_file_open: %ld\n", inode->i_ino);
-
 	host_dentry = get_host_dentry(dentry);
 	if (IS_ERR(host_dentry))
 		return PTR_ERR(host_dentry);
@@ -1272,8 +1247,6 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 static int
 lazyfs_file_release(struct inode *inode, struct file *file)
 {
-	//printk("lazyfs_file_release: %ld\n", inode->i_ino);
-
 	if (file->private_data)
 		fput((struct file *) file->private_data);
 	else
@@ -1287,7 +1260,6 @@ lazyfs_file_release(struct inode *inode, struct file *file)
 static struct super_operations lazyfs_ops = {
 	statfs:		lazyfs_statfs,
 	put_super:	lazyfs_put_super,
-	put_inode:	lazyfs_put_inode,
 };
 
 static struct inode_operations lazyfs_dir_inode_operations = {
@@ -1325,13 +1297,11 @@ static DECLARE_FSTYPE(lazyfs_fs_type, "lazyfs", lazyfs_read_super, FS_LITTER);
 
 static int __init init_lazyfs_fs(void)
 {
-	printk("LazyFS ready!\n");
 	return register_filesystem(&lazyfs_fs_type);
 }
 
 static void __exit exit_lazyfs_fs(void)
 {
-	printk("LazyFS exiting\n");
 	unregister_filesystem(&lazyfs_fs_type);
 }
 
