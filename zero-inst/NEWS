@@ -1,5 +1,9 @@
 Changes since 0.1.19:
 
+* Give files user write permission by default (doesn't do anything, since fs is
+  mounted read-only, but means that things don't end up read-only after
+  copying).
+
 * --nodaemon flag to prevent backgrounding (requested by Joachim Kupke).
 
 * Before forking, send errors to stderr (in addition to syslog).

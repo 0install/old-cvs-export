@@ -483,7 +483,7 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 
 	inode->u.generic_ip = NULL;
 
-	inode->i_mode = mode | 0444;	/* Always give read */
+	inode->i_mode = mode | 0644;	/* Always give read */
 	inode->i_nlink = 1;
 	inode->i_uid = 0;
 	inode->i_gid = 0;
@@ -1153,7 +1153,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 
 	while (listing < end) {
 		struct dentry *existing;
-		mode_t mode = 0444;
+		mode_t mode = 0644;
 		struct qstr name;
 		struct qstr link_target;
 		off_t size;
