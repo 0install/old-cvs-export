@@ -1,4 +1,5 @@
 HELPER_USER := @HELPER_USER@
+ROOT_PREFIX = @ROOT_PREFIX@
 FSTAB := /etc/fstab
 
 AUTOMAKE_OPTIONS = foreign
@@ -20,12 +21,14 @@ zero_install_LDADD = -lexpat
 install-exec-local:
 	([ -d /uri ] || mkdir /uri) && \
  	([ -d /var/cache/zero-inst ] || mkdir -m 0755 /var/cache/zero-inst) && \
- 	chown "${HELPER_USER}" /var/cache/zero-inst && \
- 	grep -q "^lazyfs" ${FSTAB} ||	echo "lazyfs          /uri            lazyfs  /var/cache/zero-inst            0 0" >> ${FSTAB}
+	([ -n "${ROOT_PREFIX}" ] || \
+ 	 chown "${HELPER_USER}" /var/cache/zero-inst && \
+ 	 grep -q "^lazyfs" ${FSTAB} ||	echo "lazyfs          /uri            lazyfs  /var/cache/zero-inst            0 0" >> ${FSTAB})
 
 uninstall-local:
-	grep -v "^lazyfs[ \t]*/uri[ \t]" "${FSTAB}" > "${FSTAB}.new" && \
-	mv "${FSTAB}.new" "${FSTAB}"
+	if [ -z "${ROOT_PREFIX}" ]; then \
+	  grep -v "^lazyfs[ \t]*/uri[ \t]" "${FSTAB}" > "${FSTAB}.new" && \
+	  mv "${FSTAB}.new" "${FSTAB}"; fi
 
 CFLAGS = -O2 -Wall -Wstrict-prototypes -g
 
