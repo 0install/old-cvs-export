@@ -1,6 +1,11 @@
 Changes since 0.1.24:
 
-* Stricter checking for valid domain names.
+* Stricter checking for valid site names.
+
+* If the user rejects a request, reject duplicate requests for the next
+  few seconds.
+
+* Use new version of lazyfs.
 
 Changes since 0.1.23:
 

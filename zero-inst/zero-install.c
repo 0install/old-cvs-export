@@ -219,6 +219,11 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 		return;
 	}
 
+	if (fetch_check_auto_reject(path, uid)) {
+		close(request_fd);
+		return;
+	}
+
 	task = task_new(TASK_KERNEL);
 	if (!task) {
 		close(request_fd);

@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "global.h"
 #include "support.h"
@@ -20,6 +21,17 @@
 #include "mirrors.h"
 
 #define TMP_PREFIX ".0inst-tmp-"
+
+/* The number of seconds after the user rejects a request during which
+ * we will auto-reject identical requests.
+ */
+#define AUTO_REJECT_PERIOD 5
+
+
+static char *last_reject_request = NULL;
+static uid_t last_reject_user = 0;
+static time_t last_reject_time = 0;
+
 
 static void build_ddd_from_index(Element *dir_node, char *dir);
 
@@ -676,10 +688,12 @@ out:
  * start with a letter, end with a letter or digit, and have as interior
  * characters only letters, digits, and hyphen.  There are also some
  * restrictions on the length. Labels must be 63 characters or less."
+ *
+ * 'site' is terminated by \0 or '/'.
  */
 static int valid_site_name(const char *site)
 {
-	const char *hash;
+	const char *end;
 	int domain_len;
 	int i;
 	int label_start = 0;
@@ -690,9 +704,9 @@ static int valid_site_name(const char *site)
 	if (site[0] < 'a' || site[0] > 'z')
 		return 0;
 
-	hash = strchr(site, '#');
-	if (hash)
-		domain_len = hash - site;
+	end = strpbrk(site, "#/");
+	if (end)
+		domain_len = end - site;
 	else
 		domain_len = strlen(site);
 
@@ -844,6 +858,34 @@ out:
 	if (tgz)
 		free(tgz);
 	return task;
+}
+
+/* User has cancelled fetching 'request'. Reject duplicate requests in
+ * future for a few seconds.
+ */
+void fetch_set_auto_reject(const char *request, uid_t uid)
+{
+	error("Should reject '%s' for '%d'", request, uid);
+	if (last_reject_request)
+		free(last_reject_request);
+	last_reject_request = my_strdup(request);
+	last_reject_user = uid;
+	last_reject_time = time(NULL);
+}
+
+/* Test whether we should reject this request before even trying to
+ * download (eg, because the user already cancelled the same request
+ * a few seconds ago.
+ */
+int fetch_check_auto_reject(const char *request, uid_t uid)
+{
+	if (last_reject_request && last_reject_user == uid &&
+	    strcmp(last_reject_request, request) == 0 &&
+	    time(NULL) - last_reject_time < AUTO_REJECT_PERIOD) {
+		error("Auto re-rejecting request for '%s'", request);
+		return 1;
+	}
+	return 0;
 }
 
 static void test_valid_site_name(void)

@@ -422,6 +422,9 @@ static int cancel_download(const char *request, uid_t uid)
 				send_result(task, 0);
 			else
 				kernel_cancel_task(task);
+
+			fetch_set_auto_reject(request, uid);
+
 			return 1;
 		}
 	}
@@ -438,8 +441,10 @@ static void dbus_cancel_download(DBusConnection *connection,
 				DBUS_TYPE_STRING, &request, DBUS_TYPE_INVALID))
 		return;
 
-	if (!dbus_connection_get_unix_user(connection, &uid))
+	if (!dbus_connection_get_unix_user(connection, &uid)) {
 		assert(0);
+		abort();
+	}
 
 	if (!cancel_download(request, uid)) {
 		dbus_set_error_const(error, "Error", "Not being fetched");
