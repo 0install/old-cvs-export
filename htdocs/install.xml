@@ -24,11 +24,9 @@ the /uri directory. Like all kernel modules, you <strong>must</strong>
 compile this using the actual kernel headers for the kernel you're actually
 running. In practice, this means that you should have compiled your own
 kernel (eg, from <a href="http://kernel.org">kernel.org</a>) and be running
-it. Using a stock distribution kernel is a bad idea (two reports of problems
-with stock Debian kernels, though LuFS seems to be affected the same way, so
-perhaps it's Debian's fault?). You may get a kernel crash, and will probably
-have to reboot (this affects all kernel modules, not just the zero-install
-one).
+it. Using a stock distribution kernel is a bad idea. You may get a kernel
+crash, and will probably have to reboot (this affects all kernel modules, not
+just the zero-install one).
 </p>
 
 <p>
@@ -54,13 +52,13 @@ Kernel</a>.
 </div>
 -->
 
-<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.10.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.10.tar.gz.sig">GPG Sig</a> ]. Extract it, and
+<p>OK, now <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.11.tar.gz">download Zero Install</a> [ <a href="http://prdownloads.sourceforge.net/zero-install/zero-install-0.1.11.tar.gz.sig">GPG Sig</a> ]. Extract it, and
 move to the new directory (things you type are shown in bold):
 </p>
 
 <pre>
-$ <b>tar xzf zero-install-0.1.10.tar.gz</b>
-$ <b>cd zero-install-0.1.10</b>
+$ <b>tar xzf zero-install-0.1.11.tar.gz</b>
+$ <b>cd zero-install-0.1.11</b>
 </pre>
 
 <p>
@@ -140,6 +138,7 @@ You need to run the helper as the user you specified at the start.
 <pre>
 $ <b>./zero-install</b>
 Zero Install started: using cache directory '/var/cache/zero-inst'
+Write root ... file
 </pre>
 
 <p>
@@ -160,8 +159,18 @@ It worked!
 
 <p>
 Users can run the 0show command to see what they are currently downloading.
-This is just a command-line client at the moment, but the idea is to create
-a panel applet or similar to keep the user informed.
+This is just a command-line client at the moment, but there is also a
+graphical version called ZeroProgress, itself available via Zero Install:
+</p>
+
+<pre>
+$ <b>/uri/http/zero-install.sourceforge.net/apps/ZeroProgress/AppRun</b>
+</pre>
+
+<p>
+Nothing appears on the screen when you run this, but any futher downloads
+will display a progress box. Note that the GTK library is not yet in
+Zero Install, so you need to have that installed by traditional methods.
 </p>
 
 <p>
@@ -185,23 +194,6 @@ window shown on the main page using this command:
 <pre>
 $ <b>rox /uri/http/zero-install.sourceforge.net/demo</b>
 </pre>
-
-<p>
-The GTK progress indicator will pop up a progress box (as shown on the
-<a href="index.html">title page</a>) whenever a download is in progress. It can
-be run like this (the refresh is only needed if you've already cached an
-old version of this directory):
-</p>
-
-<pre>
-$ <b>cd /uri/http/zero-install.sourceforge.net</b>
-$ <b>0refresh</b>
-$ <b>./apps/ZeroProgress/AppRun</b>
-</pre>
-
-<div class='note'>There's a slight bug in the current version the
-zero-install program which means that the box may not close when the
-download finishes. The CVS version has it fixed.</div>
 
 <p>
 You can also find XFree86 4.3.1 in the `libs' directory. You can run either
