@@ -23,7 +23,7 @@
 
 static void build_ddd_from_index(Element *dir_node, char *dir);
 
-/* 0 on success */
+/* 0 on success (cwd is changed). */
 static int chdir_meta(const char *site)
 {
 	char *meta;
@@ -70,12 +70,6 @@ static Index *load_index(const char *site)
 		goto out;
 		
 	index = parse_index(index_path, 0, site);
-
-	if (index && !gpg_trusted(site, "index.xml")) {
-		/* Index exists but is out-of-date */
-		index_free(index);
-		index = NULL;
-	}
 
 out:
 	if (index_path)
@@ -441,22 +435,8 @@ static int unpack_site_archive(const char *site)
 
 	assert(strchr(site, '/') == NULL);
 
-	/* Change to meta dir */
-	{
-		char *meta;
-
-		meta = build_string("%s/%s/" META, cache_dir, site);
-		if (!meta)
-			goto out;
-
-		if (chdir(meta)) {
-			error("chdir: %m");
-			free(meta);
-			goto out;
-		}
-		
-		free(meta);
-	}
+	if (chdir_meta(site))
+		return 1;
 
 	if (system("tar xjf index.tar.bz2 keyring.pub mirrors.xml "
 		   "index.xml.sig") == 0)
@@ -464,7 +444,6 @@ static int unpack_site_archive(const char *site)
 	else
 		error("Failed to extract GPG signature/keyring/mirrors!");
 
-out:
 	chdir("/");
 	return success;
 }
@@ -559,6 +538,7 @@ static int fetch_index_file(Task *task, const char *site)
 	task->step = got_site_index;
 	wget(task, uri, bz, 1);
 	free(bz);
+	free(uri);
 
 	if (task->child_pid == -1)
 		return 0;
