@@ -336,14 +336,30 @@ static void unpack_archive(const char *archive_path, const char *archive_dir,
 	system("rm -rf .0inst-tmp");
 }
 
+static void may_rotate_log(void) {
+	struct stat log_info;
+	char *backup = NULL;
+
+	if (stat(wget_log, &log_info) != 0)
+		return;	/* Doesn't exist yet? OK. */
+
+	if (log_info.st_size < 10000)
+		return;	/* Nice and small. Keep it. */
+
+	backup = build_string("%s.old", wget_log);
+	syslog(LOG_INFO, "Wget log is too big. Backing up as '%s'", backup);
+	if (rename(wget_log, backup))
+		error("rename:%m");
+}
+
 /* Begins fetching 'uri', storing the file as 'path'.
  * Sets task->child_pid and makes task->str a copy of 'path'.
  * On error, task->child_pid will still be -1.
  */
 static void wget(Task *task, const char *uri, const char *path, int use_cache)
 {
-	const char *argv[] = {"wget", "-q", "-O", NULL, uri,
-			"--tries=3",
+	const char *argv[] = {"wget", "-O", NULL, uri,
+			"--tries=3", "-a", wget_log,
 			use_cache ? NULL : "--cache=off", NULL};
 	char *slash;
 
@@ -354,7 +370,7 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 	task_set_string(task, path);
 	if (!task->str)
 		return;
-	argv[3] = task->str;
+	argv[2] = task->str;
 
 	slash = strrchr(task->str, '/');
 	assert(slash);
@@ -363,6 +379,8 @@ static void wget(Task *task, const char *uri, const char *path, int use_cache)
 	if (!ensure_dir(task->str))
 		goto err;
 	*slash = '/';
+
+	may_rotate_log();
 
 	task->child_pid = fork();
 	if (task->child_pid == -1) {
@@ -390,7 +408,7 @@ static void got_archive(Task *task, const char *err)
 			free(dir);
 		}
 	} else {
-		/* XXX: maybe the index to too old? force a refresh... */
+		/* XXX: maybe the index is too old? force a refresh... */
 		error("Failed to fetch archive (%s)", task->str);
 	}
 

@@ -69,6 +69,7 @@ int verbose = 0; /* (debug) */
  */
 #define INDEX_CHECK_TIME (60 * 60)
 
+char *wget_log = NULL;
 char cache_dir[MAX_PATH_LEN];
 int cache_dir_len;	/* strlen(cache_dir) */
 
@@ -414,7 +415,11 @@ int main(int argc, char **argv)
 	assert(cache_dir_len >= 1 && cache_dir_len < sizeof(cache_dir));
 	cache_dir[cache_dir_len] = '\0';
 
+	wget_log = build_string("%s/.0inst-wget.log", cache_dir);
+	if (!wget_log)
+		return EXIT_FAILURE;
 	syslog(LOG_INFO, "Started: using cache directory '%s'", cache_dir);
+	syslog(LOG_INFO, "Network errors are logged to '%s'", wget_log);
 
 	if (0) {
 		printf("Literal: %s\n", build_string("Hello world"));
