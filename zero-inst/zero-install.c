@@ -336,6 +336,8 @@ static void read_from_helper(int helper)
 		exit(EXIT_FAILURE);
 	}
 
+	close_on_exec(request_fd, 1);
+
 	len = read(request_fd, buffer, sizeof(buffer));
 
 	if (len < 2 || buffer[len - 1] != '\0' || buffer[0] != '/') {

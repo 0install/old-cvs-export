@@ -165,3 +165,14 @@ int ensure_dir(const char *path)
 
 	return 1;
 }
+
+/* Set the close-on-exec flag for this FD.
+ * TRUE means that an exec()'d process will not get the FD.
+ */
+void close_on_exec(int fd, int close)
+{
+	if (fcntl(fd, F_SETFD, close)) {
+		perror("fcntl() failed");
+		exit(EXIT_FAILURE);
+	}
+}

@@ -365,17 +365,17 @@ destroy_request(struct lazy_user_request *request)
 	if (!request)
 		BUG();
 
-	// printk("Removing request by user %d for '%s'\n",
-	// 		request->uid, request->dentry->d_name.name);
+	//printk("Removing request by user %d for '%s'\n",
+	//		request->uid, request->dentry->d_name.name);
 
 	if (list_empty(&request->request_list))
 		BUG();
 	if (list_empty(&request->helper_list))
 		BUG();
 
-	dput(request->dentry);
 	list_del(&request->helper_list);
 	list_del(&request->request_list);
+	dput(request->dentry);
 
 	kfree(request);
 	dec(R_USER_REQUEST);
