@@ -247,21 +247,13 @@ static void client_send_reply(Client *client, const char *message)
 	new[client->send_len - 1] = '\0';
 }
 
-/* Client requests the 'directory' be refetched */
-static void client_refresh(Client *client, const char *directory)
+/* Client requests the cache for 'host' be refetched */
+static void client_refresh(Client *client, const char *host)
 {
-	char real[PATH_MAX];
 	Index *index;
 
-	if (!realpath(directory, real)) {
-		if (snprintf(real, sizeof(real),
-				"Bad path: %s", strerror(errno)) > 0)
-			client_send_reply(client, real);
-		return;
-	}
-	
-	if (strncmp(real, MNT_DIR "/", sizeof(MNT_DIR)) != 0) {
-		client_send_reply(client, "Not under Zero Install's control");
+	if (strchr(host, '/') || host[0] == '.' || !*host) {
+		client_send_reply(client, "Bad hostname");
 		return;
 	}
 
@@ -270,11 +262,13 @@ static void client_refresh(Client *client, const char *directory)
 		return;
 	}
 
-	task_set_string(client->task, real + sizeof(MNT_DIR) - 1);
+	task_set_string(client->task, NULL);
+	client->task->str = my_malloc(strlen(host) + 2);
 	if (!client->task->str) {
 		client_send_reply(client, "Out of memory");
 		return;
 	}
+	sprintf(client->task->str, "/%s", host);
 
 	index = get_index(client->task->str, &client->task->child_task, 1);
 	assert(!index);

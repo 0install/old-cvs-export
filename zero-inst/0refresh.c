@@ -4,6 +4,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#define ZERO_MNT "/uri/0install"
+
 static void send_command(int socket, const char *message)
 {
 	while (*message) {
@@ -106,11 +108,22 @@ int main(int argc, char **argv)
 
 	if (argc == 1) {
 		char cwd[4096];
+		char *path, *slash;
 		if (!getcwd(cwd, sizeof(cwd))) {
 			fprintf(stderr, "getcwd() failed\n");
 			return 1;
 		}
-		send_command(control, cwd);
+		if (strncmp(cwd, ZERO_MNT "/", sizeof(ZERO_MNT)) != 0) {
+			fprintf(stderr, "'%s' not under " ZERO_MNT ".\n",
+					cwd);
+			return 1;
+		}
+
+		path = cwd + sizeof(ZERO_MNT);
+		slash = strchr(path, '/');
+		if (slash)
+			*slash = '\0';
+		send_command(control, path);
 	} else
 		send_command(control, argv[1]);
 	send_command(control, "\n");
