@@ -31,7 +31,7 @@
 
 #ifdef LINUX_2_6_SERIES
 	/* 2.6 kernel */
-# define SBI(sb) ((struct lazy_sb_info *) ((sb)->s_fs_info))
+# define SBI_VOID(sb) ((sb)->s_fs_info)
 # define TIME_T struct timespec
 /* (... format only stores times to 1 second accuracy anyway) */
 # define TIMES_EQUAL(a, b) ((a).tv_sec == (b).tv_sec)
@@ -42,7 +42,7 @@
 
 #else
 	/* 2.4 kernel */
-# define SBI(sb) ((struct lazy_sb_info *) ((sb)->u.generic_sbp))
+# define SBI_VOID(sb) ((sb)->u.generic_sbp)
 # ifdef CONFIG_MODVERSIONS
 #  define MODVERSIONS
 #  include <linux/modversions.h>
@@ -51,6 +51,8 @@
 # define TIME_T time_t
 # define TIMES_EQUAL(a, b) ((a) == (b))
 #endif
+
+#define SBI(sb) ((struct lazy_sb_info *) SBI_VOID(sb))
 
 #include <linux/module.h>
 #include <linux/types.h>
@@ -653,7 +655,7 @@ lazyfs_fill_super(struct super_block *sb, void *data, int silent)
 	sbi = kmalloc(sizeof(struct lazy_sb_info), GFP_KERNEL);
 	if (!sbi)
 		return -ENOMEM;
-	SBI(sb) = sbi;
+	SBI_VOID(sb) = sbi;
 	sbi->host_dentry = NULL;
 	sbi->host_mnt = NULL;
 	sbi->cache_dentry = NULL;
@@ -1411,7 +1413,7 @@ lazyfs_put_super(struct super_block *sb)
 		dec(R_ROOT_HOST_DENTRY);
 		mntput(sbi->host_mnt);
 		dec(R_ROOT_HOST_MNT);
-		SBI(sb) = NULL;
+		SBI_VOID(sb) = NULL;
 		kfree(sbi);
 		dec(R_SBI);
 	}
@@ -1931,7 +1933,7 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 	/* Make sure the mapping for our inode points to the host file's */
 	spin_lock(&mapping_lock);
 
-	((int) inode->u.generic_ip)++;
+	(*((int *) &inode->u.generic_ip))++;
 	finfo->n_mappings++;
 	if (inode->i_mapping == &inode->i_data) {
 		if (((int) inode->u.generic_ip) != 1)
@@ -2031,7 +2033,7 @@ lazyfs_file_release(struct inode *inode, struct file *file)
 
 		spin_lock(&mapping_lock);
 
-		((int) inode->u.generic_ip) -= finfo->n_mappings;
+		*((int *) &inode->u.generic_ip) -= finfo->n_mappings;
 
 		if (((int) inode->u.generic_ip) == 0) {
 			//printk("Last mapping gone!\n");

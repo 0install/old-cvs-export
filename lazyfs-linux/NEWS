@@ -1,3 +1,7 @@
+* Fixed some compiler warnings with GCC 3.3.
+
+* Added unit tests.
+
 * Use /sbin prefix for depmod and modprobe, in case it's not in PATH (Alastair
   Porter).
 
