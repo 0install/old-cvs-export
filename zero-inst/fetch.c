@@ -439,7 +439,7 @@ static const char *unpack_site_archive(const char *site)
 	if (chdir_meta(site))
 		return "chdir failed";
 
-	if (system("tar xjf index.tar.bz2 keyring.pub mirrors.xml "
+	if (system("tar --bzip2 -xf index.tar.bz2 keyring.pub mirrors.xml "
 		   "index.xml.sig") == 0)
 		err = NULL;
 	else
