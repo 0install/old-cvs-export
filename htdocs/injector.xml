@@ -36,6 +36,9 @@ $ gpg --recv-key --keyserver www.keyserver.net 59A53CC1
 </li>
 </ul>
 
+<div class='note'>The current release (0.2) is just an experimental prototype. It will
+contain a few bugs.</div>
+
 <p>
 To run the injector, use the <b>0launch</b> or <b>0launch-gui</b> commands. <b>0launch</b>
 tries to run a program without prompting, while the GUI version asks you to confirm or
