@@ -1,4 +1,8 @@
+Changes since 0.1.23:
+
 * Updated the Technical file (reported by Issac Trotts).
+
+* Use new version of lazyfs.
 
 Changes since 0.1.22:
 

@@ -1,6 +1,9 @@
 #! /bin/sh
 # /etc/init.d/0install
 #
+# chkconfig: 345 90 10
+# description: Downloads resources under /uri/0install
+#
 # Written by Thomas Leonard, tal197 at users.sourceforge.net.
 
 test -f "@zero-install@" || exit 0
