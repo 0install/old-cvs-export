@@ -364,6 +364,7 @@ def make_mirrors():
 	root.setAttributeNS(dom.XMLNS_NAMESPACE, 'xmlns', ZERO_NS)
 	doc.appendChild(root)
 	root.setAttributeNS(None, 'index', index_bz_leaf)
+	root.setAttributeNS(None, 'index_size', str(os.stat(index_bz).st_size))
 	mirror = doc.createElementNS(ZERO_NS, 'mirror')
 	# TODO: put archive_dir_leaf here, not in each link.
 	# But have to cope with older zero-install versions for a while.
