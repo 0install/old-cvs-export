@@ -6,7 +6,8 @@ all: lazyfs.o zero
 CC=gcc
 CFLAGS   := -O2 -Wall -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -g
 MODFLAGS := -DMODULE -D__KERNEL__
-#UMFLAGS  := -I${KERNEL}/include -U__i386__ -Ui386 -DUM_FASTCALL -D__arch_um__ -DSUBARCH="i386" -D_LARGEFILE64_SOURCE -I${KERNEL}/arch/um/include -Derrno=kernel_errno -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
+
+UMFLAGS := -I${KERNEL}/arch/um/include -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
 
 clean:
 	rm lazyfs.o zero

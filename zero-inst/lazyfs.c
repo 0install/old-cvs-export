@@ -19,16 +19,14 @@
 
 /* See the 'Technical' file for details. */
 
-/* TODO: Don't allow multiple files with the same name. Also '.' and '..'. */
-
 #include <linux/module.h>   /* Needed by all modules */
 #include <linux/kernel.h>   /* Needed for KERN_ALERT */
 #include <linux/init.h>     /* Needed for the macros */
-#include <linux/autoconf.h>
+#include "config.h"
 
-#if CONFIG_MODVERSIONS==1
-#define MODVERSIONS
-#include <linux/modversions.h>
+#ifdef USE_MODVERSIONS
+# define MODVERSIONS
+# include <linux/modversions.h>
 #endif
 
 #define LAZYFS_MAX_LISTING_SIZE (100*1024)
@@ -828,6 +826,11 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		
 		if (listing == end + 1)
 			goto bad_list;	/* Last line not terminated */
+
+		if (name.len == 1 && name.name[0] == '.')
+			goto bad_list;	/* Can't have '.' */
+		if (name.len == 2 && name.name[0] == '.' && name.name[1] == '.')
+			goto bad_list;	/* Can't have '..' */
 
 		name.hash = full_name_hash(name.name, name.len);
 		existing = d_lookup(dir, &name);

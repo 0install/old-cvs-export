@@ -1,4 +1,5 @@
 AC_INIT(lazyfs.c)
+AC_CONFIG_HEADER(config.h)
 
 AC_PROG_CC
 
@@ -32,5 +33,13 @@ EOF
   exit 1
 fi
 AC_MSG_RESULT(OK)
+
+AC_MSG_CHECKING(if modversions should be used)
+if ksyms -a|grep -q "printk\>"; then
+  AC_MSG_RESULT(no)
+else
+  AC_DEFINE(FILE_B_FLAG)
+  AC_MSG_RESULT(yes)
+fi
 
 AC_OUTPUT(Makefile)
