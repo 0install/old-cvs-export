@@ -17,10 +17,16 @@ types of reader we have:
 <dd>Sets up zero install for users.</dd>
 
 <dt>Packager</dt>
-<dd>Makes software available to others via Zero Install.</dd>
+<dd>Makes software available to others via Zero Install.
+See the <a href="packagers.html">Packagers</a> page for more
+information.
+</dd>
 
 <dt>Zero Install developer</dt>
-<dd>Helps write the core Zero Install system.</dd>
+<dd>Helps write the core Zero Install system.
+See the <a href="technical.html">Technical details</a> page for more
+information.
+</dd>
 
 </dl>
 
@@ -186,176 +192,5 @@ $ for x in *; do 0refresh "$x"; done
 This will update every cached index file. The actual data will be fetched on
 demand.
 </p>
-
-<h2>Documentation for packagers</h2>
-
-<p>If you'd like to make software available via Zero Install then you should
-use the 0build program to build the index file. The easiest way to do this
-is to 'cd' into the directory you want to make available and run '0build'
-to build the index files in the server directory from there:</p>
-
-<pre>
-$ <b>alias 0build=/uri/0install/zero-install.sourceforge.net/bin/0build</b>
-$ <b>cd ~/www</b>
-$ <b>ls -l MyProg/</b>
-total 4
--rwxr-xr-x    1 tal00r   tal00r         18 2003-05-23 15:21 foo
-$ <b>./MyProg/foo</b>
-42
-$ <b>0build /var/www myhost.com</b>
-Building index files for server 'myhost.com' in '/var/www'.
-Creating new directory for archives '/var/www/.0inst-archives'
-Creating new archive for /MyProg
-$ <b>/uri/0install/myhost.com/MyProg/foo</b>
-42
-</pre>
-
-<p>And that's it!</p>
-
-<ul>
-<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/361">I share my webserver with others, and can't put files in the root!</a></li>
-</ul>
-
-<h3>Suggested directory layout</h3>
-
-<p>
-Typically, you'll want to provide multiple versions of your software, and
-for multiple platforms. The suggested way to handle this is to create
-a subdirectory for each platform, and then a sub-sub-directory for each
-version, so the program will be run as:
-</p>
-
-<pre>
-$ <b>/uri/0install/.../MyProg/Linux-ix86/1.0.2/MyProg</b>
-</pre>
-
-<p>
-If your program is platform independent then you can skip the platform part,
-of course. If your program is platform dependant, but programs referring to
-it are not, then you should use the special '@PLATFORM@' target:
-</p>
-
-<pre>
-$ <b>cd ~/www/MyProg</b>
-$ <b>ln -s '@PLATFORM@' platform</b>
-</pre>
-
-<p>
-Other programs can then access it as:
-</p>
-
-<pre>
-$ <b>/uri/0install/.../MyProg/platform/1.0.2/MyProg</b>
-</pre>
-
-<p>
-When accessed via Zero Install, the symlink's target will be the name of
-the user's platform (ie, it will appear as 'platform -> Linux-ix86' on
-Linux ix86 type systems).
-</p>
-
-<p>
-The versions should go inside the platform directories (rather than the
-other way around) so that 'platform/latest-2.2' can be a different version
-for each platform (eg, if the ARM port is a few versions behind the x86 one).
-Note that some of the ROX applications use a different scheme (that predates
-Zero Install), putting the platforms inside the versions and using 'uname'
-to run them. Don't let that confuse you.
-</p>
-
-<p>
-You should also use symlinks to indicate interesting versions (such as the
-current stable release). Thus, a python script might start with:
-</p>
-
-<pre>
-#!/uri/0install/python.org/platform/2.2-or-later
-print "Hello, I need Python 2.2 or later"
-</pre>
-
-<p>
-The '2.2-or-later' symlink points to the latest version of python which
-is compatible with version 2.2. Other examples: 'latest-2.2 -> 2.2.3',
-'latest-stable', etc.
-</p>
-
-<h3>Avoiding glibc version troubles</h3>
-
-<p>
-Glibc tries to prevent programs compiled using one version of the library
-from running on other versions, even when the interface is compatible. To
-create portable binaries, it is therefore necessary to use a little program at
-<a href="http://autopackage.org">autopackage.org</a> (apbuild CVS module) which
-can be used as a wrapper for gcc.
-</p>
-
-<h3>Depending on other things in Zero Install</h3>
-
-<p>
-Your application can use other libraries from Zero Install, or it can use
-old-style pathnames (eg, '#!usr/bin/env python'). In that case, the user
-must install Python manually, as if they weren't using Zero Install. This
-is useful for packages that aren't provided through this system.
-</p>
-
-<p>
-There's a handy '0run' command, which gets installed to /bin. This takes
-a program and a date and runs the program, first forcing a refresh if it's
-missing or too old. So a python script might instead start with:
-</p>
-
-<pre>
-	#!/bin/0run python.org/python2.2 2003-07-05
-	print "Hello from python!"
-</pre>
-
-<p>
-(0run lets you leave out the leading /uri/0install)
-</p>
-
-<p>
-If the software you're packaging has not been designed for Zero Install then
-it may require a 'make install' step. In that case, use --prefix to give
-the final location (full URI) and mount a tmpfs partition (or similar) there
-to catch the installed files:
-</p>
-
-<pre>
-$ <b>./configure --prefix=/uri/0install/www.gtk.org/glib/Linux-ix86/2.2.1</b>
-$ <b>make</b>
-# <b>mount -t tmpfs tmpfs /uri/0install/www.gtk.org/</b>
-$ <b>make install</b>
-</pre>
-
-<p>
-Then use 0build to archive the tmpfs partition onto the web server.
-</p>
-
-<h3>Shared libraries</h3>
-
-<p>
-It's quite easy to make normal libraries available through Zero Install
-(see the <a href="technical.html">glib example</a>). For a very simple example,
-take a look in
-<tt>/uri/0install/zero-install.sourceforge.net/libs/libhello-1.0</tt>. There's
-an 'example' subdirectory with a test program. Copy that directory somewhere
-and run make inside it. The program compiles using the header files for
-`libhello' from Zero Install. You'll get a binary called 'demo' which, when
-run, dynamically links against the binary in Zero Install too.
-</p>
-
-<h3>Cool URIs</h3>
-
-<p>
-Remember that the full pathname of your application or library is part of the
-public API of the software. Changing your directory layout is equivalent to
-changing the API. See <a href="http://www.w3.org/Provider/Style/URI.html">
-Cool URIs don't change</a> for more thoughts on stable URIs.
-</p>
-
-<h2>Documentation for Zero Install developers</h2>
-
-See the <a href="technical.html">Technical details</a> page for more
-information.
 
 </html>
