@@ -1,3 +1,23 @@
+Changes since 0.1.8:
+
+* Change to the control interface: lines are now terminated by \0, not \n.
+
+* 0show interface changed to include the path of the current download and
+  its total size (if known). This is for progress indicators.
+
+* Index files are validated more carefully.
+
+* The code has been tidied up a great deal.
+
+* When fetching a file, the index is updated first.
+
+* Installation is now simpler.
+
+* Initial (untested) support for Linux 2.5.70.
+
+* Kernel module checks that size and mtimes are correct, and does a
+  refresh if not.
+
 Changes since 0.1.7:
 
 * New 0refresh program to update the cache.
