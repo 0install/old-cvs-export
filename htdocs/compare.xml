@@ -70,8 +70,8 @@ simply telling the computer to run it.
 <pre>
 $ gimp
 bash: 'gimp' not found in disk cache
-$ sudo disk-cache load /usr/bin/gimp
-Enter root@localhost's password:
+$ su -c 'disk-cache load /usr/bin/gimp'
+Enter root's password:
 $ gimp
 </pre>
 <p>
