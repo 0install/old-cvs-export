@@ -933,6 +933,8 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 			goto bad_list;	/* Can't have '.' */
 		if (name.len == 2 && name.name[0] == '.' && name.name[1] == '.')
 			goto bad_list;	/* Can't have '..' */
+		if (strchr(name.name, '/'))
+			goto bad_list;	/* Can't have '/' in a name */
 
 		name.hash = full_name_hash(name.name, name.len);
 		existing = d_lookup(dir, &name);

@@ -5,7 +5,9 @@ TESTS := hello_glib
 GLIB := /uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386
 PKG_CONFIG_PATH=${GLIB}/lib/pkgconfig
 
-all: lazyfs.o zero-install #${TESTS}
+ZERO_OBJECTS := zero-install.o support.o child.o control.o
+
+all: lazyfs.o zero-install 0show #${TESTS}
 
 CC	 := @CC@
 CFLAGS   := -O2 -Wall -Wstrict-prototypes -g
@@ -15,7 +17,7 @@ UMFLAGS := -I${KERNEL}/arch/um/include -I${KERNEL}/arch/um/kernel/tt/include -I$
 clean:
 	rm -f *.o hello_glib zero-install
 
-KERNELFLAGS := -I${KERNEL}/include -Wno-trigraphs -fno-strict-aliasing -fno-common
+KERNELFLAGS := -I${KERNEL}/include -Wno-trigraphs -fno-strict-aliasing -fno-common -Wall -Wstrict-prototypes
 MODFLAGS := -DMODULE -D__KERNEL__
 
 install:
@@ -26,10 +28,10 @@ install:
 	[ -d /var/cache/zero-inst ] || mkdir /var/cache/zero-inst
 
 lazyfs.o: lazyfs.c
-	${CC} -c ${CFLAGS} ${KERNELFLAGS} ${MODFLAGS} -o $@ $<
+	${CC} -c ${KERNELFLAGS} ${MODFLAGS} -o $@ $<
 
-zero-install: zero-install.o support.o child.o
-	${CC} -o $@ zero-install.o support.o child.o
+zero-install: ${ZERO_OBJECTS}
+	${CC} -o $@ ${ZERO_OBJECTS}
 
 # Test program using glib
 

@@ -45,37 +45,20 @@
 #include <sys/select.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <time.h>
 
 #include "support.h"
+#include "control.h"
 #include "child.h"
+#include "zero-install.h"
 
-#define URI "/uri"
-static const char *cache_dir = "/var/cache/zero-inst";
+const char *cache_dir = "/var/cache/zero-inst";
 
 static const char *prog; /* argv[0] */
 
-typedef struct _Request Request;
-typedef struct _UserRequest UserRequest;
+static int finished = 0;
 
-struct _Request {
-	char *path;
-
-	int n_users;
-	UserRequest *users;
-
-	pid_t child_pid;
-
-	Request *next;	/* link in open_requests */
-};
-
-struct _UserRequest {
-	int fd;
-	uid_t uid;
-
-	char *leaf;
-};
-
-static Request *open_requests = NULL;
+Request *open_requests = NULL;
 
 static int to_wakeup_pipe = -1;	/* Write here to get noticed */
 
@@ -109,13 +92,6 @@ static void finish_request(Request *request)
 
 	printf("Closing request in %s\n", request->path);
 
-	for (i = 0; i < request->n_users; i++) {
-		printf("  Closing request %d for %s\n",
-				request->users[i].fd,
-				request->users[i].leaf);
-		close(request->users[i].fd);
-	}
-
 	if (request == open_requests) {
 		open_requests = request->next;
 	} else {
@@ -135,6 +111,16 @@ static void finish_request(Request *request)
 		}
 	}
 	request->next = NULL;
+
+	for (i = 0; i < request->n_users; i++) {
+		printf("  Closing request %d for %s\n",
+				request->users[i].fd,
+				request->users[i].leaf);
+		close(request->users[i].fd);
+		free(request->users[i].leaf);
+
+		control_notify_user(request->users[i].uid);
+	}
 
 	free(request->users);
 	free(request->path);
@@ -175,8 +161,8 @@ static void request_add_user(Request *request, int fd, uid_t uid,
 	UserRequest *new;
 	char *leaf;
 
-	new = realloc(request->users,
-		      sizeof(UserRequest) * request->n_users + 1);
+	new = my_realloc(request->users,
+		      sizeof(UserRequest) * (request->n_users + 1));
 	if (!new) {
 		close(fd);
 		return;
@@ -194,6 +180,8 @@ static void request_add_user(Request *request, int fd, uid_t uid,
 	new[request->n_users].leaf = leaf;
 
 	request->n_users++;
+
+	control_notify_user(uid);
 }
 
 static Request *find_request(const char *path)
@@ -212,6 +200,9 @@ static Request *find_request(const char *path)
 static void handle_root_request(int request_fd)
 {
 	FILE *ddd;
+	long now;
+
+	now = time(NULL);
 
 	if (chdir(cache_dir))
 		goto err;
@@ -219,7 +210,11 @@ static void handle_root_request(int request_fd)
 	ddd = fopen("....", "w");
 	if (!ddd)
 		goto err;
-	fprintf(ddd, "LazyFS\nd 0 0 %s%c", "http", 0);
+	fprintf(ddd, "LazyFS\n"
+		"d 0 %ld http%c"
+		"d 0 %ld ftp%c"
+		"d 0 %ld https%c",
+		now, 0, now, 0, now, 0);
 	if (fclose(ddd))
 		goto err;
 
@@ -228,11 +223,46 @@ static void handle_root_request(int request_fd)
 	fprintf(stderr, "Write root ... file\n");
 	goto out;
 err:
+	perror("handle_root_request");
 	fprintf(stderr, "Unable to write root ... file\n");
 out:
 	close(request_fd);
 	chdir("/");
-	return;
+}
+
+/* Handle one of the top-level dirs (http, ftp, etc) by marking it as
+ * dynamic.
+ */
+static void handle_toplevel_request(int request_fd, const char *dir)
+{
+	FILE *ddd;
+
+	if (chdir(cache_dir))
+		goto err;
+
+	if (mkdir(dir, 0755) && errno != EEXIST)
+		goto err;
+	if (chdir(dir))
+		goto err;
+
+	ddd = fopen("....", "w");
+	if (!ddd)
+		goto err;
+	fprintf(ddd, "LazyFS Dynamic\n");
+	if (fclose(ddd))
+		goto err;
+	if (rename("....", "..."))
+		goto err;
+	goto out;
+err:
+	perror("handle_toplevel_request");
+	fprintf(stderr, "Unable to write %s ... file\n", dir);
+out:
+	close(request_fd);
+	chdir("/");
+
+	sleep(1);
+	fprintf(stderr, "Done\n");
 }
 
 static void close_all_fds(void)
@@ -286,10 +316,11 @@ static void handle_request(int request_fd, uid_t uid, char *path)
 	}
 
 	slash = strrchr(path, '/');
-	if (slash != path)
-		*slash = '\0';
-	else
-		path = "/";
+	if (slash == path) {
+		handle_toplevel_request(request_fd, path + 1);
+		return;
+	}
+	*slash = '\0';
 
 	request = find_request(path);
 	if (!request) {
@@ -317,6 +348,12 @@ static void handle_request(int request_fd, uid_t uid, char *path)
  */
 static void child_died(int signum)
 {
+	write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
+}
+
+static void sigint(int signum)
+{
+	finished = 1;
 	write(to_wakeup_pipe, "\0", 1);	/* Wake up! */
 }
 
@@ -413,8 +450,11 @@ int main(int argc, char **argv)
 	int wakeup_pipe[2];
 	struct sigaction act;
 	int helper;
+	int control_socket;
 	int max_fd;
 
+	umask(0022);
+	
 	prog = argv[0];
 
 	helper = open_helper();
@@ -438,19 +478,35 @@ int main(int argc, char **argv)
 	act.sa_flags = SA_NOCLDSTOP;
 	sigaction(SIGCHLD, &act, NULL);
 
+	/* Catch SIGINT and exit nicely */
+	act.sa_handler = sigint;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_ONESHOT;
+	sigaction(SIGINT, &act, NULL);
+
+	control_socket = create_control_socket();
+
 	if (wakeup_pipe[0] > helper)
 		max_fd = wakeup_pipe[0];
 	else
 		max_fd = helper;
+	if (control_socket > max_fd)
+		max_fd = control_socket;
 
-	while (1) {
-		fd_set rfds;
+	while (!finished) {
+		fd_set rfds, wfds;
+		int n = max_fd + 1;
 
 		FD_ZERO(&rfds);
+		FD_ZERO(&wfds);
+
 		FD_SET(helper, &rfds);
 		FD_SET(wakeup_pipe[0], &rfds);
+		FD_SET(control_socket, &rfds);
 
-		if (select(max_fd + 1, &rfds, NULL, NULL, NULL) == -1) {
+		n = control_add_select(n, &rfds, &wfds);
+
+		if (select(n, &rfds, &wfds, NULL, NULL) == -1) {
 			if (errno == EINTR)
 				continue;
 			perror("select");
@@ -462,9 +518,17 @@ int main(int argc, char **argv)
 		
 		if (FD_ISSET(wakeup_pipe[0], &rfds))
 			read_from_wakeup(wakeup_pipe[0]);
+		
+		if (FD_ISSET(control_socket, &rfds))
+			read_from_control(control_socket);
+
+		control_check_select(&rfds, &wfds);
 	}
 
+	/* Doing a clean shutdown is mainly for valgrind's benefit */
+	printf("%s: Got SIGINT... terminating...\n", prog);
+
 	close(helper);
-	
+
 	return EXIT_SUCCESS;
 }
