@@ -19,9 +19,12 @@
 	 * Linux to test it)
 	 */
 
-/* TODO: Locking. */
-
 /* See the 'Technical' file for details. */
+
+/* Locking:
+ * After the initial read_super, the virtual directory tree can only be changed
+ * from within ensure_cached(), which uses a static lock to prevent races.
+ */
 
 #include <linux/module.h>   /* Needed by all modules */
 #include <linux/kernel.h>   /* Needed for KERN_ALERT */
@@ -48,7 +51,7 @@
 
 #include "lazyfs.h"
 
-#if 1
+#if 1	/* Debugging */
 static atomic_t resource_counter = ATOMIC_INIT(0);
 static inline void inc(char *m)
 {
@@ -59,6 +62,25 @@ static inline void dec(char *m)
 {
 	//printk("- %s\n", m);
 	atomic_dec(&resource_counter);
+}
+static void show_refs(struct dentry *dentry, int indent)
+{
+	struct list_head *next;
+	int i;
+
+	for (i = 0; i < indent; i++)
+		printk(" ");
+	printk("'%s' [%d] %s %s\n", dentry->d_name.name,
+			atomic_read(&dentry->d_count),
+			indent != 0 && d_unhashed(dentry) ? "(unhashed)" : "",
+			!dentry->d_inode ? "(negative)" : "");
+
+	next = dentry->d_subdirs.next;
+	while (next != &dentry->d_subdirs) {
+		struct dentry *c = list_entry(next, struct dentry, d_child);
+		show_refs(c, indent + 2);
+		next = next->next;
+	}
 }
 #endif
 
@@ -104,7 +126,7 @@ struct lazy_sb_info
 struct lazy_de_info
 {
 	struct dentry *dentry;	/* dentry->d_fsdata->dentry == dentry */
-	int may_delete;		/* Used during mark-and-sweep (XXX:lock) */
+	int may_delete;		/* Used during mark-and-sweep */
 
 	/* When a directory is opened we find the corresponding directory
 	 * in the cache, and store its dentry here. host_dentry make go
@@ -145,8 +167,7 @@ static int ensure_cached(struct dentry *dentry);
 static void
 lazyfs_put_inode(struct inode *inode)
 {
-	if (S_ISLNK(inode->i_mode) && inode->u.generic_ip)
-	{
+	if (S_ISLNK(inode->i_mode) && inode->u.generic_ip) {
 		kfree(inode->u.generic_ip);
 		dec("target");
 	}
@@ -164,13 +185,11 @@ lazyfs_release_dentry(struct dentry *dentry)
 	if (!list_empty(&info->helper_list))
 		BUG();
 
-	if (info->host_dentry)
-	{
+	if (info->host_dentry) {
 		dec("info->host_dentry");
 		dput(info->host_dentry);
 	}
-	if (info->list_dentry)
-	{
+	if (info->list_dentry) {
 		dec("info->list_dentry");
 		dput(info->list_dentry);
 	}
@@ -199,19 +218,16 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 	inode->i_size = size;
 	inode->i_atime = CURRENT_TIME;
 	inode->i_ctime = inode->i_mtime = mtime;
-	if (S_ISDIR(mode))
-	{
+	if (S_ISDIR(mode)) {
 		inode->i_op = &lazyfs_dir_inode_operations;
 		inode->i_fop = &lazyfs_dir_operations;
 	}
 	else if (S_ISREG(mode))
 		inode->i_fop = &lazyfs_file_operations;
-	else if (S_ISLNK(mode))
-	{
+	else if (S_ISLNK(mode)) {
 		char *target;
 		target = kmalloc(link_target->len + 1, GFP_KERNEL);
-		if (!target)
-		{
+		if (!target) {
 			iput(inode);
 			return NULL;
 		}
@@ -245,8 +261,7 @@ new_dentry(struct super_block *sb, struct dentry *parent_dentry,
 	if (!inode)
 		return NULL;
 
-	if (parent_dentry)
-	{
+	if (parent_dentry) {
 		struct qstr name;
 
 		if (sb != parent_dentry->d_inode->i_sb)
@@ -296,13 +311,11 @@ file_from_mount_data(struct lazy_mount_data *mount_data)
 	struct file *file;
 	struct inode *inode = NULL;
 
-	if (!mount_data)
-	{
+	if (!mount_data) {
 		printk("lazyfs_read_super: Bad mount data\n");
 		return NULL;
 	}
-	if (mount_data->version != 1)
-	{
+	if (mount_data->version != 1) {
 		printk("lazyfs_read_super: Wrong version number\n");
 		return NULL;
 	}
@@ -310,8 +323,7 @@ file_from_mount_data(struct lazy_mount_data *mount_data)
 	file = fget(mount_data->fd);
 	if (file)
 		inode = file->f_dentry->d_inode;
-	if (!inode || !S_ISDIR(inode->i_mode))
-	{
+	if (!inode || !S_ISDIR(inode->i_mode)) {
 		printk("lazyfs_read_super: Bad file\n");
 		fput(file);
 		return NULL;
@@ -357,13 +369,11 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 
 	return sb;
 err:
-	if (sbi->host_file)
-	{
+	if (sbi->host_file) {
 		fput(sbi->host_file);
 		dec("mount host file");
 	}
-	if (sbi)
-	{
+	if (sbi) {
 		kfree(sbi);
 		dec("sbi");
 	}
@@ -404,8 +414,7 @@ get_host_dir_dentry(struct dentry *dentry, struct dentry *host_dentry)
 	old = info->host_dentry;
 	info->host_dentry = dget(host_dentry);
 	inc("info->host_dentry");
-	if (old)
-	{
+	if (old) {
 		dput(old);
 		dec("info->host_dentry");
 	}
@@ -436,13 +445,10 @@ static struct dentry *try_get_host_dentry(struct dentry *dentry,
 	if ((!parent_host) != (dentry == sb->s_root))
 		BUG();
 	
-	if (!parent_host)
-	{
+	if (!parent_host) {
 		struct lazy_sb_info *sbi = sb->u.generic_sbp;
 		host_dentry = dget(sbi->host_file->f_dentry);
-	}
-	else
-	{
+	} else {
 		down(&parent_host->d_inode->i_sem);
 		host_dentry = lookup_hash(&name, parent_host);
 		up(&parent_host->d_inode->i_sem);
@@ -461,14 +467,11 @@ static struct dentry *try_get_host_dentry(struct dentry *dentry,
 	mode = dentry->d_inode->i_mode;
 	host_mode = host_dentry->d_inode->i_mode;
 
-	if (S_ISREG(mode))
-	{
+	if (S_ISREG(mode)) {
 		if (S_ISREG(host_mode))
 			return host_dentry;	/* File, OK */
 		goto fetch;
-	}
-	else if (S_ISDIR(mode))
-	{
+	} else if (S_ISDIR(mode)) {
 		struct dentry *list_dentry;
 
 		if (!S_ISDIR(host_mode))
@@ -509,12 +512,9 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 	if (!info)
 		BUG();
 
-	if (dentry != sb->s_root)
-	{
+	if (dentry != sb->s_root) {
 		struct lazy_de_info *parent_info = dentry->d_parent->d_fsdata;
 
-		if (!parent_info)
-			BUG();
 		/* parent_host can't be NULL, but it can change under us */
 		parent_host = dget(parent_info->host_dentry);
 		if (!parent_host)
@@ -543,8 +543,7 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 		/* Start a fetch, if there isn't one already */
 		spin_lock(&fetching_lock);
 		had_helper = sbi->helper_mnt != NULL;
-		if (had_helper && list_empty(&info->helper_list))
-		{
+		if (had_helper && list_empty(&info->helper_list)) {
 			dget(dentry);
 			list_add_tail(&info->helper_list, &sbi->to_helper);
 			start_fetching = 1;
@@ -561,19 +560,16 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 		if (!blocking)
                         goto out;
 
-		while (1)
-		{
+		while (1) {
 			current->state = TASK_INTERRUPTIBLE;
 			spin_lock(&fetching_lock);
-			if (list_empty(&info->helper_list))
-			{
+			if (list_empty(&info->helper_list)) {
 				spin_unlock(&fetching_lock);
-				break;
+				break;	/* Fetch request completed */
 			}
 			spin_unlock(&fetching_lock);
 
-			if (signal_pending(current))
-			{
+			if (signal_pending(current)) {
 				host_dentry = ERR_PTR(-ERESTARTSYS);
 				goto out;
 			}
@@ -583,8 +579,7 @@ static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 	} while (1);
 
 out:
-	if (parent_host)
-	{
+	if (parent_host) {
 		dput(parent_host);
 		dec("parent_host");
 	}
@@ -603,11 +598,13 @@ while (isdigit(**s))
 return i;
 }
 
-/* Audit: START */
-static void mark_children_may_delete(struct dentry *dentry)
+/* Mark every child of this directory as a candidate for removal.
+ * Called with 'update_dir' lock held.
+ */
+static inline void mark_children_may_delete(struct dentry *dentry)
 {
 	struct super_block *sb = dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = sb->u.generic_sbp;
 	struct list_head *head, *next;
 
 	spin_lock(&dcache_lock);
@@ -616,11 +613,10 @@ static void mark_children_may_delete(struct dentry *dentry)
 
 	while (next != head) {
 		struct dentry *child = list_entry(next, struct dentry, d_child);
-		struct lazy_de_info *info = (struct lazy_de_info *)
-						child->d_fsdata;
+		struct lazy_de_info *info = child->d_fsdata;
 		next = next->next;
 
-		if (d_unhashed(child)||!child->d_inode)
+		if (d_unhashed(child) || !child->d_inode)
 			continue;
 
 		if (child != sbi->helper_dentry)
@@ -648,7 +644,7 @@ resume:
 		struct list_head *tmp = next;
 		struct dentry *dentry = list_entry(tmp, struct dentry, d_child);
 		next = tmp->next;
-		if (d_unhashed(dentry)||!dentry->d_inode)
+		if (d_unhashed(dentry) || !dentry->d_inode)
 			continue;
 		if (!list_empty(&dentry->d_subdirs)) {
 			this_parent = dentry;
@@ -667,29 +663,10 @@ resume:
 	spin_unlock(&dcache_lock);
 }
 
-#if 0
-static void show_refs(struct dentry *dentry, int indent)
-{
-	struct list_head *next;
-	int i;
-
-	for (i = 0; i < indent; i++)
-		printk(" ");
-	printk("'%s' [%d] %s %s\n", dentry->d_name.name,
-			atomic_read(&dentry->d_count),
-			indent != 0 && d_unhashed(dentry) ? "(unhashed)" : "",
-			!dentry->d_inode ? "(negative)" : "");
-
-	next = dentry->d_subdirs.next;
-	while (next != &dentry->d_subdirs) {
-		struct dentry *c = list_entry(next, struct dentry, d_child);
-		show_refs(c, indent + 2);
-		next = next->next;
-	}
-}
-#endif
-
-/* Removes dentry from the tree, and any child nodes too */
+/* Removes dentry from the tree, and any child nodes too.
+ * Note: removes the ref that the tree held, but doesn't drop the reference
+ * passed in.
+ */
 static void remove_dentry(struct dentry *dentry)
 {
 	my_d_genocide(dentry);
@@ -712,7 +689,7 @@ restart:
 						child->d_fsdata;
 		next = next->next;
 
-		if (d_unhashed(child)||!child->d_inode)
+		if (d_unhashed(child) || !child->d_inode)
 			continue;
 
 		if (!info->may_delete)
@@ -735,11 +712,10 @@ has_changed(struct inode *i, mode_t mode, size_t size, time_t time,
 	if (i->i_mode != mode || i->i_size != size || i->i_mtime != time)
 		return 1;
 
-	if (S_ISLNK(mode))
-	{
+	if (S_ISLNK(mode)) {
 		char *old = i->u.generic_ip;
-		return strncmp(old, link_target->name, link_target->len)
-			|| strlen(old) != link_target->len;
+		return strncmp(old, link_target->name, link_target->len) ||
+			strlen(old) != link_target->len;
 	}
 
 	return 0;
@@ -747,6 +723,7 @@ has_changed(struct inode *i, mode_t mode, size_t size, time_t time,
 
 /* The file list for a directory has changed.
  * Update it by parsing the new list of contents read from '...'.
+ * Must be called with 'update_dir' lock held.
  */
 static inline int
 add_dentries_from_list(struct dentry *dir, const char *listing, int size)
@@ -765,12 +742,9 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		return -EIO;
 	listing += 7;
 
-	lock_kernel();
-
 	mark_children_may_delete(dir);
 
-	while (listing < end)
-	{
+	while (listing < end) {
 		struct dentry *existing;
 		mode_t mode = 0444;
 		struct qstr name;
@@ -778,8 +752,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		off_t size;
 		time_t time;
 
-		switch (*(listing++))
-		{
+		switch (*(listing++)) {
 			case 'f': mode |= S_IFREG; break;
 			case 'x': mode |= S_IFREG | 0111; break;
 			case 'd': mode |= S_IFDIR | 0111; break;
@@ -810,8 +783,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		if (listing == end + 1)
 			goto bad_list;	/* Last line not terminated */
 
-		if (S_ISLNK(mode))
-		{
+		if (S_ISLNK(mode)) {
 			link_target.name = listing;
 			link_target.len = strlen(link_target.name);
 			listing += link_target.len + 1;
@@ -826,30 +798,24 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 
 		name.hash = full_name_hash(name.name, name.len);
 		existing = d_lookup(dir, &name);
-		if (existing && existing->d_inode)
-		{
+		if (existing && existing->d_inode) {
 			struct inode *i = existing->d_inode;
-			if (has_changed(i, mode, size, time, &link_target))
-			{
+			if (has_changed(i, mode, size, time, &link_target)) {
 				remove_dentry(existing);
 				new_dentry(sb, dir, name.name,
 					   mode, size, time, &link_target);
-			}
-			else
-			{
+			} else {
 				struct lazy_de_info *info = existing->d_fsdata;
 				info->may_delete = 0;
 			}
-			dput(existing);
-		}
-		else
+		} else
 			new_dentry(sb, dir, name.name, mode, size, time,
 					&link_target);
+		if (existing)
+			dput(existing);
 	}
 
 	sweep_marked_children(dir);
-
-	unlock_kernel();
 
 	if (listing != end)
 		BUG();
@@ -859,14 +825,10 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 	return 0;
 
 bad_list:
-	unlock_kernel();
-
 	printk("lazyfs: '%s/...' file is invalid\n", dir->d_name.name);
 
 	return -EIO;
 }
-
-/* Audit: END */
 
 /* Open this file and read it into a new kmalloc'd block. Return the
  * new block. The block is \0 terminated.
@@ -880,15 +842,14 @@ open_and_read(struct dentry *dentry, struct vfsmount *mnt,
 	char *listing;
 	struct file *file;
 
-	/* Open for reading (frees mnt and dputs) */
+	/* Open for reading (frees mnt and dentry) */
 	file = dentry_open(dget(dentry), mntget(mnt), 1);
 	if (IS_ERR(file))
 		return (char *) file;
 	inc("ddd file");
 
 	size = file->f_dentry->d_inode->i_size;
-	if (size > max_size)
-	{
+	if (size < 0 || size > max_size) {
 		printk("lazyfs: file too big\n");
 		fput(file);
 		dec("ddd file");
@@ -896,8 +857,7 @@ open_and_read(struct dentry *dentry, struct vfsmount *mnt,
 	}
 
 	listing = kmalloc(size + 1, GFP_KERNEL);
-	if (!listing)
-	{
+	if (!listing) {
 		fput(file);
 		dec("ddd file");
 		return ERR_PTR(-ENOMEM);
@@ -905,14 +865,12 @@ open_and_read(struct dentry *dentry, struct vfsmount *mnt,
 	listing[size] = '\0';
 	inc("listing");
 
-	while (offset < size)
-	{
+	while (offset < size) {
 		int got;
 
 		got = kernel_read(file, offset, listing + offset,
-				size - offset);
-		if (got <= 0)
-		{
+				  size - offset);
+		if (got <= 0) {
 			printk("lazyfs: error reading file\n");
 			fput(file);
 			dec("ddd file");
@@ -937,10 +895,10 @@ open_and_read(struct dentry *dentry, struct vfsmount *mnt,
  */
 static int ensure_cached(struct dentry *dentry)
 {
+	static spinlock_t update_dir = SPIN_LOCK_UNLOCKED;
 	struct lazy_de_info *info = dentry->d_fsdata;
 	struct dentry *list_dentry = NULL;
 	int err;
-	static spinlock_t update_dir = SPIN_LOCK_UNLOCKED;
 	char *listing;
 	off_t size;
 	struct super_block *sb = dentry->d_inode->i_sb;
@@ -954,8 +912,7 @@ static int ensure_cached(struct dentry *dentry)
 		return PTR_ERR(list_dentry);
 	
 	spin_lock(&update_dir);
-	if (list_dentry == info->list_dentry)
-	{
+	if (list_dentry == info->list_dentry) {
 		/* Already cached... do nothing */
 		spin_unlock(&update_dir);
 		dput(list_dentry);
@@ -964,8 +921,7 @@ static int ensure_cached(struct dentry *dentry)
 	}
 
 	/* Switch to the new version */
-	if (info->list_dentry)
-	{
+	if (info->list_dentry) {
 		dput(info->list_dentry);
 		dec("info->list_dentry");
 	}
@@ -973,11 +929,10 @@ static int ensure_cached(struct dentry *dentry)
 	inc("info->list_dentry");
 
 	listing = open_and_read(list_dentry, sbi->host_file->f_vfsmnt,
-			LAZYFS_MAX_LISTING_SIZE, &size);
+				LAZYFS_MAX_LISTING_SIZE, &size);
 	dput(list_dentry);
 	dec("list_dentry");
-	if (IS_ERR(listing))
-	{
+	if (IS_ERR(listing)) {
 		spin_unlock(&update_dir);
 		return PTR_ERR(listing);
 	}
@@ -987,8 +942,7 @@ static int ensure_cached(struct dentry *dentry)
 	kfree(listing);
 	dec("listing");
 
-	if (err == -EIO)
-	{
+	if (err == -EIO) {
 		struct inode *dir;
 		list_dentry = dget(info->list_dentry);
 		inc("list_dentry");
@@ -1018,8 +972,7 @@ lazyfs_put_super(struct super_block *sb)
 {
 	struct lazy_sb_info *sbi = (struct lazy_sb_info *) sb->u.generic_sbp;
 
-	if (sbi)
-	{
+	if (sbi) {
 		if (!list_empty(&sbi->to_helper))
 			BUG();
 		if (!list_empty(&sbi->requests_in_progress))
@@ -1052,8 +1005,6 @@ lazyfs_statfs(struct super_block *sb, struct statfs *buf)
 	return 0;
 }
 
-/* Audit: START */
-
 static int
 lazyfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 {
@@ -1064,8 +1015,7 @@ lazyfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 
 	if (skip)
 		skip--;
-	else
-	{
+	else {
 		err = filldir(dirent, ".", 1, 0, dir->d_inode->i_ino, DT_DIR);
 		if (err)
 			return count ? count : err;
@@ -1075,8 +1025,7 @@ lazyfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 
 	if (skip)
 		skip--;
-	else
-	{
+	else {
 		err = filldir(dirent, "..", 2, 1,
 				dir->d_parent->d_inode->i_ino, DT_DIR);
 		if (err)
@@ -1094,13 +1043,14 @@ lazyfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 
 	while (next != head) {
 		struct dentry *child = list_entry(next, struct dentry, d_child);
+		mode_t mode = child->d_inode->i_mode;
+
 		next = next->next;
 
 		if (d_unhashed(child)||!child->d_inode)
 			continue;
 
-		if (skip)
-		{
+		if (skip) {
 			skip--;
 			continue;
 		}
@@ -1110,7 +1060,9 @@ lazyfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 				      child->d_name.len,
 			      file->f_pos,
 			      child->d_inode->i_ino,
-			      0); /* XXX: type unused */
+			      S_ISDIR(mode) ? DT_DIR :
+			      S_ISLNK(mode) ? DT_LNK :
+			      S_ISREG(mode) ? DT_REG : DT_UNKNOWN);
 		if (err)
 			goto out;
 		count++;
@@ -1127,10 +1079,8 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 	struct dentry *new;
 
 	if (dir == dir->i_sb->s_root->d_inode &&
-		strcmp(dentry->d_name.name, ".lazyfs-helper") == 0)
-	{
-		struct lazy_sb_info *sbi = (struct lazy_sb_info *)
-						dir->i_sb->u.generic_sbp;
+		strcmp(dentry->d_name.name, ".lazyfs-helper") == 0) {
+		struct lazy_sb_info *sbi = dir->i_sb->u.generic_sbp;
 		return dget(sbi->helper_dentry);
 	}
 
@@ -1174,8 +1124,7 @@ lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
 	size_t start_count = count;
 	int err;
 
-	if (file->f_dentry == last)
-	{
+	if (file->f_dentry == last) {
 		if (count < 1)
 			return -ENAMETOOLONG;
 		err = copy_to_user(buffer, "/", 1);
@@ -1183,14 +1132,16 @@ lazyfs_handle_read(struct file *file, char *buffer, size_t count, loff_t *off)
 		return 1;
 	}
 
-	while (1)
-	{
+	while (1) {
 		this = file->f_dentry;
 		if (this == last)
 			break;
 		/* Find the topmost dir which we haven't written out yet */
-		while (this->d_parent != last)
+		while (this->d_parent != last) {
+			if (this == this->d_parent)
+				return -ENOTDIR;	/* No longer exists */
 			this = this->d_parent;
+		}
 
 		if (count < 1)
 			return -ENAMETOOLONG;
@@ -1242,8 +1193,7 @@ send_to_helper(char *buffer, size_t count, struct dentry *dentry)
 		return -ENOMEM;
 	inc("request");
 	fd = get_unused_fd();
-	if (fd < 0)
-	{
+	if (fd < 0) {
 		fput(file);
 		return fd;
 	}
@@ -1275,8 +1225,7 @@ lazyfs_helper_open(struct inode *inode, struct file *file)
 	int err = 0;
 
 	spin_lock(&fetching_lock);
-	if (!sbi->helper_mnt)
-	{
+	if (!sbi->helper_mnt) {
 		sbi->helper_mnt = mntget(file->f_vfsmnt);
 		inc("helper");
 	}
@@ -1292,9 +1241,6 @@ lazyfs_helper_release(struct inode *inode, struct file *file)
 {
 	struct super_block *sb = inode->i_sb;
 	struct lazy_sb_info *sbi = sb->u.generic_sbp;
-
-	if (!sbi)
-		BUG();
 
 	spin_lock(&fetching_lock);
 
@@ -1346,14 +1292,12 @@ lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 		}
 		spin_unlock(&fetching_lock);
 
-		if (info)
-		{
+		if (info) {
 			struct dentry *dentry = info->dentry;
 
 			err = send_to_helper(buffer, count, dentry);
 
-			if (err < 0)
-			{
+			if (err < 0) {
 				/* Failed... error */
 				spin_lock(&fetching_lock);
 				if (list_empty(&info->helper_list))
@@ -1389,7 +1333,7 @@ out:
 static ssize_t
 lazyfs_file_read(struct file *file, char *buffer, size_t count, loff_t *off)
 {
-	struct file *host_file = (struct file *) file->private_data;
+	struct file *host_file = file->private_data;
 
 	if (!host_file)
 		BUG();
@@ -1407,9 +1351,6 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 	struct inode *inode, *host_inode;
 	int err;
 
-	if (!host_file)
-		BUG();
-
 	if (!host_file->f_op || !host_file->f_op->mmap)
 		return -ENODEV;
 
@@ -1417,8 +1358,7 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 	host_inode = host_file->f_dentry->d_inode;
 
 	if (inode->i_mapping != &inode->i_data &&
-	    inode->i_mapping != host_inode->i_mapping)
-	{
+	    inode->i_mapping != host_inode->i_mapping) {
 		/* We already forwarded the host mapping, but it's changed.
 		 * Can this happen? Coda seems to think so...
 		 */
@@ -1450,8 +1390,7 @@ lazyfs_link_readlink(struct dentry *dentry, char *buf, int bufsize)
 		BUG();
 
 	len = strlen(target);
-	if (len > bufsize)
-	{
+	if (len > bufsize) {
 		err = -ENAMETOOLONG;
 		len = bufsize;
 	}
@@ -1476,15 +1415,11 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 	if (IS_ERR(host_dentry))
 		return PTR_ERR(host_dentry);
 
-	if (!sbi || !sbi->host_file)
-		BUG();
-
 	/* Open the host file */
 	{
 		struct vfsmount *mnt = mntget(sbi->host_file->f_vfsmnt);
 		host_file = dentry_open(host_dentry, mnt, file->f_flags);
 		host_dentry = NULL;
-		mnt = NULL;
 		/* (mnt and dentry freed by here) */
 	}
 
@@ -1500,8 +1435,7 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 static int
 lazyfs_file_release(struct inode *inode, struct file *file)
 {
-	if (file->private_data)
-	{
+	if (file->private_data) {
 		fput((struct file *) file->private_data);
 		dec("file->host_file");
 	}
@@ -1572,5 +1506,3 @@ EXPORT_NO_SYMBOLS;
 module_init(init_lazyfs_fs)
 module_exit(exit_lazyfs_fs)
 MODULE_LICENSE("GPL");
-
-/* Audit: END */
