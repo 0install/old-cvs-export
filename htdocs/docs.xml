@@ -123,6 +123,11 @@ each subdirectory. Of course, the actual files are still only downloaded when
 you try to access them.
 </p>
 
+<ul>
+  <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/623">DBus.error.Disconnected: Disconnected before receiving a reply</a></li>
+</ul>
+
+<!--
 <div class='note'>
 <h3>GPG errors with 0refresh?</h3>
 <p>
@@ -137,6 +142,7 @@ you can bypass the check by deleting the file
 <tt>/var/cache/zero-inst/SITE/.0inst-meta/trusted_key</tt>.
 </p>
 </div>
+-->
 
 </dd>
 </dl>
