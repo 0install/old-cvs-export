@@ -1,0 +1,141 @@
+		Technical implementation details
+	for the Zero-Install kernel-userspace interface
+
+	
+Overview
+
+The zero-install system is a high-performance caching HTTP based read-only
+network filesystem. Programs and resources on remote machines can be read via
+standard Unix paths, such as /uri/http/zero-install.sf.net/demo.
+Because speed is of utmost importance, all resources accessed are cached on
+the local machine.
+
+Having fetched a resource, the system will always satisfy requests directly
+from the cache without even checking that they are up-to-date. Users must
+explicitly request a refresh. Software can also force a refresh if it knows
+that the cache is out-of-date (for example, if a program requires libfoo-1.2.3,
+but the cache says that 1.2.1 is the latest version).
+
+The cached downloads may be kept anywhere. On a traditional Linux filesystem,
+/var/cache/zero-install is the obvious choice. The network filesystem itself
+must also be mounted somewhere. '/uri' must be used for this, since software
+much be able to rely on absolute paths to identify linked resources. For
+example, a python program might start with:
+	
+	#!/uri/http/www.python.org/python-latest/python
+	print "Hello world from python!"
+
+
+LazyFS
+
+LazyFS implements the kernel side of things. A lazyfs filesystem should
+be mounted on /uri. The mount data should contain a file handle for the root of
+the cache directory (see the zero.c program). Because the system must show
+files even before they have been downloaded, the directory listing for a
+directory in /uri is fetched from a file called '...' in the corresponding
+cache directory.
+
+These files begin with the magic string 'LazyFS\n', then continue with a list
+of lines in the form:
+
+d 100 1234 name\0
+x 5 12 name2\0
+...
+
+The first character is 'd', 'x', 'f', or 'l' (for directory, executable,
+file, or symlink). Then space, then the size, another space, the mtime,
+another space, the name and the terminator. Note that entries end in '\0',
+not \n (since filenames can contain newlines).
+
+Because it wouldn't be safe to change a '...' file while in use (the kernel
+might try to read it half way though) you must create a new file and then
+rename it to '...'. Otherwise, the kernel won't even notice the change.
+(note that the kernel should still handle corrupted files safely)
+
+Having got the directory listing, lazyfs will allow applications to browse
+around the /uri system, reading more '...' files as it goes. When a file
+or directory is first opened by an application, lazyfs opens the corresponding
+file (or '...' file for directories) in the cache.
+
+Because lazyfs has a listing for each directory, it can automatically
+respond to requests for files which don't exist. However, if the listing
+indicates that the file does exist on the remote machine, but it is not
+present locally, lazyfs will ask a user-space helper application to
+fetch the missing files.
+
+
+The user-space helper
+
+LazyFS can operate without any userspace helper. It creates the virtual
+directory structure from the '...' files. When a virtual file is opened, it
+opens the corresponding host file and proxys to that.
+
+If we need to access a host file or directory which doesn't exist, we
+need a helper application. If no helper is registered, we return EIO
+(I/O error).
+
+There can only be one registered helper at a time. It registers by opening
+the /uri/.lazyfs-helper file and reading requests from it. When a process
+opens a file or directory which has a missing host inode, it is put to
+sleep and a request sent to the helper in the form of a file handle.
+
+The request is a number (ASCII) followed by \n. You have to read the
+whole line in a single read() operation (and you'll only get one per
+read). The number is a file handle which lazyfs has opened for you.
+When this handle is closed, the requesting process wakes up (hopefully to
+find that the missing file has appeared). If more processes request the
+file, they will also be put to sleep until the request is handled.
+
+If the helper closes the /uri/.lazyfs-helper file then all pending requests
+return EIO errors. The helper can be safely restarted without having to
+remount the filesystem.
+
+The user-space helper may handle any number of requests in parallel, and
+can pass the file handles to subprocesses (remember to close them in the
+parent, though!). It may also choose to limit the number of fetches.
+
+
+Kernel implementation details
+
+Like tmpfs, we use the kernel's dcache to hold the current state of
+the tree. When a directory is opened for the first time (or a lookup
+done) we read the '...' file inside the host directory and d_add()
+everything we find, making up new inodes as we go.
+
+We have to rebuild the directory list if the '...' file is replaced.
+
+We keep links to the host filesystem at the dcache layer. There may be
+host inodes that we don't know about, or virtual inodes with no
+corresponding host.
+
+We only keep references to host directories, not to regular files.
+This means that deleting a file in the cache will actually free the space
+right away.
+
+	Host directory		    LazyFS mirror
+
+host_inode <-- host_dentry <-- dentry --> inode
+    		      |		     |
+   hi2 <--------- hd2 <--------- d2 -----> i2
+	      |		    	 |
+   hi3 <--------- hd3	     	 |
+			     	 |
+   				 d4 -----> i4
+   hi5
+
+When a regular file dentry is opened, we pair up the file structures:
+
+	host_file <----------- file
+	     |			|
+	     V			V
+host_inode <-- host_dentry    dentry ----> inode
+
+When directories are opened, we assert their contents into the dcache
+and then forget about it (no link to the host directory is held). Thus,
+regular files are only linked at the 'file' level, while directories are
+only linked at the 'dentry' level. Except for the '...' files, which we do
+hold, but only so we know when they've changed. Got it? Good.
+
+We do not have any files with nlinks > 1. Therefore, each dentry has exactly
+one inode, and vice versa, and so we do not track inodes directly.
+

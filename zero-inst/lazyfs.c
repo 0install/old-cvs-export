@@ -19,75 +19,7 @@
 	 * Linux to test it)
 	 */
 
-
-/* 
- * File structure:
- *
- * Like tmpfs, we use the kernel's dcache to hold the current state of
- * the tree. When a directory is opened for the first time (or a lookup
- * done) we read the '...' file inside the host directory and d_add()
- * everything we find, making up new inodes as we go.
- *
- * We have to rebuild the directory list if the '...' file changes.
- *
- * We keep links to the host filesystem at the dcache layer. There may be
- * host inodes that we don't know about, or virtual inodes with no
- * corresponding host.
- *
- * We only keep references to host directories, not to regular files.
- * This means that deleting a file in the cache will actually free the space
- * right away.
- *
- * 	Host directory		    LazyFS mirror
- *
- * host_inode <-- host_dentry <-- dentry --> inode
- *     		      |		     |
- *    hi2 <--------- hd2 <--------- d2 -----> i2
- *		      |		     |
- *    hi3 <--------- hd3	     |
- *				     |
- *    				    d4 -----> i4
- *    hi5
- *
- * When a regular file dentry is opened, we pair up the file structures:
- *
- *		host_file <---------- file
- *		     |			|
- *		     V			V
- * host_inode <-- host_dentry        dentry ----> inode
- *
- * When directories are opened, we assert their contents into the dcache
- * and then forget about it (no link to the host directory is held). Thus,
- * regular files are only linked at the 'file' level, while directories are
- * only linked at the 'dentry' level. Except for the '...' files, which we do
- * hold, but only so we know when they've changed. Got it? Good.
- *
- * We do not support files with nlinks > 1. Therefore, each dentry
- * has exactly one inode, and vice versa, and so we do not track inodes
- * directly.
- */
-
-/* 
- * The user-space helper:
- *
- * lazyfs can operate without any userspace helper. It creates the virtual
- * directory structure from the '...' files. When a virtual file is opened, it
- * opens the corresponding host file and proxys to that.
- * 
- * If we need to access a host file or directory which doesn't exist, we
- * need a helper application. If no helper is registered, we return EIO.
- *
- * There can only be one registered helper at a time. It registers by opening
- * the /.lazyfs-helper file and reading requests from it. When a process
- * opens a file or directory which has a missing host inode, it is put to
- * sleep and a request sent to the helper in the form of a file handle.
- *
- * When this handle is closed, the requesting process wakes up (hopefully to
- * find that the missing file has appeared).
- *
- * If the helper closes the ./lazyfs-helper file then all pending requests
- * return EIO errors.
- */
+/* See the 'Technical' file for details. */
 
 #include <linux/module.h>   /* Needed by all modules */
 #include <linux/kernel.h>   /* Needed for KERN_ALERT */
