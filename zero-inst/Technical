@@ -172,7 +172,7 @@ requests without affecting other users.
 
 We keep a count of how many times each open file has been mmapped, and
 how many times each inode has been mmapped (these are incremented together).
-The first time the inode is mmapped, we take a reference to the host inode's
+The first time the inode is mmapped, we take a pointer to the host inode's
 mapping information. When a file is closed, we decrement the inode count by
 the file count, and reset the mapping if it is now zero. A single source
 inode cannot be mmapped to two different host inodes. This could cause a
