@@ -1,7 +1,10 @@
 KERNEL := @KERNELDIR@
 MODULEDIR := /lib/modules/`uname -r`/kernel/fs/lazyfs
 
-all: lazyfs.o
+TESTS := hello_glib
+GLIB := /uri/http/zero-install.sf.net/libs/glib/2.2.1/Linux-i386/
+
+all: lazyfs.o ${TESTS}
 
 CC=gcc
 CFLAGS   := -O2 -Wall -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -g
@@ -10,7 +13,7 @@ MODFLAGS := -DMODULE -D__KERNEL__
 UMFLAGS := -I${KERNEL}/arch/um/include -I${KERNEL}/arch/um/kernel/tt/include -I${KERNEL}/arch/um/kernel/skas/include -DARCH=um
 
 clean:
-	rm -f lazyfs.o zero
+	rm -f *.o hello_glib
 
 KERNELFLAGS := -I${KERNEL}/include
 
@@ -23,3 +26,11 @@ install:
 
 lazyfs.o: lazyfs.c
 	${CC} -c ${CFLAGS} ${KERNELFLAGS} ${MODFLAGS} -o $@ $<
+
+# Test program using glib
+
+hello_glib.o: hello_glib.c
+	${CC} -c -Wall `pkg-config --cflags glib-2.0`  $@ $<
+
+hello_glib: hello_glib.o
+	gcc -Wl,--rpath=${GLIB}/lib `pkg-config --libs glib-2.0` -o $@ $<
