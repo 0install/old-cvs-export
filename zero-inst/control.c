@@ -17,6 +17,7 @@ struct _Client {
 	int have_uid;
 	uid_t uid;
 	int monitor;
+	int terminate;
 
 	int need_update;
 
@@ -82,7 +83,7 @@ static void client_push_update(Client *client)
 
 	client->need_update = 1;
 
-	if (!client->monitor)
+	if (client->terminate || !client->monitor)
 		return;
 
 	if (client->to_send)
@@ -151,6 +152,7 @@ void read_from_control(int control)
 	client->to_send = NULL;
 	client->command[0] = '\0';
 	client->next = clients;
+	client->terminate = 0;
 	clients = client;
 
 	if (setsockopt(fd, SOL_SOCKET, SO_PASSCRED, &one, sizeof(one))) {
@@ -179,38 +181,58 @@ static void client_free(Client *client)
 	printf("Lost client %d\n", client->socket);
 	close(client->socket);
 	client->next = NULL;
+	if (client->to_send) {
+		printf("(discarding buffered messages)\n");
+		free(client->to_send);
+	}
 	free(client);
 }
 
-static int client_do_command(Client *client, const char *command)
+/* Add 'message' to the client's output buffer. On OOM, terminate connection */
+static void client_send_reply(Client *client, const char *message)
 {
+	int old_len = client->to_send ? strlen(client->to_send) : 0;
+	char *new;
+
+	new = my_realloc(client->to_send, old_len + strlen(message) + 1);
+	if (!new) {
+		client->terminate = 1;
+		return;
+	}
+	
+	client->to_send = new;
+	
+	strcpy(new + old_len, message);
+}
+
+static void client_do_command(Client *client, const char *command)
+{
+	if (client->terminate)
+		return;
+
 	if (strcmp(command, "MONITOR") == 0) {
 		client->monitor = 1;
 		client_push_update(client);
-		return 0;
 	} else {
 		fprintf(stderr, "Unknown command '%s' from client %d\n",
 				command, client->socket);
-		return -1;
+		client_send_reply(client, "Bad command\n");
+		client->terminate = 1;
 	}
 }
 
 /* Execute each complete command in client->command, removing them
- * as we go. Returns 0 on success, or -1 on invalid command.
+ * as we go. If client is set to terminate, does nothing.
  */
-static int client_do_commands(Client *client)
+static void client_do_commands(Client *client)
 {
 	char *nl;
 
 	while ((nl = strchr(client->command, '\n'))) {
 		*nl = '\0';
-		if (client_do_command(client, client->command))
-			return -1;
-		memmove(client->command, nl + 1,
-				strlen(nl + 1) + 1);
+		client_do_command(client, client->command);
+		memmove(client->command, nl + 1, strlen(nl + 1) + 1);
 	}
-
-	return 0;
 }
 
 static int read_from_client(Client *client)
@@ -276,12 +298,19 @@ static int read_from_client(Client *client)
 	if (got <= 0) {
 		if (got < 0)
 			perror("Reading from client");
+		else
+			printf("Client closed connection\n");
 		return -1;
 	}
 
 	client->command[current_len + got] = '\0';
 
-	return client_do_commands(client);
+	client_do_commands(client);
+
+	if (client->terminate && !client->to_send)
+		return -1;
+
+	return 0;
 }
 
 static int write_to_client(Client *client)
@@ -302,6 +331,9 @@ static int write_to_client(Client *client)
 	if (client->to_send[client->send_offset] == '\0') {
 		free(client->to_send);
 		client->to_send = NULL;
+
+		if (client->terminate)
+			return -1;
 
 		if (client->need_update)
 			client_push_update(client);
