@@ -509,8 +509,7 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 		inode->i_op = &lazyfs_dir_inode_operations;
 		inode->i_fop = &lazyfs_dir_file_operations;
 		inode->i_mode |= 0111;
-	}
-	else if (S_ISREG(mode))
+	} else if (S_ISREG(mode))
 		inode->i_fop = &lazyfs_file_operations;
 	else if (S_ISLNK(mode)) {
 		char *target;
@@ -532,8 +531,13 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
 
 		inode->i_op = &lazyfs_link_operations;
 		inode->i_mode |= 0111;
-	}
-	else
+	} else if (S_ISFIFO(mode)) {
+		struct lazy_sb_info *sbi = SBI(sb);
+
+		inode->i_fop = &lazyfs_helper_operations;
+		inode->i_uid = sbi->host_dentry->d_inode->i_uid;
+		inode->i_mode = S_IFFIFO | 0400;
+	} else
 		BUG();
 	return inode;
 }
@@ -697,12 +701,9 @@ lazyfs_fill_super(struct super_block *sb, void *data, int silent)
 
 	/* Create /.lazyfs-helper */
 	sbi->helper_dentry = new_dentry(sb, sb->s_root, ".lazyfs-helper",
-			S_IFREG, 0, CURRENT_TIME, NULL);
+			S_IFFIFO, 0, CURRENT_TIME, NULL);
 	if (!sbi->helper_dentry)
 		goto err;
-	sbi->helper_dentry->d_inode->i_fop = &lazyfs_helper_operations;
-	sbi->helper_dentry->d_inode->i_uid = sbi->host_dentry->d_inode->i_uid;
-	sbi->helper_dentry->d_inode->i_mode = S_IFREG | 0400;
 
 	sbi->helper_mnt = NULL;
 	INIT_LIST_HEAD(&sbi->to_helper);

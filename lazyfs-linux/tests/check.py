@@ -5,6 +5,7 @@ import os, signal, time
 import traceback
 import mmap
 import select
+import stat
 
 # You can edit these four lines to suit...
 test_dir = os.path.expanduser('~/lazyfs-test')	# Where to put test files
@@ -199,6 +200,10 @@ class Test1WithoutHelper(LazyFS):
 			assert 0
 		except IOError:
 			pass
+	
+	def test3HelperType(self):
+		info = os.stat(fs + '/.lazyfs-helper')
+		assert stat.S_ISFIFO(info.st_mode)
 
 class Test2WithHelper(WithHelper):
 	def clientNothing(self): pass
