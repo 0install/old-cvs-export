@@ -15,43 +15,43 @@ saved_build = '.0inst-0build'
 
 target = None
 host = None
-key = None
 
 if len(sys.argv) == 1:
 	if os.path.exists(saved_build):
 		lines = file(saved_build).readlines()
 		target, = [l[7:-1] for l in lines if l.startswith('target=')]
 		host, = [l[5:-1] for l in lines if l.startswith('host=')]
-		try:
-			key, = [l[4:-1] for l in lines if l.startswith('key=')]
-		except:
-			key = None
-elif len(sys.argv) == 4:
+elif len(sys.argv) == 3:
 	target = sys.argv[1]
 	host = sys.argv[2]
-	key = sys.argv[3]
 
-if not (target and host and key):
-	print >>sys.stderr, "Usage: 0build <targetdir> <your.host> <GPG key>\n\n" \
+assert "'" not in host
+assert "\\" not in host
+key = '<0install@' + host + '>'
+
+if not (target and host):
+	print >>sys.stderr, "Usage: 0build <targetdir> <your.host>\n\n" \
 		"The <targetdir>/%s directory will be created/updated,\n" \
 		"along with the index file <targetdir>/%s\n\n" \
 		"This file should be fetchable as: http://<your.host>/%s.\n\n" \
 		"Then the file ./<somefile> will be accessable as\n" \
 		"/uri/0install/<your.host>/<somefile>\n\n" \
-		"Eg: 0build /var/www/ your.host 'John Smith'\n\n" \
+		"Eg: 0build /var/www/ your.host\n\n" \
 		"The values are saved; in future, just run '0build'" % \
 		(archive_dir_leaf, index_leaf, index_leaf)
 	raise SystemExit(1)
 
 print >> file(saved_build, 'w'), \
-	'target=%s\nhost=%s\nkey=%s' % (target, host, key)
-
-assert "'" not in key
-assert "\\" not in key
+	'target=%s\nhost=%s' % (target, host)
 
 if os.system("gpg --list-secret-keys '%s' >/dev/null" % key):
-	print "\nFailed to find the GPG key '%s'... aborting" % key
-	raise SystemExit
+	print "\nFailed to find a GPG key for this server."
+	print "You should create one now, with an 'email address'"
+	print "of %s (the name part can be anything).\n" % key
+	os.system("gpg --gen-key")
+	if os.system("gpg --list-secret-keys '%s' >/dev/null" % key):
+		print "Key still not found. Aborting..."
+		raise SystemExit
 
 print "Building index files for server '%s' in '%s'." % (host, target)
 
