@@ -144,7 +144,7 @@ $ <b>cd zero-install-0.1.21</b>
 
 <p>
 For security reasons, it's better not to run zero install as root. So you'll
-now need to choose a user to run the helper as. This could be your own user
+now need to choose a user to run it as. This could be your own user
 name, or (<a href="http://sourceforge.net/mailarchive/message.php?msg_id=6386789">ideally</a>) you could create a new user just for this purpose. Run
 configure with the name of your chosen user (here called 'zeroinst'):
 </p>
@@ -163,7 +163,8 @@ $ <b>su -c 'make install'</b>
 This will create the <tt>/uri/0install</tt> mount point and the
 <tt>/var/cache/zero-inst</tt> cache directory. It will also add an entry to
 <tt>/etc/fstab</tt> to allow mounting <tt>/uri/0install</tt> easily. If you
-were already running an older version, this step also unmounts /uri/0install.
+were already running an older version, this step also unmounts
+<tt>/uri/0install</tt>.
 </p>
 
 <p>
@@ -272,13 +273,13 @@ reader, pkg-config, GTK, Java and NEdit, can be found in the directory
 
 <h3>Notes</h3>
 <ul>
-<li>I/O errors indicate that the helper failed to fetch the requested file.
+<li>I/O errors indicate that zero install failed to fetch the requested file.
 ZeroProgress should pop up a box with an explanation, if it's running. Otherwise,
 check the log file (as shown above).</li>
-<li>When you reboot, /uri/0install is automatically mounted, but the
+<li>When you reboot, <tt>/uri/0install</tt> is automatically mounted, but the
 zero-install helper program is <strong>not</strong> run automatically.
 Therefore, you will get I/O errors when trying to access anything new, until
-you start the helper.
+you do <tt>/etc/init.d/0install start</tt>.
 </li>
 </ul>
 
