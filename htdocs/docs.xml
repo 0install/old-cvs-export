@@ -141,6 +141,94 @@ $ <b>/uri/http/localhost/MyProg/foo</b>
 <p>And that's it! Of course, when giving the address to other people, you'll
 have to replace 'localhost' with your webserver's host name.</p>
 
+<h3>Suggested directory layout</h3>
+
+<p>
+Typically, you'll want to provide multiple versions of your software, and
+for multiple platforms. The suggested way to handle this is to create
+a subdirectory for each platform, and then a sub-sub-directory for each
+version, so the program will be run as:
+</p>
+
+<pre>
+$ <b>/uri/http/.../MyProg/Linux-i386/1.0.2/MyProg</b>
+</pre>
+
+<p>
+If your program is platform independant then you can skip the platform part,
+of course. If your program is platform dependant, but programs referring to
+it are not, then you should use the special '@PLATFORM@' target:
+</p>
+
+<pre>
+$ <b>cd ~/www/MyProg</b>
+$ <b>ln -s '@PLATFORM@' platform</b>
+</pre>
+
+<p>
+Other programs can then access it as:
+</p>
+
+<pre>
+$ <b>/uri/http/.../MyProg/platform/1.0.2/MyProg</b>
+</pre>
+
+<p>
+When accessed via Zero Install, the symlink's target will be the name of
+the user's platform (ie, it will appear as 'platform -> Linux-i386' on
+Linux i386 type systems).
+(this is not yet implemented)
+</p>
+
+<p>
+You should also use symlinks to indicate interesting versions (such as the
+current stable release). Thus, a python scripts might start with:
+</p>
+
+<pre>
+#!/uri/http/www.python.org/platform/2.2-or-later
+print "Hello, I need Python 2.2 or later"
+</pre>
+
+<p>
+The '2.2-or-later' symlink points to the latest version of python which
+is compatible with version 2.2. Other examples: 'latest-2.2 -> 2.2.3',
+'latest-stable', etc.
+</p>
+
+<p>
+The versions should go inside the platform directories (rather than the
+other way around) so that 'platform/latest-2.2' can be a different version
+for each platform (eg, if the ARM port is a few versions behind the 386 one).
+</p>
+
+<h3>Depending on other things in Zero Install</h3>
+
+<p>
+Your application can use other libraries from Zero Install, or it can use
+old-style pathnames (eg, '#!usr/bin/env python'). In that case, the user
+must install Python manually, as if they weren't using Zero Install. This
+is useful for packages that aren't provided through this system.
+</p>
+
+<p>
+If the software you're packaging has not been designed for Zero Install then
+it may require a 'make install' step. In that case, use --prefix to give
+the final location (full URI) and mount a tmpfs partition (or similar) there
+to catch the installed files:
+</p>
+
+<pre>
+$ <b>./configure --prefix=/uri/http/www.gtk.org/glib/Linux-i386/2.2.1</b>
+$ <b>make</b>
+# <b>mount -t tmpfs tmpfs /uri/http/www.gtk.org/</b>
+$ <b>make install</b>
+</pre>
+
+<p>
+Then use 0build to archive the tmpfs partition onto the web server.
+</p>
+
 <h2>Documentation for Zero Install developers</h2>
 
 See the <a href="technical.html">Technical details</a> page for more
