@@ -1,3 +1,5 @@
+* Test for bzip2, tar, gzip, wget and gpg on startup.
+
 Changes since 0.1.21:
 
 * Use --bzip2 option to tar rather than -j to support older versions

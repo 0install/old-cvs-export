@@ -373,6 +373,10 @@ err:
 
 #define CACHE_LINK MNT_DIR "/.lazyfs-cache"
 
+#define REQUIRE(prog, test) if (system(prog " " test " >/dev/null 2>&1")) { \
+		error("It appears that " prog " isn't installed ('" prog " " test "' " \
+			"returned an error exit status)"); }
+
 int main(int argc, char **argv)
 {
 	int wakeup_pipe[2];
@@ -398,6 +402,12 @@ int main(int argc, char **argv)
 		} else if (strcmp(argv[1], "--nodaemon") == 0)
 			background = 0;
 	}
+
+	REQUIRE("bzip2", "--help");
+	REQUIRE("tar", "--version");
+	REQUIRE("gzip", "--version");
+	REQUIRE("wget", "--version");
+	REQUIRE("gpg", "--version");
 
 	umask(0022);
 	
