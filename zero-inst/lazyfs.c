@@ -16,21 +16,31 @@
 
 #include <linux/autoconf.h>
 
-#ifdef CONFIG_MODVERSIONS
-# define MODVERSIONS
-# include <linux/modversions.h>
-#endif
-
 #define LAZYFS_MAX_LISTING_SIZE (100*1024)
 
 #include "config.h"
+
+#ifdef LINUX_2_5_SERIES
+	/* 2.5 kernel */
+# define SBI(sb) ((struct lazy_sb_info *) ((sb)->s_fs_info))
+# define TIME_T struct timespec
+
+#else
+	/* 2.4 kernel */
+# define SBI(sb) ((struct lazy_sb_info *) ((sb)->u.generic_sbp))
+# ifdef CONFIG_MODVERSIONS
+#  define MODVERSIONS
+#  include <linux/modversions.h>
+# endif
+# include <linux/locks.h>
+# define TIME_T time_t
+#endif
 
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/errno.h>
 #include <linux/slab.h>
 #include <linux/fs.h>
-#include <linux/locks.h>
 #include <linux/init.h>
 #include <linux/smp_lock.h>
 #include <linux/file.h>
@@ -221,7 +231,7 @@ add_user_request(struct lazy_de_info *info, uid_t uid)
 {
 	struct dentry *dentry = info->dentry;
 	struct super_block *sb = dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 	struct lazy_user_request *request;
 
 	request = kmalloc(sizeof(struct lazy_user_request), GFP_KERNEL);
@@ -317,7 +327,7 @@ lazyfs_release_dentry(struct dentry *dentry)
 /* Create a new inode with an unused inode number */
 static inline struct inode *
 lazyfs_new_inode(struct super_block *sb, mode_t mode,
-		 loff_t size, time_t mtime, struct qstr *link_target)
+		 loff_t size, TIME_T mtime, struct qstr *link_target)
 {
 	struct inode *inode;
 
@@ -373,7 +383,7 @@ lazyfs_new_inode(struct super_block *sb, mode_t mode,
  */
 static struct dentry *
 new_dentry(struct super_block *sb, struct dentry *parent_dentry,
-	   const char *leaf, mode_t mode, loff_t size, time_t mtime,
+	   const char *leaf, mode_t mode, loff_t size, TIME_T mtime,
 	   struct qstr *link_target)
 {
 	struct dentry *new = NULL;
@@ -477,7 +487,7 @@ lazyfs_read_super(struct super_block *sb, void *data, int silent)
 	sbi = kmalloc(sizeof(struct lazy_sb_info), GFP_KERNEL);
 	if (!sbi)
 		return NULL;
-	sb->u.generic_sbp = sbi;
+	SBI(sb) = sbi;
 	sbi->host_dentry = NULL;
 	sbi->host_mnt = NULL;
 	sbi->cache_dentry = NULL;
@@ -606,7 +616,7 @@ static struct dentry *try_get_host_dentry(struct dentry *dentry,
 		BUG();
 	
 	if (!parent_host) {
-		struct lazy_sb_info *sbi = sb->u.generic_sbp;
+		struct lazy_sb_info *sbi = SBI(sb);
 		host_dentry = dget(sbi->host_dentry);
 	} else {
 		down(&parent_host->d_inode->i_sem);
@@ -669,7 +679,7 @@ fetch:
 static struct dentry *get_host_dentry(struct dentry *dentry, int blocking)
 {
 	struct super_block *sb = dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 	struct dentry *host_dentry;
 	struct dentry *parent_host = NULL;
 	struct lazy_de_info *info = dentry->d_fsdata;
@@ -774,7 +784,7 @@ return i;
 static inline void mark_children_may_delete(struct dentry *dentry)
 {
 	struct super_block *sb = dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 	struct list_head *head, *next;
 
 	spin_lock(&dcache_lock);
@@ -875,7 +885,7 @@ restart:
 }
 
 static inline int
-has_changed(struct inode *i, mode_t mode, size_t size, time_t time,
+has_changed(struct inode *i, mode_t mode, size_t size, TIME_T time,
 	    struct qstr *link_target)
 {
 	if (i->i_mode != mode || i->i_size != size || i->i_mtime != time)
@@ -928,7 +938,7 @@ add_dentries_from_list(struct dentry *dir, const char *listing, int size)
 		struct qstr name;
 		struct qstr link_target;
 		off_t size;
-		time_t time;
+		TIME_T time;
 
 		switch (*(listing++)) {
 			case 'f': mode |= S_IFREG; break;
@@ -1086,7 +1096,7 @@ static int ensure_cached(struct dentry *dentry)
 	char *listing;
 	off_t size;
 	struct super_block *sb = dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 
 	if (!S_ISDIR(dentry->d_inode->i_mode))
 		BUG();
@@ -1154,7 +1164,7 @@ lazyfs_dir_open(struct inode *inode, struct file *file)
 static void
 lazyfs_put_super(struct super_block *sb)
 {
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 
 	if (sbi) {
 		if (!list_empty(&sbi->to_helper))
@@ -1171,7 +1181,7 @@ lazyfs_put_super(struct super_block *sb)
 		dec("root host_dentry");
 		mntput(sbi->host_mnt);
 		dec("root host_mnt");
-		sb->u.generic_sbp = NULL;
+		SBI(sb) = NULL;
 		kfree(sbi);
 		dec("sbi");
 	}
@@ -1313,7 +1323,7 @@ lazyfs_lookup(struct inode *dir, struct dentry *dentry)
 	int err;
 
 	if (dir == dir->i_sb->s_root->d_inode) {
-		struct lazy_sb_info *sbi = dir->i_sb->u.generic_sbp;
+		struct lazy_sb_info *sbi = SBI(dir->i_sb);
 
 		if (strcmp(dentry->d_name.name, ".lazyfs-helper") == 0)
 			return dget(sbi->helper_dentry);
@@ -1439,7 +1449,7 @@ send_to_helper(char *buffer, size_t count, struct lazy_user_request *request)
 {
 	struct dentry *dentry = request->dentry;
 	struct super_block *sb = dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 	struct file *file;
 	char number[40];
 	int len = dentry->d_name.len;
@@ -1497,7 +1507,7 @@ static int
 lazyfs_helper_open(struct inode *inode, struct file *file)
 {
 	struct super_block *sb = inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 	int err = 0;
 
 	spin_lock(&fetching_lock);
@@ -1516,7 +1526,7 @@ static int
 lazyfs_helper_release(struct inode *inode, struct file *file)
 {
 	struct super_block *sb = inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 
 	spin_lock(&fetching_lock);
 
@@ -1554,7 +1564,7 @@ lazyfs_helper_poll(struct file *file, poll_table *wait)
 {
         unsigned int retval = 0;
 	struct super_block *sb = file->f_dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 
         poll_wait(file, &helper_wait, wait);
 
@@ -1570,7 +1580,7 @@ static ssize_t
 lazyfs_helper_read(struct file *file, char *buffer, size_t count, loff_t *off)
 {
 	struct super_block *sb = file->f_dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 	int err = 0;
 	DECLARE_WAITQUEUE(wait, current);
 
@@ -1636,7 +1646,7 @@ get_host_file(struct file *file, int block)
 {
 	struct dentry *dentry = file->f_dentry;
 	struct super_block *sb = dentry->d_inode->i_sb;
-	struct lazy_sb_info *sbi = sb->u.generic_sbp;
+	struct lazy_sb_info *sbi = SBI(sb);
 	struct dentry *host_dentry;
 	struct file *host_file;
 	struct lazy_file_info *finfo = file->private_data;
