@@ -1,3 +1,7 @@
+(this is the 0.1.23-smp-fix release)
+
+Changes since 0.1.23:
+
 * Bugfix: SMP machines would deadlock in genocide_one due to trying to
   aquire dcache_lock twice (reported by Taco Buitenhuis and Geraldo).
 
