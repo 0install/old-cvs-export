@@ -1,3 +1,5 @@
+* Check that check.py is executable (reported by Olivier Kaloudoff).
+
 Changes since 0.1.24
 
 * Implemented poll for files. Before, select() would indicate that the file

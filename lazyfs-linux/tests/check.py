@@ -24,6 +24,9 @@ os.system('sync')	# Just in case we crash the kernel ;-)
 
 prog_name = os.path.abspath(sys.argv[0])
 
+if not os.stat(prog_name).st_mode & 0111:
+	raise Exception("'%s' must be executable!" % prog_name)
+
 if os.getuid() == 0:
 	print "Unit-tests must not be run as root."
 	sys.exit()
