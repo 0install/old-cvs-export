@@ -226,6 +226,8 @@ distributions?</h3>
 There are some problems in this area generally (not just with Zero Install).
 The <a href="http://www.autopackage.org">Autopackage</a> project is working
 on these issues; see their FAQ for a detailed look at the problems faced.
+However, we have a single binary for ROX-Filer that seems to work on all
+distributions, so it's certainly possible.
 </p>
 
 <h3>What happens if there are two programs which may not be run simultaneously
@@ -350,6 +352,36 @@ The solution may be to have two implementations of zero-install; one written
 in C to be small for boot-strapping, and one written in
 Python/D/scheme/whatever for larger systems.
 </p>
+
+<h3>Does this replace /etc, /var, /tmp, etc?</h3>
+
+<p>
+No. Zero Install is read-only, so you couldn't store configuration, data or temporary
+files in it, even if you wanted to. <b>/usr/0install</b> replaces <b>/usr</b> and <b>/opt</b>.
+It's sensible to keep the other things separate, because they need to be treated
+differently:
+</p>
+
+<dl>
+<dt>/uri/0install</dt>
+<dd>Read-only files that can be downloaded again automatically if lost. Does
+not need to be backed up (cache stored under <b>/var</b>).</dd>
+
+<dt>/etc</dt>
+<dd>Contains system configuration. Should be backed up, and probably kept under version
+control too. May be mounted read-only most of the time.</dd>
+
+<dt>/home</dt>
+<dd>User data. Must be writeable, and often changes. Should be backed up regularly.</dd>
+
+<dt>/var</dt>
+<dd>Changes quickly (contains print and mail queues, logs, etc). Must be writeable. Doesn't
+need to be backed up, but data should persist over reboots.</dd>
+
+<dt>/tmp</dt>
+<dd>Changes quickly and must be writeable, but need not persist over reboots (can use
+tmpfs rather than a physical disk).</dd>
+</dl>
 
 <h3>What was the inspiration for Zero Install?</h3>
 
