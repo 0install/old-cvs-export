@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <sys/un.h>
 #include <assert.h>
@@ -67,6 +68,11 @@ int create_control_socket(void)
 		fprintf(stderr, "(trying to create socket %s)\n",
 				addr.sun_path);
 		exit(EXIT_FAILURE);
+	}
+	if (chmod(addr.sun_path, 0777)) {
+		perror("chmod");
+		fprintf(stderr, "(trying to give access to socket %s)\n",
+				addr.sun_path);
 	}
 
 	if (listen(control, 5) == -1) {
