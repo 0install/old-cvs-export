@@ -9,11 +9,6 @@ You'll find both the client side stuff (new xterm, etc) there, as well as the
 server side. You'll still need a recent glibc, as it doesn't get that from
 Zero Install.
 </p>
-<p>
-<strong>26-Apr-2003:</strong> A new release is out! All the Python code has
-been converted to C, so this version should be easier to install. It also
-handles multiple downloads in parallel, and has a few other improvements.
-</p>
 
 <p>
 <strong>03-May-2003:</strong> The project now has a <a
@@ -31,6 +26,11 @@ users.
 
 <p>
 <strong>23-May-2003:</strong> New <a href="docs.html">Documentation page</a>.
+</p>
+
+<p>
+<strong>27-May-2003:</strong> A new release is out! See the
+<a href="https://sourceforge.net/project/shownotes.php?release_id=161873">release notes</a> for details.
 </p>
 
 <p>See the <a href="http://sourceforge.net/news/?group_id=76468">News Archive</a> for

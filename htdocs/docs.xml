@@ -105,8 +105,9 @@ gimp1.3
 gimp2.0
 </pre>
 
-(this command does not exist yet; in the meantime, deleting
-/var/cache/zero-inst/http/www.gimp.org will have the same effect)
+(this command only updates the directory listing at present; if a file's
+contents change, you must delete it manually from the cache to cause a
+refetch).
 </dd>
 
 </dl>
@@ -151,7 +152,7 @@ version, so the program will be run as:
 </p>
 
 <pre>
-$ <b>/uri/http/.../MyProg/Linux-i386/1.0.2/MyProg</b>
+$ <b>/uri/http/.../MyProg/Linux-ix86/1.0.2/MyProg</b>
 </pre>
 
 <p>
@@ -175,9 +176,8 @@ $ <b>/uri/http/.../MyProg/platform/1.0.2/MyProg</b>
 
 <p>
 When accessed via Zero Install, the symlink's target will be the name of
-the user's platform (ie, it will appear as 'platform -> Linux-i386' on
-Linux i386 type systems).
-(this is not yet implemented)
+the user's platform (ie, it will appear as 'platform -> Linux-ix86' on
+Linux ix86 type systems).
 </p>
 
 <p>
@@ -199,7 +199,7 @@ is compatible with version 2.2. Other examples: 'latest-2.2 -> 2.2.3',
 <p>
 The versions should go inside the platform directories (rather than the
 other way around) so that 'platform/latest-2.2' can be a different version
-for each platform (eg, if the ARM port is a few versions behind the 386 one).
+for each platform (eg, if the ARM port is a few versions behind the x86 one).
 </p>
 
 <h3>Depending on other things in Zero Install</h3>
@@ -219,7 +219,7 @@ to catch the installed files:
 </p>
 
 <pre>
-$ <b>./configure --prefix=/uri/http/www.gtk.org/glib/Linux-i386/2.2.1</b>
+$ <b>./configure --prefix=/uri/http/www.gtk.org/glib/Linux-ix86/2.2.1</b>
 $ <b>make</b>
 # <b>mount -t tmpfs tmpfs /uri/http/www.gtk.org/</b>
 $ <b>make install</b>
