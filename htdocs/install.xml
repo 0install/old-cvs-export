@@ -127,6 +127,7 @@ $ <b>su -c 'make install'</b>
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/349">The file ~/.../include/linux/version.h does not exist</a></li>
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/367">QM_MODULES: Function not implemented</a></li>
 <li><a href="http://article.gmane.org/gmane.comp.file-systems.zero-install.devel/374">dmesg: version magic...</a> (Debian custom kernel)</li>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/436">depmod: Command not found</a></li>
 </ul>
 
 <h3>Installing Zero Install</h3>
