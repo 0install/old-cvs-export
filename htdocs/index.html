@@ -32,7 +32,13 @@ off-line use.
 Let's say you're looking for a little desktop reminder application. You
 search <a href="http://freshmeat.net">Freshmeat.net</a> and find
 <a href="http://rox.sf.net/memo.php3">Memo</a>. You open the directory
-containing Memo (on the remote machine) with your file manager:
+containing Memo (on the remote machine) with your file manager (note the
+titlebar):
+</p>
+
+<p style='text-align: center'>
+<img src='memo.png' width='343' height='130'
+     alt='ROX-Filer window showing Memo application on the remote machine' />
 </p>
 
 <p>
@@ -51,7 +57,7 @@ because the Zero Install system has cached everything locally.
 <p class='q'>What about package management systems like APT?</p>
 
 These require a central authority to maintain the database. For example, you
-can't install Memo using the Debian, because they don't package it. The best an
+can't install Memo using APT, because Debian don't package it. The best an
 author can do is provide Debian .deb packages on the site. But then the user
 still has to do the manual dependancy resolution above for everything not in
 Debian's system.
@@ -64,166 +70,20 @@ See the <a href="compare.html">comparison with other systems</a> document
 for a more detailed list of the advantages of Zero Install.
 </p>
 
+<p class='q'>I have more questions!</p>
+
+<p>Try <a href="faq.html">the FAQ</a>.
+
 <h2>Setting up the zero-installation system</h2>
 
+<!--
 <p>
 <a href="http://www.osnews.com/story.php?news_id=2949">The Very Verbose Guide to Updating and Compiling Your Debian Kernel</a>
-</p>
+</p> -->
 
 <p>
-Although it allows other software to be run easily, the
-zero-installation system itself does require installation. Also, since
-it's currently a quickly-knocked-up prototype, it's probably quite hard
-to install. It might be buggy too, so don't run it on anything
-important; it's just a proof-of-concept. If you don't want to actually
-run it, you can still follow this tutorial to understand how it works.
-</p>
-<p>
-The system works by making resources which are available via HTTP
-appear in the filesystem, using the LazyFS filesystem. LazyFS requires
-the coda kernel module, which comes with Linux 2.4 kernels.
-</p>
-<p>
-Start by loading the coda module:
-</p>
-<pre>
-# modprobe coda
-</pre>
-<p>
-If that works, there's a good change you'll be able to try the system
-out. If not, it's probably either because you don't have coda (visit
-<a href="http://www.kernel.org">kernel.org</a> and get a newer kernel)
-or, possibly, because it's compiled in.
-</p>
-
-<p>
-Get the zero-installation code: Zero-Installtion-0.1.4 ALPHA PROTOTYPE
-[ <a href="http://prdownloads.sourceforge.net/zero-install/zero-inst-0.1.4.tgz">
-Mirrors</a> ].
-</p>
-<p>
-Enter the directory and compile it (it requires
-<a href="http://www.gtk.org">glib</a>):
-</p>
-<pre>
-# tar xzf zero-inst-0.1.4.tgz
-# cd zero-inst-0.1.4
-# make
-cc `pkg-config --cflags glib-2.0` -Wall -g -O2  `pkg-config --libs glib-2.0`  lazy.c   -o lazy
-</pre>
-<p>
-Now run the 0install script. This is a little shell script that will
-create the cache directory (/var/cache/zero-install), the mount point
-(/uri) and the device file (/dev/cfs0) if any of them are missing. It
-will then start the system, and mount /uri for you:
-</p>
-<pre>
-# ./0install
-Creating coda device /dev/cfs0
-Creating /uri
-Creating cache directory /var/cache/zero-inst
-Using helper: /home/tal00r/zero-inst-0.1.4/helper
-Flushing kernel cache...
-Mounting /uri...
-Ready...
-</pre>
-<p>
-Leave that running and switch to another window. Now check it worked:
-</p>
-<pre>
-# cat /uri/http/zero-install.sourceforge.net/test.txt
-It worked!
-</pre>
-
-<h2>Using the system</h2>
-
-<p>
-You can now run programs directly using a pathname based on their URI.
-We'll start with a simple shell script:
-</p>
-
-<pre>
-$ /uri/http/www.ecs.soton.ac.uk/~tal00r/zero-installation/hello.sh
-Hello World from sh
-</pre>
-<p>
-Of course, you can alias this or use other mechanisms to make it easy
-to use again (the exact syntax may depend on your shell):
-</p>
-<pre>
-$ alias hi=/uri/http/www.ecs.soton.ac.uk/~tal00r/zero-installation/hello.sh
-$ hi
-Hello World from sh
-</pre>
-<p>
-Notice that there was a brief delay on the first run, but the second
-run is instant. The program has been cached. Of course, the power of
-the system comes from handling dependancies. This next example runs a
-python program which, in turn, runs a new shell script:
-</p>
-
-<pre>
-$ cd /uri/http/www.ecs.soton.ac.uk/~tal00r/zero-installation
-$ ./testpy
-Hello from python!
-This is another shell script
-</pre>
-<p>
-If you'd like to try a graphical application, run this command to open
-a <a href="http://rox.sf.net/rox_filer.php3">ROX-Filer</a> window showing
-<a href="http://rox.sf.net/archive.php3">Archive</a>. Click on it to run it.
-(note that ROX-Filer and pygtk are NOT yet in the zero-install system, so
-you do need them installed already)
-</p>
-<pre>
-$ rox /uri/http/www.ecs.soton.ac.uk/~tal00r/zero-installation/archive-1.9.1
-</pre>
-
-<p style='text-align:center'>
-<img src='archive.png' width='540' height='140'
-     alt='ROX-Filer window showing remote Archive application' />
-</p>
-
-<p>
-Note that Archive requires <a href="http://rox.sf.net/rox_lib.php3">ROX-Lib2</a>
-to run. That's OK; ROX-Lib2 will be run from the zero-installation system
-automatically.
-</p>
-
-<p>
-If you want to experiment with providing your own programs through
-this system you'll need to run the build_meta command to create the
-directory listings (it creates .0inst-dir files recursively).
-</p>
-
-<pre>
-$ alias 0build=/uri/http/www.ecs.soton.ac.uk/~tal00r/zero-installation/tools/build_meta
-$ 0build public_html
-</pre>
-
-<p>
-Tip for developers: If you rebuild a directory that has already been
-cached, you can use 'rmdir' on the directory to force it to be
-reloaded (note, this does not behave like a regular rmdir; for one
-thing, the directory doesn't have to be empty). This will return an
-error to the rmdir command, but the contents will be refetched on the
-next access.
-</p>
-
-<p>
-If you need to supply a different binary depending on the user's
-platform, you can use the .0inst-platform symlink. This example will
-run a compiled C program, choosing the correct binary for your
-platform (I've only compiled it for Linux-ix86, so this demo isn't
-very impressive, but you get the idea):
-</p>
-<pre>
-$ /uri/http/www.ecs.soton.ac.uk/~tal00r/zero-installation/.0inst-platform/hello_c 
-Hello World from C!
-</pre>
-<p>
-The .0inst-platform is a symlink whose target is "Linux-ix86" (or
-whatever platform the user is running on).
+The system is currently being rewritten. New instructions will appear shortly.
+In the mean-time, here are the <a href="old.html">old instructions</a>.
 </p>
 
 <p style='float: right;'>
