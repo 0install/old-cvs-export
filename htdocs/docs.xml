@@ -40,13 +40,12 @@ Zero Install.</p>
 Generally, you don't have to do anything special to use the system.
 When you find software on the web which is available via zero install, you'll
 be told where it is, and you can run it from there. For example, you can run
-the glib `Hello World' demo like this:
+ROX-Filer like this:
 </p>
 
 <pre>
-$ <b>cd /uri/0install/zero-install.sourceforge.net/demo</b>
-$ <b>./hello_glib</b>
-Hello World from glib!
+$ <b>cd /uri/0install/rox.sourceforge.net</b>
+$ <b>./rox</b>
 </pre>
 
 <p>
@@ -56,7 +55,7 @@ Some possibilities are:
 
 <ul>
 
-<li>Open a filer window and drag the program onto the pinboard or panel,
+<li>Drag the program from a filer window onto the pinboard or panel,
 or add a filer bookmark.
 </li>
 
@@ -64,17 +63,15 @@ or add a filer bookmark.
 
 <li>Symlink it into your path, eg (assuming PATH contains ~/bin):
 <pre>
-$ <b>ln -s /uri/0install/zero-install.sourceforge.net/demo/hello_glib ~/bin</b>
-$ <b>hello_glib</b>
-Hello World from glib!
+$ <b>ln -s /uri/0install/rox.sourceforge.net/rox ~/bin</b>
+$ <b>rox</b>
 </pre>
 </li>
 
 <li>Make a shell alias:
 <pre>
-$ <b>alias hw='/uri/0install/zero-install.sourceforge.net/demo/hello_glib'</b>
-$ <b>hw</b>
-Hello World from glib!
+$ <b>alias rox='/uri/0install/rox.sourceforge.net/rox'</b>
+$ <b>rox</b>
 </pre>
 </li>
 
