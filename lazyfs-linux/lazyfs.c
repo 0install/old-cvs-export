@@ -433,6 +433,11 @@ lazyfs_dentry_revalidate(struct dentry *dentry, int flags)
 		 */
 		if (S_ISDIR(dentry->d_inode->i_mode))
 			ensure_cached(dentry);
+
+		/* If entry is still hashed, OK, otherwise we must do
+		 * the lookup again.
+		 */
+		return d_unhashed(dentry) == 0;
 	}
 	return 1;
 }

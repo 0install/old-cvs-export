@@ -1,5 +1,8 @@
-* Fixed some bugs the unittests found (listing / didn't send a request to the
-  helper, and opening a deleted file triggered a BUG assertion).
+* Fixed some bugs the unittests found:
+  - Listing "/" didn't send a request to the helper.
+  - Opening a deleted file triggered a BUG assertion.
+  - Revalidate didn't indicate that a changed dentry needed to be looked up
+    again (triggering the previous bug).
 
 * Fixed some compiler warnings with GCC 3.3.
 

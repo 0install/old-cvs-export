@@ -55,6 +55,7 @@ def cstest(base):
 				print "Killing", child
 				os.kill(child, signal.SIGTERM)
 				os.waitpid(child, 0)
+				error = Exception('Error in child')
 			if error:
 				raise error or Exception("Child didn't quit")
 	return test
@@ -196,6 +197,7 @@ class TestWithHelper(WithHelper):
 		self.send_dir('/', ['f 5 3 hello'])
 		self.send_file('/hello', 'Hello', 3)
 		self.send_file('/hello', 'World', 3)
+		self.send_file('/hello', 'Worlds', 3)
 
 	testDownload = cstest('Download')
 	
