@@ -192,6 +192,7 @@ Mar 26 11:31:15 everest zero-install: Network errors are logged to '/var/cache/z
 <ul>
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/73">mount: wrong fs type...</a> (run 'dmesg' for hints)</li>
 <li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/332">error while loading shared libraries: libdbus-1.so.0</a></li>
+<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/457">lazyfs kernel module not loaded automatically</a></li>
 </ul>
 
 <h2>Testing the installation</h2>
