@@ -1,3 +1,6 @@
+* Fixed some bugs the unittests found (listing / didn't send a request to the
+  helper, and opening a deleted file triggered a BUG assertion).
+
 * Fixed some compiler warnings with GCC 3.3.
 
 * Added unit tests.
