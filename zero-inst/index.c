@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <time.h>
 
+#include "global.h"
 #include "index.h"
 #include "support.h"
 #include "zero-install.h"

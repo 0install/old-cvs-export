@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "global.h"
 #include "control.h"
 #include "support.h"
 #include "zero-install.h"

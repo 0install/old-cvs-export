@@ -9,10 +9,17 @@ typedef struct _UserRequest UserRequest;
 
 int queue_request(const char *path, const char *leaf, uid_t uid, int fd);
 
-typedef enum {READY, FETCHING_INDEX, FETCHING_ARCHIVE} State;
+/* State meanings on entry to request_next_step(): */
+typedef enum {
+	READY,		/* Request just started - fetch index */
+	FETCHING_INDEX,	/* Index fetched - process and fetch archive */
+	FETCHING_SUBINDEX,	/* Subindex fetched - create directory */
+	FETCHING_ARCHIVE,	/* Archive fetched - extract files */
+} State;
 
 struct _Request {
 	char *path;
+	Index *index;
 
 	int n_users;
 	UserRequest *users;

@@ -48,6 +48,7 @@
 #include <time.h>
 #include <assert.h>
 
+#include "global.h"
 #include "support.h"
 #include "control.h"
 #include "fetch.h"
@@ -67,7 +68,7 @@ Request *open_requests = NULL;
 static int to_wakeup_pipe = -1;	/* Write here to get noticed */
 
 /* Static prototypes */
-static void request_ensure_running(Request *request);
+static void request_next_step(Request *request);
 
 static int open_helper(void)
 {
@@ -130,6 +131,8 @@ static void finish_request(Request *request)
 		control_notify_user(request->users[i].uid);
 	}
 
+	if (request->index)
+		index_free(request->index);
 	free(request->users);
 	free(request->path);
 	free(request);
@@ -139,7 +142,7 @@ static void finish_request(Request *request)
  * we are handling, possibly containing multiple requests within that
  * dir. The new Request will be in the READY state with no actual fetches,
  * and not in the global requests list yet.
- * NULL on error (out of memory).
+ * NULL on error (out of memory, already reported).
  */
 static Request *request_new(const char *path)
 {
@@ -154,6 +157,7 @@ static Request *request_new(const char *path)
 	request->path = NULL;
 	request->users = NULL;
 	request->state = READY;
+	request->index = NULL;
 
 	request->path = my_strdup(path);
 	if (!request->path)
@@ -280,44 +284,6 @@ out:
 	fprintf(stderr, "Done\n");
 }
 
-#if 0
-static void close_all_fds(void)
-{
-	Request *next;
-
-	for (next = open_requests; next; next = next->next) {
-		int i;
-
-		for (i = 0; i < next->n_users; i++) {
-			close(next->users[i].fd);
-		}
-	}
-}
-#endif
-
-static int ensure_dir(const char *path)
-{
-	struct stat info;
-
-	assert(strncmp(path, cache_dir, strlen(cache_dir)) == 0);
-	
-	if (lstat(path, &info) == 0) {
-		if (S_ISDIR(info.st_mode))
-			return 1;	/* Already exists */
-		fprintf(stderr, "%s should be a directory... unlinking!\n",
-				path);
-		unlink(path);
-	}
-
-	if (mkdir(path, 0755)) {
-		perror("mkdir");
-		fprintf(stderr, "(while creating %s)\n", path);
-		return 0;
-	}
-
-	return 1;
-}
-
 static void wget(Request *request, const char *uri, char *path,
 		 int use_cache)
 {
@@ -363,8 +329,7 @@ static void request_done_head(Request *request)
 
 	assert(request->n_users > 0);
 
-	printf("request_done_head(%s : %s)\n",
-			request->path, request->users[0].leaf);
+	printf("\t(finished '%s')\n", request->users[0].leaf);
 
 	if (request->users[0].fd != -1)
 		close(request->users[0].fd);
@@ -376,158 +341,273 @@ static void request_done_head(Request *request)
 		request->users[i] = request->users[i + 1];
 
 	control_notify_user(uid);
-
-	printf("[ next; %d remaining ]\n", request->n_users);
-
-	if (request->n_users)
-		request_ensure_running(request);
-	else
-		finish_request(request);
 }
 
-/* Either do finish_request or start a child process and advance state */
-static void request_ensure_running(Request *request)
+static void fetched_subindex(Request *request)
+{
+	UserRequest *first_rq = request->users;
+	Index *subindex;
+	char path[MAX_PATH_LEN];
+
+	assert(request->state == FETCHING_SUBINDEX);
+
+	if (snprintf(path, sizeof(path),
+		"%s%s/%s/" ZERO_INST_INDEX, cache_dir, request->path,
+		first_rq->leaf) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+	}
+
+	subindex = parse_index(path);
+	if (!subindex)
+		return;
+	path[strlen(path) - sizeof(ZERO_INST_INDEX)] = '\0';
+	printf("[ build index in %s ]\n", path);
+
+	build_ddd_from_index(subindex, path);
+	index_free(subindex);
+}
+
+static void fetched_archive(Request *request)
+{
+	UserRequest *first_rq = request->users;
+	char path[MAX_PATH_LEN];
+
+	assert(request->state == FETCHING_ARCHIVE);
+
+	fprintf(stderr, "Got archive!\n");
+	if (snprintf(path, sizeof(path), "%s%s/", cache_dir,
+	    request->path) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		return;
+	}
+	if (chdir(path)) {
+		perror("chdir");
+		return;
+	}
+	unpack_archive(first_rq->leaf);
+	chdir("/");
+}
+
+/* Start a new fetch. Sets child->pid on success */
+static void begin_fetch_index(Request *request)
+{
+	char path[MAX_PATH_LEN];
+	char uri[MAX_URI_LEN];
+
+	assert(request->child_pid == -1);
+
+	/* Fetch main directory index */
+	if (!build_uri(uri, sizeof(uri), request->path, ZERO_INST_INDEX, NULL))
+		return;
+
+	if (snprintf(path, sizeof(path), "%s%s/" ZERO_INST_INDEX, cache_dir,
+	    request->path) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		return;
+	}
+	request->state = FETCHING_INDEX;
+	wget(request, uri, path, 0);
+}
+
+/* Start a new fetch. Sets child->pid on success.
+ * Modifies uri.
+ */
+static void begin_fetch_archive(Request *request, char *uri, int uri_len)
+{
+	char base[MAX_URI_LEN];
+	char path[MAX_PATH_LEN];
+
+	assert(request->child_pid == -1);
+
+	printf("\t(fetch archive '%s')\n", uri);
+
+	request->state = FETCHING_ARCHIVE;
+	if (snprintf(path, sizeof(path), "%s%s/archive.tgz",
+				cache_dir, request->path) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		return;
+	}
+
+	if (!build_uri(base, sizeof(base), request->path, NULL, NULL))
+		return;
+
+	if (!uri_ensure_absolute(uri, uri_len, base))
+		return;
+
+	wget(request, uri, path, 0);
+}
+
+/* Start a new fetch. Sets child->pid on success. */
+static void begin_fetch_subindex(Request *request)
+{
+	UserRequest *first_rq = request->users;
+	char path[MAX_PATH_LEN];
+	char uri[MAX_URI_LEN];
+
+	assert(request->child_pid == -1);
+
+	if (snprintf(path, sizeof(path), "%s%s/%s" , cache_dir,
+			request->path, first_rq->leaf) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		return;
+	}
+	if (!ensure_dir(path))
+		return;
+
+	/* Fetch subdirectory index */
+	if (!build_uri(uri, sizeof(uri), request->path, first_rq->leaf,
+				ZERO_INST_INDEX))
+		return;
+
+	if (snprintf(path, sizeof(path),
+		"%s%s/%s/" ZERO_INST_INDEX, cache_dir, request->path,
+		first_rq->leaf) > sizeof(path) - 1) {
+		fprintf(stderr, "Path too long\n");
+		return;
+	}
+
+	request->state = FETCHING_SUBINDEX;
+	wget(request, uri, path, 0);
+}
+
+/* We've got the main index, and dealt with any previous fetch already. Now we
+ * need to use the index to find out what kind of thing the next leafname is
+ * and start fetching that...
+ * Sets child_pid on success.
+ */
+static void begin_fetch(Request *request)
 {
 	UserRequest *first_rq = request->users;
 	char uri[MAX_URI_LEN];
 	char path[MAX_PATH_LEN];
 	int err;
-	
-	if (request->child_pid != -1) {
-		fprintf(stderr, "request_ensure_running: In progrss!\n");
-		goto err;
-	}
 
-	if (request->n_users == 0) {
-		fprintf(stderr, "request_ensure_running: Internal error\n");
-		exit(EXIT_FAILURE);
-	}
+	assert(request->child_pid == -1);
+	assert(request->n_users);
 
-	if (request->state == FETCHING_INDEX) {
-		/* printf("[ process index ]\n"); */
-		if (snprintf(path, sizeof(path),
-			"%s%s/%s/", cache_dir, request->path,
-			first_rq->leaf) > sizeof(path) - 1) {
-			fprintf(stderr, "Path too long\n");
-			goto err;
-		}
-		build_ddd_from_index(path);
-		request_done_head(request);
-		return;
-	}
-
-	if (request->state == FETCHING_ARCHIVE) {
-		fprintf(stderr, "Got archive!\n");
-		if (snprintf(path, sizeof(path), "%s%s/", cache_dir,
-		    request->path) > sizeof(path) - 1) {
-			fprintf(stderr, "Path too long\n");
-			goto err;
-		}
-		if (chdir(path)) {
-			perror("chdir");
-			goto err;
-		}
-		unpack_archive(first_rq->leaf);
-		chdir("/");
-		request_done_head(request);
-		return;
-	}
+	printf("\t(%d files remaining in request)\n", request->n_users);
 
 	if (!strchr(request->path + 1, '/')) {
 		/* The root of a site (eg, /http/zero-install.sf.net) */
 
 		if (strcmp(first_rq->leaf, "AppRun") == 0 ||
 		    strcmp(first_rq->leaf, ".DirIcon") == 0)
-			goto err;
+			return;
 		
 		if (snprintf(uri, sizeof(uri),
 			"%s://%s/" ZERO_INST_INDEX, request->path + 1,
 			first_rq->leaf) > sizeof(uri) - 1) {
 			fprintf(stderr, "URI too long\n");
-			goto err;
+			return;
 		}
 		if (snprintf(path, sizeof(path),
 			"%s%s/%s/" ZERO_INST_INDEX, cache_dir, request->path,
 			first_rq->leaf) > sizeof(path) - 1) {
 			fprintf(stderr, "Path too long\n");
-			goto err;
+			return;
 		}
 
-		request->state = FETCHING_INDEX;
+		request->state = FETCHING_SUBINDEX;
 		wget(request, uri, path, 0);
-		if (!request->child_pid)
-			goto err;
 		return;
 	}
+
+	assert(request->index);
 
 	/* It's not the root directory of a site, but a resource within it.
-	 * Read the index file to find out what kind of object it is and
-	 * how to get it.
+	 * Check the index to find out what kind of object it is and how to get
+	 * it.
 	 */
-	/* TODO: check the index is up-to-date */
 
-	if (snprintf(path, sizeof(path), "%s%s/" ZERO_INST_INDEX, cache_dir,
-			request->path) > sizeof(path) - 1) {
-		fprintf(stderr, "Path too long\n");
-		goto err;
-	}
-	/* printf("[ check index '%s' ]\n", path); */
-	/* Find out what kind of thing it is */
+	err = get_item_info(request->index, first_rq->leaf, uri, sizeof(uri));
+	if (!err)
+		begin_fetch_archive(request, uri, sizeof(uri));
+	else if (err == EISDIR)
+		begin_fetch_subindex(request);
+	/* (else error) */
+}
 
-	err = get_item_info(path, first_rq->leaf, uri, sizeof(uri));
-	if (!err) {
-		char base[MAX_URI_LEN];
+/* Called whenever there is no child process running for this request.
+ *
+ * If we've just finished doing something (eg, fetching a tarball or index)
+ * then we deal with that first.
+ *
+ * Then, if there's nothing more to do, we finish_request().
+ * Otherwise, we spawn a new process to perform the next step.
+ */
+static void request_next_step(Request *request)
+{
+	char path[MAX_PATH_LEN];
 
-		request->state = FETCHING_ARCHIVE;
-		if (snprintf(path, sizeof(path), "%s%s/archive.tgz",
-				cache_dir, request->path) > sizeof(path) - 1) {
-			fprintf(stderr, "Path too long\n");
-			goto err;
-		}
+	printf("Request %s moving forward...\n", request->path);
 
-		if (!build_uri(base, sizeof(base), request->path, NULL, NULL))
-			goto err;
-
-		if (!uri_ensure_absolute(uri, sizeof(uri), base))
-			goto err;
-
-		wget(request, uri, path, 0);
-		if (!request->child_pid)
-			goto err;
-		return;
-	} else if (err != EISDIR)
-		goto err;
-
-	/* It's a directory */
-	if (snprintf(path, sizeof(path), "%s%s/%s" , cache_dir,
-			request->path, first_rq->leaf) > sizeof(path) - 1) {
-		fprintf(stderr, "Path too long\n");
-		goto err;
-	}
-	if (!ensure_dir(path))
-		goto err;
-
-	/* Fetch subdirectory index */
-	if (!build_uri(uri, sizeof(uri), request->path, first_rq->leaf,
-				ZERO_INST_INDEX))
-		goto err;
-	if (snprintf(path, sizeof(path),
-		"%s%s/%s/" ZERO_INST_INDEX, cache_dir, request->path,
-		first_rq->leaf) > sizeof(path) - 1) {
-		fprintf(stderr, "Path too long\n");
-		goto err;
+	if (request->child_pid != -1) {
+		fprintf(stderr, "request_next_step: In progress!\n");
+		exit(EXIT_FAILURE);
 	}
 
-	request->state = FETCHING_INDEX;
-	wget(request, uri, path, 0);
-	if (!request->child_pid)
-		goto err;
-	return;
-err:
-	if (request->state == FETCHING_ARCHIVE)
-		request_done_head(request);
-	else
+	if (!request->n_users) {
 		finish_request(request);
+		return;
+	}
+
+	/* (don't need an index for top-levels) */
+	if (!request->index && strchr(request->path + 1, '/')) {
+		/* We don't have a parsed index yet. Either we need to fetch
+		 * it, or we've just finished fetching it.
+		 */
+		if (request->state == READY) {
+			printf("\t(fetching index)\n");
+			begin_fetch_index(request);
+			request->state = FETCHING_INDEX;
+			return;
+		} else if (request->state == FETCHING_INDEX) {
+			printf("\t(processing index)\n");
+			if (snprintf(path, sizeof(path),
+			    "%s%s/" ZERO_INST_INDEX, cache_dir,
+			    request->path) > sizeof(path) - 1) {
+				fprintf(stderr, "Path too long\n");
+				finish_request(request);
+				return;
+			}
+			request->index = parse_index(path);
+			if (!request->index) {
+				finish_request(request);
+				return;
+			}
+			path[strlen(path) - sizeof(ZERO_INST_INDEX)] = '\0';
+			/* TODO: might not need to recreate ... file */
+			build_ddd_from_index(request->index, path);
+		}
+	}
+	
+	assert(request->index || !strchr(request->path + 1, '/'));
+	
+	if (request->state == FETCHING_SUBINDEX) {
+		printf("\t(fetched subindex)\n");
+		fetched_subindex(request);
+		request_done_head(request);
+	} else if (request->state == FETCHING_ARCHIVE) {
+		printf("\t(fetched archive)\n");
+		fetched_archive(request);
+		request_done_head(request);
+	}
+
+	while (request->n_users) {
+		begin_fetch(request);
+		if (request->child_pid != -1)
+			break;
+		/* Couldn't start request... skip to next */
+		printf("\t(skipping)\n");
+		request_done_head(request);
+	}
+
+	/* Either we have begun a new request, or there is nothing left to do */
+
+	if (!request->n_users)
+		finish_request(request);
+
+	return;
 }
 
 static void handle_request(int request_fd, uid_t uid, char *path)
@@ -577,10 +657,9 @@ int queue_request(const char *path, const char *leaf, uid_t uid, int fd)
 	}
 
 	request_add_user(request, fd, uid, leaf);
-	if (request->n_users == 0) {
-		finish_request(request);
-	} else if (request->n_users == 1)
-		request_ensure_running(request);
+
+	if (request->n_users == 1)
+		request_next_step(request);
 
 	return 0;
 err:
@@ -651,14 +730,6 @@ static void read_from_helper(int helper)
 	handle_request(request_fd, uid, buffer);
 }
 
-static void request_child_finished(Request *request)
-{
-	request->child_pid = -1;
-
-	printf("[ process completed - continue with request ]\n");
-	request_ensure_running(request);
-}
-
 static void read_from_wakeup(int wakeup)
 {
 	char buffer[40];
@@ -685,7 +756,8 @@ static void read_from_wakeup(int wakeup)
 				break;
 			}
 			if (next->child_pid == child) {
-				request_child_finished(next);
+				next->child_pid = -1;
+				request_next_step(next);
 				break;
 			}
 		}
@@ -721,8 +793,8 @@ int main(int argc, char **argv)
 	if (len == -1) {
 		perror("readlink(" CACHE_LINK ")");
 		fprintf(stderr, "\nCan't find location of cache directory.\n"
-				"Make sure /uri is mounted and that you are running\n"
-				"the latest version of the lazyfs kernel module.\n");
+			"Make sure /uri is mounted and that you are running\n"
+			"the latest version of the lazyfs kernel module.\n");
 		return EXIT_FAILURE;
 	}
 	assert(len >= 1 && len < sizeof(cache_dir));

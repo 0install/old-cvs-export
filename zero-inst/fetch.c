@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "global.h"
 #include "index.h"
 #include "fetch.h"
 #include "zero-install.h"
@@ -23,9 +24,8 @@ static void write_item(Item *item, void *data)
 		fprintf(ddd, "%s%c", item->target, 0);
 }
 
-void build_ddd_from_index(const char *dir)
+void build_ddd_from_index(Index *index, const char *dir)
 {
-	Index *index = NULL;
 	FILE *ddd = NULL;
 
 	if (chdir(dir)) {
@@ -33,10 +33,6 @@ void build_ddd_from_index(const char *dir)
 		return;
 	}
 	
-	index = parse_index(ZERO_INST_INDEX);
-	if (!index)
-		goto err;
-
 	ddd = fopen("....", "w");
 	if (!ddd)
 		goto err;
@@ -52,27 +48,22 @@ void build_ddd_from_index(const char *dir)
 err:
 	perror("build_ddd_from_index");
 out:
-	if (index)
-		index_free(index);
 	chdir("/");
 }
 
-/* Return the URI of the archive containing 'leaf' by reading the given
- * XML index file.
+/* Return the URI of the archive containing 'leaf' using the given index.
  * Returns EISDIR if it's a directory, 0 on success or EINVAL for other
  * errors.
  */
-int get_item_info(const char *index_path, const char *leaf, char *uri, int len)
+int get_item_info(Index *index, const char *leaf, char *uri, int len)
 {
-	Index *index;
 	Item *item = NULL;
 	Group *group = NULL;
 	int a_len;
 
+	assert(index);
+
 	/* printf("[ get '%s' ]\n", leaf); */
-	index = parse_index(index_path);
-	if (!index)
-		return EINVAL;
 
 	index_lookup(index, leaf, &group, &item);
 	if (!item) {
@@ -101,11 +92,8 @@ int get_item_info(const char *index_path, const char *leaf, char *uri, int len)
 
 	memcpy(uri, group->archives->leafname, a_len);
 
-	index_free(index);
 	return 0;
 err:
-	if (index)
-		index_free(index);
 	return EINVAL;
 }
 

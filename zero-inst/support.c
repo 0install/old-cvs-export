@@ -1,10 +1,15 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
 #include <assert.h>
 
+#include "global.h"
 #include "support.h"
+#include "zero-install.h"
 
 void *my_malloc(size_t size)
 {
@@ -52,8 +57,7 @@ void set_blocking(int fd, int blocking)
 		perror("fcntl() failed");
 }
 
-/* Copy uri to buffer. If uri is relative, store the absolute path
- * in buffer, using the given base URI.
+/* If uri is relative, convert to absolute path, using the given base URI.
  * 'http://foo.org/dir', 'leaf.html' -> 'http://foo.org/dir/leaf.html'
  * 'http://foo.org/dir', 'http://bar.org/leaf' -> 'http://bar.org/leaf'
  *
@@ -71,7 +75,7 @@ int uri_ensure_absolute(char *uri, int len, const char *base)
 	}
 
 	/* Relative path */
-	printf("Join '%s' + '%s'\n", base, uri);
+	/* printf("Join '%s' + '%s'\n", base, uri); */
 
 	uri_len = strlen(uri);
 	base_len = strlen(base);
@@ -125,3 +129,30 @@ too_big:
 	return 0;
 }
 
+/* Ensure that 'path' is a directory, creating it if not.
+ * If 'path' already exists as a non-directory, it is unlinked.
+ * As a sanity check, 'path' must start with cache_dir.
+ * Returns 1 on success.
+ */
+int ensure_dir(const char *path)
+{
+	struct stat info;
+
+	assert(strncmp(path, cache_dir, strlen(cache_dir)) == 0);
+	
+	if (lstat(path, &info) == 0) {
+		if (S_ISDIR(info.st_mode))
+			return 1;	/* Already exists */
+		fprintf(stderr, "%s should be a directory... unlinking!\n",
+				path);
+		unlink(path);
+	}
+
+	if (mkdir(path, 0755)) {
+		perror("mkdir");
+		fprintf(stderr, "(while creating %s)\n", path);
+		return 0;
+	}
+
+	return 1;
+}
