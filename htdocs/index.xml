@@ -28,6 +28,9 @@ list</a> if you want to help out!</p>
 <a href="https://sourceforge.net/forum/forum.php?forum_id=286651">announcement</a> for details.
 </p>
 
+<p>
+<strong>01-Jul-2003:</strong> New GUI progress indicator (pictured below).</p>
+
 <p>See the <a href="http://sourceforge.net/news/?group_id=76468">News Archive</a> for
 more detailed news items, and on-line discussion.</p>
 </div>
@@ -131,7 +134,8 @@ will need to install pygtk, etc, as normal for now.
 <p>
 Take a look at our <a href="http://sourceforge.net/pm/?group_id=76468">tasks
 list</a> for a list of things being worked on (or things that will be worked
-on when we get volunteers).
+on when we get volunteers). We really need lots of volunteers to start packaging
+some common libraries for other things to depend on...
 </p>
 
 <p class='q'>Do I have to enter the full URI everytime I want to run a
