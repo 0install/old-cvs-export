@@ -1766,12 +1766,17 @@ lazyfs_file_open(struct inode *inode, struct file *file)
 
 	finfo->host_file = NULL;
 	finfo->n_mappings = 0;
-	file->private_data = finfo;
 	
 	err = get_host_file(file, 0);
 	if (err == -EAGAIN)
 		err = 0;	/* We'll pick it up in the read */
-	return 0;
+
+	if (err)
+		kfree(finfo);
+	else
+		file->private_data = finfo;
+
+	return err;
 }
 
 static int
@@ -1785,10 +1790,8 @@ lazyfs_file_release(struct inode *inode, struct file *file)
 
 	host_file = finfo->host_file;
 
-	if (!host_file) {
-		printk("Note: no host file (never read?)\n");
-		goto out;
-	}
+	if (!host_file)
+		goto out;	/* Opened but never read */
 
 	if (finfo->n_mappings) {
 		//printk("File was mmapped %d times\n", finfo->n_mappings);
