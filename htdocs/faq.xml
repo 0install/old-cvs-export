@@ -8,8 +8,10 @@
 
 <h3>Why are you abandoning application directories after supporting
 them all these years?</h3>
-<p>I'm not. This system is built on application directories. It would
-never work without them. You didn't try it out, did you?</p>
+<p>I'm not. The examples use application directories. Application directories
+provide an ideal user interface for this system, since they don't all have
+to be installed in a single directory (in PATH, etc).
+</p>
 
 <h3>Isn't fetching stuff over the web really slow?</h3>
 <p>You have to get stuff over the web anyway the first time. The
