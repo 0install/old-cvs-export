@@ -194,4 +194,109 @@ who it says it is, and it doesn't check that they're trust-worthy, but it
 trust-worthy in the past is from the same people as before.
 </p>
 
+<h3>Protecting users from themselves</h3>
+
+<p>
+What if a user wants to try some software, but doesn't fully trust it. Zero
+Install will protect the rest of the system from that user, but not the user
+from himself. However, users have a number of options independent of Zero
+Install for running software in safety.
+</p>
+
+<p>
+First, there are tools such as <a
+href="http://subterfugue.org/">Subterfugue</a>, which can intercept all system
+calls made by a process and block or change destructive ones. For example, a
+user could run a program but only allow it to write to their ~/Testing
+directory.
+</p>
+
+<p>
+Secondly, <a href="http://user-mode-linux.sf.net">User Mode Linux</a> allows
+any user to run a whole Linux system within Linux. Normally, this rather
+restricts the amount of software available, but with Zero Install they can
+mount /uri within the virtual machine as a hostfs type mount of the real
+machine's /uri directly, thus sharing all downloads between both the real
+and virtual machines. However, any changes made will only affect the virtual
+machine.
+</p>
+
+<p>
+Third, and perhaps simplest, the system administrator can create a 'sandbox'
+UID for testing software. Any user can log in as 'testing' and try programs
+out, safe in the knowledge that no important data is saved as that UID.
+</p>
+
+<h3>Trusting Zero Install itself</h3>
+
+<p>
+As we have seen, the security of the whole computer system only depends on the
+security of Zero Install itself, which is fairly small and comparatively easily
+audited.  In this section, we consider what attacks are possible due to bugs
+here.
+</p>
+
+<p>
+The first and most important point to understand is that <strong>Zero Install
+is experimental software</strong>. Since it is still rapidly changing, it has
+not yet been carefully checked for correctness, and should not be used anywhere
+where that could cause problems.
+</p>
+
+<p>
+There are various types of exploit that can be launched against a computer
+system. A <strong>local exploit</strong> is where one of the users of the
+computer gets access to something they shouldn't (such as the ability to
+modify another user's files). A <strong>remote exploit</strong> allows
+someone elsewhere on the Internet to get access to the machine.
+</p>
+
+<p>
+Systems which offer a service (such as a serving web pages) to the outside
+world may allow remote exploits if buggy. You could set up a web server, go on
+holiday for a week, and return to find the machine compromised. Zero Install
+does not listen for incoming connections, so this kind of attack is not
+possible. Zero Install only talks to other machines at the request of a user
+on the computer itself.
+</p>
+
+<p>
+Therefore, there are three ways in which a buggy Zero Install could be
+exploited:
+</p>
+
+<ol>
+<li>A local user of the machine attacks it.</li>
+<li>A local user is tricked into running software from a dodgy site, and this
+software exploits a bug in Zero Install to get access to the rest of the system.</li>
+<li>A local user accesses a trusted site which has been broken in to.</li>
+</ol>
+
+<p>Point 3 is the same as point 2, except that Zero Install can detect the
+problem if the site has been accessed in the past (due to the use of digital
+signatures described above).</p>
+
+<p>
+Before anyone gets too paranoid, please remember that existing systems require
+you to trust <strong>all</strong> downloaded programs (hundreds or thousands
+of them), whereas Zero Install is just one program.
+</p>
+
+<p>
+Since Zero Install runs with its own UID, even if compromised it should not
+stop the system from booting or interfere with core system services. It would,
+however, allow the attacker to trojan all software available via Zero Install.
+If both the Zero Install program <strong>and</strong> the kernel module
+contained exploits, the attacker could get control of the whole machine.
+However, this would require an extremely skillful attacker, and three
+separate vulnerabilities (tricking a local user, getting past the downloader
+program, and getting past the kernel module).
+</p>
+
+<p>
+However, since Zero Install is small and will be infrequently changing, any
+bugs found can be quickly corrected and new bugs should be very rare. After
+the 1.0 release, hopefully many programmers will help us check it.
+</p>
+
 </html>

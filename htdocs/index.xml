@@ -69,7 +69,7 @@ title-bar):
 
 <p>
 Click on Memo to run it, and it will run. Now, Memo depends on ROX-Lib2,
-which requires pygtk, with needs python2.2 and GTK+-2, which needs glib,
+which requires pygtk, which needs python2.2 and GTK+-2, which needs glib,
 pango and AKT. But that's OK; Memo runs everything it
 needs directly from the remote machines where they're stored.
 </p>
@@ -110,13 +110,15 @@ for a more detailed list of the advantages of Zero Install.
 
 <p class='q'>Isn't running stuff off the net a security risk?</p>
 
-<p>Isn't that where you get your software from anyway? You're quite free
-to verify GPG signatures, only use trusted web-sites, etc under this scheme.
-And since it doesn't run any of the remote code as root, you can try software
-out safely as a 'guest' user. Once downloaded, the programs are run from the
-cache, without even checking the original sites for updates (you have to
-tell it to update manually).
+<p>Isn't that where you get your software from anyway? Zero Install can
+automatically perform a number of checks for you, and since it doesn't run any
+of the remote code as root, you can try software out safely as a 'guest' user.
+Once downloaded, the programs are run from the cache, without even checking the
+original sites for updates (you have to tell it to update manually).
 </p>
+
+<p>See the <a href="security.html">security model</a> document for more
+information about security in Zero Install.</p>
 
 <p class='q'>Can I try it out?</p>
 
