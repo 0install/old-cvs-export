@@ -1,3 +1,17 @@
+Changes since 0.1.16:
+
+* Support for Linux 2.6 (tested with 2.6.0-pre7).
+
+* New mirrors.xml file supplied in the initial archive.
+  This will allow the index to be downloaded separately, although at present
+  it is also in the main archive too.
+
+* Unsigned sites now give an error instead of a warning (the transition
+  period is over; mirrors.xml is required, so sites have to rerun 0build
+  anyway).
+
+* Brought testing framework up-to-date.
+
 Changes since 0.1.15:
 
 * Uses expat instead of libxml for XML parsing (smaller).
