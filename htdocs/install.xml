@@ -248,9 +248,6 @@ Some example applications can be found in
 Lots more software, including Mozilla, Python, Acrobat reader, pkg-config,
 GTK, Java and NEdit, can be found in the directory
 <tt>/uri/0install/www-i1.informatik.rwth-aachen.de</tt>.
-<strong>Note 27-Oct-2003:</strong> this site needs to run the 0build command
-to bring its index format up-to-date. Until then, zero-install will reject it
-because it is not digitally signed.
 </p>
 
 <h3>Notes</h3>
