@@ -194,6 +194,21 @@ changing the API. See <a href="http://www.w3.org/Provider/Style/URI.html">
 Cool URIs don't change</a> for more thoughts on stable URIs.
 </p>
 
+<h3>Including debugging symbols</h3>
+
+<p>
+With traditional packages, you must decide whether or not to include debugging
+symbols in binaries. Including the symbols makes the binary many times larger
+(slower to download), but makes debugging with gdb much easier. With
+Zero Install, you can separate the debugging symbols into a separate file,
+which will be downloaded automatically if the user uses gdb on the program,
+but not otherwise.
+</p>
+
+<ul>
+<li><a href="http://thread.gmane.org/gmane.comp.desktop.rox.devel/5347">Making snapshots with debugging symbols</a></li>
+</ul>
+
 <h2 id="study1">Case study #1: packaging Contacts for Zero Install</h2>
 
 <p><a href="http://roxos.sunsite.dk/dev-contrib/guido/Contacts/">Contacts</a>
