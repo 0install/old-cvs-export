@@ -16,10 +16,9 @@
 #include "zero-install.h"
 #include "task.h"
 #include "fetch.h"
+#include "list.h"
 
 static DBusWatch *dbus_watches = NULL;
-static DBusConnection *dispatches = NULL;
-static dbus_int32_t next_dispatch = -1;
 static DBusMessageHandler *handler = NULL;
 static DBusServer *server = NULL;
 
@@ -31,6 +30,9 @@ static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 #define OLD_SOCKET "/uri/0install/.lazyfs-cache/control"
 #define SERVER_SOCKET "unix:path=/uri/0install/.lazyfs-cache/.control"
 #define DBUS_Z_NS "net.sourceforge.zero-install"
+
+static ListHead dispatches = LIST_INIT;
+static ListHead monitors = LIST_INIT;
 
 static void remove_watch(DBusWatch *watch, void *data)
 {
@@ -70,27 +72,10 @@ static dbus_bool_t add_watch(DBusWatch *watch, void *data)
 static void dispatch_status_function(DBusConnection *connection,
                           DBusDispatchStatus new_status, void *data)
 {
-	DBusConnection *next;
-
 	if (new_status == DBUS_DISPATCH_COMPLETE)
 		return;
 
-	if (!dispatches) {
-		dbus_connection_set_data(connection, next_dispatch, NULL, NULL);
-		dispatches = connection;
-		dbus_connection_ref(connection);
-		return;
-	}
-
-	for (next = dispatches; next;
-		next = dbus_connection_get_data(next, next_dispatch)) {
-		if (next == connection)
-			return;
-	}
-
-	dbus_connection_set_data(connection, next_dispatch, dispatches, NULL);
-	dispatches = connection;
-	dbus_connection_ref(connection);
+	list_prepend(&dispatches, connection);
 }
 
 static void send_task_start(DBusConnection *connection, Task *task)
@@ -128,6 +113,15 @@ static void dbus_monitor(DBusConnection *connection, DBusError *error)
 		return;
 	}
 
+	printf("[ monitor ]\n");
+
+	if (list_contains(&monitors, connection)) {
+		dbus_set_error_const(error, "Error", "Already monitoring!");
+		return;
+	}
+	
+	list_prepend(&monitors, connection);
+
 	for (task = all_tasks; task; task = task->next) {
 		if ((task->type == TASK_CLIENT || task->type == TASK_KERNEL) &&
 		    task->child_task && task->uid == uid) {
@@ -145,9 +139,11 @@ static DBusHandlerResult message_handler(DBusMessageHandler *handler,
 
 	dbus_error_init(&error);
 
-	if (strcmp(name, "org.freedesktop.Local.Disconnect") == 0)
+	if (strcmp(name, "org.freedesktop.Local.Disconnect") == 0) {
+		if (list_contains(&monitors, connection))
+			list_remove(&monitors, connection);
 		dbus_connection_unref(connection);
-	else if (strcmp(name, "org.freedesktop.DBus.Hello") == 0) {
+	} else if (strcmp(name, "org.freedesktop.DBus.Hello") == 0) {
 		reply = dbus_message_new_reply(message);
 		if (!reply)
 			goto err;
@@ -242,10 +238,8 @@ void create_control_socket(void)
 	DBusError error;
 	const char *ext_only[] = {"EXTERNAL", NULL};
 
-	if (!dbus_connection_allocate_data_slot(&next_dispatch)) {
-		error("dbus_connection_allocate_data_slot(): OOM");
-		exit(EXIT_FAILURE);
-	}
+	list_init(&dispatches);
+	list_init(&monitors);
 
 	handler = dbus_message_handler_new(message_handler, NULL, NULL);
 	if (!handler) {
@@ -274,29 +268,22 @@ void create_control_socket(void)
 	unlink(OLD_SOCKET);
 }
 
-static void dispatch_pending(void)
+static void dispatch_one(DBusConnection *connection)
 {
-	DBusConnection *next = dispatches;
+	DBusDispatchStatus status;
 
-	dispatches = NULL;
+	while (1) {
+		status = dbus_connection_dispatch(connection);
 
-	while (next) {
-		DBusDispatchStatus status;
-		DBusConnection *this = next;
-
-		status = dbus_connection_dispatch(this);
 		if (status == DBUS_DISPATCH_DATA_REMAINS)
 			continue;
 
-		next = dbus_connection_get_data(this, next_dispatch);
+		if (status == DBUS_DISPATCH_COMPLETE)
+			break;
 
-		if (status != DBUS_DISPATCH_COMPLETE) {
-			dbus_connection_disconnect(this);
-			printf("[ error ]\n");
-			/* XXX: unref too? */
-		}
+		dbus_connection_disconnect(connection);
 
-		dbus_connection_unref(this);
+		printf("[ error ]\n");
 	}
 }
 
@@ -304,8 +291,7 @@ int control_add_select(int n, fd_set *rfds, fd_set *wfds)
 {
 	DBusWatch *watch = dbus_watches;
 
-	while (dispatches)
-		dispatch_pending();
+	list_foreach(&dispatches, dispatch_one, 1);
 
 	while (watch) {
 		if (dbus_watch_get_enabled(watch)) {
@@ -451,14 +437,23 @@ void control_check_select(fd_set *rfds, fd_set *wfds)
 	current_watch = NULL;
 }
 
-void control_notify_user(uid_t uid)
+void control_notify_start(Task *task)
 {
-	fprintf(stderr, "control_notify_user\n");
+	fprintf(stderr, "control_notify_start\n");
+}
+void control_notify_update(Task *task)
+{
+	fprintf(stderr, "control_notify_update\n");
+}
+void control_notify_end(Task *task)
+{
+	fprintf(stderr, "control_notify_end\n");
 }
 
 void control_drop_clients(void)
 {
-	dbus_connection_free_data_slot(&next_dispatch);
+	list_destroy(&dispatches);
+	list_destroy(&monitors);
 	dbus_message_handler_unref(handler);
 	dbus_server_disconnect(server);
 	dbus_server_unref(server);
