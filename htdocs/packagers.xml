@@ -282,9 +282,24 @@ $ 0build ../export roxos.sunsite.dk
 </pre>
 
 <p>
-This will create some (hidden) files in the export directory. We now need
-to upload them to our web-server. We'll create a script to make this easier,
-which we'll save as <tt>roxos.sunsite.dk/0push</tt>:
+You'll now be prompted to create a GPG key for the site. When you make updates
+to the site, you'll sign it with your key. When people refresh the site,
+Zero Install will check that the key is the same as the first time they
+accessed the site. You <i>must</i> create a key with exactly the name and
+email address 0build displays. In this case, the values are:
+</p>
+
+<pre>
+Real name: Zero Install
+Email address: 0install@roxos.sunsite.dk
+Comment: (leave blank)
+</pre>
+
+<p>
+You only have to create the key once. After this is done, 0build will create
+some (hidden) files in the export directory. We now need to upload them to our
+web-server. We'll create a script to make this easier, which we'll save as
+<tt>roxos.sunsite.dk/0push</tt>:
 </p>
 
 <pre>
