@@ -28,6 +28,8 @@ static const char *current_error = NULL;
 
 static void dbus_refresh(DBusConnection *connection, DBusMessage *message,
 			 DBusError *error, int force);
+static void dbus_cancel_download(DBusConnection *connection,
+			DBusMessage *message, DBusError *error);
 
 #define OLD_SOCKET "/uri/0install/.lazyfs-cache/control"
 #define SERVER_SOCKET "unix:path=/uri/0install/.lazyfs-cache/.control"
@@ -205,6 +207,10 @@ static DBusHandlerResult message_handler(DBusMessageHandler *handler,
 			goto err;
 	} else if (strcmp(name, DBUS_Z_NS ".Monitor") == 0) {
 		dbus_monitor(connection, &error);
+		if (dbus_error_is_set(&error))
+			goto err;
+	} else if (strcmp(name, DBUS_Z_NS ".Cancel") == 0) {
+		dbus_cancel_download(connection, message, &error);
 		if (dbus_error_is_set(&error))
 			goto err;
 	} else {
@@ -390,6 +396,43 @@ static void send_result(Task *task, int success)
 	}	
 
 	task_destroy(task, success);
+}
+
+/* 1 on success (kernel or client task exists) */
+static int cancel_download(const char *request, uid_t uid)
+{
+	Task *task;
+
+	for (task = all_tasks; task; task = task->next) {
+		if ((task->type == TASK_CLIENT || task->type == TASK_KERNEL) &&
+		    task->child_task && task->uid == uid &&
+		    strcmp(task->str, request) == 0) {
+			if (task->type == TASK_CLIENT)
+				send_result(task, 0);
+			else
+				kernel_cancel_task(task);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static void dbus_cancel_download(DBusConnection *connection,
+			DBusMessage *message, DBusError *error)
+{
+	unsigned long uid;
+	const char *request = NULL;
+
+	if (!dbus_message_get_args(message, error,
+				DBUS_TYPE_STRING, &request, DBUS_TYPE_INVALID))
+		return;
+
+	if (!dbus_connection_get_unix_user(connection, &uid))
+		assert(0);
+
+	if (!cancel_download(request, uid)) {
+		dbus_set_error_const(error, "Error", "Not being fetched");
+	}
 }
 
 /* Message requests the cache for 'host' be refetched.

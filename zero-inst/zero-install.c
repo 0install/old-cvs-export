@@ -182,6 +182,12 @@ static void kernel_got_index(Task *task)
 	task_destroy(task, 1);
 }
 
+void kernel_cancel_task(Task *task)
+{
+	close(task->fd);
+	task_destroy(task, 0);
+}
+
 static void kernel_task_step(Task *task, int success)
 {
 	if (success)

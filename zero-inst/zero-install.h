@@ -6,3 +6,5 @@
 
 extern char cache_dir[];
 extern int cache_dir_len;	/* strlen(cache_dir) */
+
+void kernel_cancel_task(Task *task);
