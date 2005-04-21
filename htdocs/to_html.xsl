@@ -79,7 +79,7 @@
 	  </div>
 
 	  <h1>The Zero Install system</h1>
-          <p class='author'>Thomas Leonard [ <a href="support.html">contact</a> | <a href="public_key.gpg">GPG public key</a> | <a href="http://sourceforge.net/developer/user_donations.php?user_id=40461">donations</a> ]</p>
+          <p class='author'>Dr Thomas Leonard [ <a href="support.html">contact</a> | <a href="public_key.gpg">GPG public key</a> | <a href="http://sourceforge.net/developer/user_donations.php?user_id=40461">donations</a> ]</p>
 
 	  <xsl:call-template name='make-links'/>
         </div>
