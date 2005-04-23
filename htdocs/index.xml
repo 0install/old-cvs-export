@@ -261,7 +261,7 @@ know if you find any more!</p>
 </ul>
 
 <p>
-<a href="http://www.w3.org/DesignIssues/Installation.html">Tim Berners-Lee's "Installation, Catalogs, and Caches"</a> (DRAFT version) mentions Zero Install, too!
+<a href="http://www.w3.org/DesignIssues/Installation.html">Tim Berners-Lee's "Installation, Catalogs, and Caches"</a> (DRAFT version) mentions Zero Install, too! (though the comment about needing a constant connection is wrong)
 </p>
 
 </html>
