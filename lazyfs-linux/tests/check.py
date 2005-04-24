@@ -11,7 +11,10 @@ import stat
 test_dir = os.path.expanduser('~/lazyfs-test')	# Where to put test files
 version = '0.1.27'				# Version of lazyfs to test
 verbose = False					# Give extra debug information
-platform = 'Linux-ix86'
+
+arch = os.uname()[4]
+if arch == 'i686': arch = 'ix86'
+platform = 'Linux-' + arch
 
 if len(sys.argv) > 1 and sys.argv[1] == '--read-hello':
 	fd = os.open('hello', os.O_RDONLY)

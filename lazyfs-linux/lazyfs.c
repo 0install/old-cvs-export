@@ -1941,6 +1941,8 @@ get_host_file(struct file *file, int flags)
 	}
 	//printk("get_host_file(%s): adding\n", dentry->d_name.name);
 
+	BUG_ON(host_file->f_dentry == NULL);
+
 	finfo->host_file = host_file;
 	inc(R_FILE_HOST_FILE);
 	spin_unlock(&host_file_lock);
@@ -1990,11 +1992,12 @@ lazyfs_file_mmap(struct file *file, struct vm_area_struct *vm)
 			return err;
 	}
 	host_file = finfo->host_file;
-	if (!host_file)
-		BUG();
+	BUG_ON(host_file == NULL);
 
 	if (!host_file->f_op || !host_file->f_op->mmap)
 		return -ENODEV;
+
+	BUG_ON(host_file->f_dentry == NULL);
 
 	inode = file->f_dentry->d_inode;
 	host_inode = host_file->f_dentry->d_inode;
