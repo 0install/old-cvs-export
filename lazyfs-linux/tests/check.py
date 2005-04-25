@@ -7,7 +7,7 @@ import mmap
 import select
 import stat
 
-# You can edit these four lines to suit...
+# You can edit these three lines to suit...
 test_dir = os.path.expanduser('~/lazyfs-test')	# Where to put test files
 version = '0.1.27'				# Version of lazyfs to test
 verbose = False					# Give extra debug information
