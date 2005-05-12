@@ -19,6 +19,11 @@ according to rules specified by the user:
      alt="The injector selects versions according to the user's policy" />
 </p>
 
+<div class='note'>
+Note: The injector is pure Python. You do <b>not</b> need the rest of Zero
+Install. No extra kernel modules required!
+</div>
+
 <h2>Trying it out</h2>
 
 <p>
