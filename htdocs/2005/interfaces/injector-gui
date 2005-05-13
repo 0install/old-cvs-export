@@ -4,7 +4,7 @@ Hash: SHA1
 <?xml version='1.0'?>
 <interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
 	   uri='http://0install.net/2005/interfaces/injector-gui'
-	   last-modified='1112196678'
+	   last-modified='1116015818'
 	   main='0launch-gui'>
   <name>Injector-GUI</name>
   <summary>Graphical interface for the injector</summary>
@@ -30,7 +30,7 @@ Hash: SHA1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFChQyCrgeCgFmlPMERAs9vAKCBocWB8RZuHbHfVwZKX0Oy9OZ44QCgyVAn
-mSXoozd0IJVmW/FpFdJO9IA=
-=cBRI
+iD8DBQFChQzZrgeCgFmlPMERAgqDAJ9SFuR493hDA8zqaLSVgMPujoTcfgCeOre9
+NkKCiJHoaFYFaMPJmh1GrYA=
+=0vB3
 -----END PGP SIGNATURE-----
