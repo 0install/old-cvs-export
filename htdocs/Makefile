@@ -5,3 +5,6 @@ all: ${HTML}
 %.html: %.xml to_html.xsl structure.xml
 	xsltproc -o $@ --stringparam file "$@" to_html.xsl "$<"
 	xmllint --noout --valid $@
+
+linklint:
+	linklint -error -warn -xref -forward -http -host 0install.net /@
