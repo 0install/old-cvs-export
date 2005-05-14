@@ -11,12 +11,13 @@ all times. The problem then is how to choose which versions to use.
 
 <p>
 The injector solves this problem by selecting components to meet a program's requirements,
-according to rules specified by the user:
+according to a policy you give it. The injector finds out which versions are available,
+and downloads and runs the ones you choose:
 </p>
 
 <p style='text-align: center'>
-<img width="569" height="364" src="inject.png"
-     alt="The injector selects versions according to the user's policy" />
+<img width="545" height="325" src="edit-injector.png"
+     alt="Running Edit with the injector" />
 </p>
 
 <div class='note'>
@@ -24,7 +25,7 @@ Note: The injector is pure Python. You do <b>not</b> need the rest of Zero
 Install. No extra kernel modules required!
 </div>
 
-<h2>Trying it out</h2>
+<h2>Installing the injector</h2>
 
 <p>
 To use the injector, you will need:
@@ -41,15 +42,11 @@ $ gpg --recv-key --keyserver www.keyserver.net 59A53CC1
 </li>
 </ul>
 
-<div class='note'>The current release is a developer release. It may contain a
-few bugs.</div>
-
 <p>
 Note that the injector works without needing the Zero Install filesystem to be
 installed (you can think of it as the next version of Zero Install).
 </p>
 
-<h3>Installing the injector</h3>
 <p>
 Download the injector from <a
 href="http://sourceforge.net/project/showfiles.php?group_id=76468&amp;package_id=146899">the
@@ -68,251 +65,53 @@ you will need later!
 $ <b>gpg injector-0.8.tar.gz.gpg</b>
 gpg: Signature made Fri 13 May 2005 20:44:57 BST using DSA key ID 59A53CC1
 gpg: Good signature from "Thomas Leonard &lt;XXXXX@users.sourceforge.net&gt;"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 9242 9807 C985 3C07 44A6  8B9A AE07 8280 59A5 3CC1
 </pre>
 
 <p>
-Extract the archive, become root, install the injector, and exit from root:
+The warning is just to tell you that you haven't yet established that the key really
+belongs to me (ultra-paranoid users will now cross-check the finger-print using
+some other source of information).
 </p>
 
+<p>
+You should now extract the archive, and change directory inside it:
+</p>
 <pre>
 $ <b>tar xzf injector-0.8.tar.gz</b>
 $ <b>cd injector-0.8</b>
-$ <b>su</b>
+</pre>
+
+<table>
+ <col id="col1"/>
+ <tr><th>Installing normally</th><th>Installing without root access</th></tr>
+ <tr>
+  <td>
+  <p>For a normal install, su to root, install, and exit from root:</p>
+<pre>$ <b>su</b>
 [ enter root password ]
 # <b>python setup.py install</b>
 # <b>exit</b>
 </pre>
+ </td><td>
+<p>
+If you don't have the root password, use this command.
+You'll need to make sure that ~/bin is in $PATH in this case.
+</p>
+<pre>$ <b>python setup.py install --home ~</b></pre>
+  </td>
+ </tr>
+</table>
 
 <p>
 You now have two new commands: <b>0launch</b>, which takes the URL of a program and runs it, and
 <b>0alias</b>, which lets you use short names instead of URLs.
 </p>
 
-<h3>Running Edit with the injector</h3>
-
 <p>
-Run <b>0launch</b>, giving it the URL for the program you want to run:
+Now it's time to <a href='injector-using.html'>try using it</a>!
 </p>
 
-<pre>
-$ <b>0launch http://rox.sourceforge.net/2005/interfaces/Edit</b>
-Need to download; switching to GUI mode
-Currently downloading:
-- http://0install.net/2005/interfaces/injector-gui
-Fetching key from http://0install.net/2005/interfaces/AE07828059A53CC1.gpg
-Currently downloading:
-- http://0install.net/2005/interfaces/injector
-Currently downloading:
-- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.4.tgz
-- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.8.tar.gz
-Adding impl with digest: sha1=8d05b57c9f3467f860ae8f4dd50c60dbe09f8f6d
-Adding impl with digest: sha1=916332220f1c5e253e4ceaa58519ec0c5a5a2329
-</pre>
-
-<p>
-So what happened?
-</p>
-
-<ol>
-<li>The injector realised that it needed to download some files to run Edit, so
-it switched to graphical mode (use <b>--console</b> to disable this).</li>
-<li>First, it needed to download the GUI itself. It fetched the GUI's interface
-file, which tells it which versions are available.</li>
-<li>The interface is signed, so it downloads the key if you don't have it already.</li>
-<li>Normally, the injector would ask whether you trusted the key, but since the GUI
-is signed with the same key as the injector, it already knows this one.</li>
-<li>The GUI interface said that it requires the injector, so 0launch downloads the interface for that too.</li>
-<li>0launch then selected suitable implementations of the two interfaces (<b>injector-gui</b>
-version 0.4 and <b>injector</b> version 0.8).</li>
-<li>It downloaded the archives from sourceforge, unpacked them, checked that
-their signatures were correct, and moved them into the cache directory.</li>
-</ol>
-
-<div class='note'>TODO: Archives are currently unpacked to your home directory, in
-<b>~/.cache/0install.net/implementations</b>. In future, they will unpack to
-a shared directory under <b>/var/cache</b>, using a setuid helper (which will
-check the cryptographic digest first, of course).</div>
-
-<p>
-Once the GUI has been fetched, it displays this dialog box:
-</p>
-
-<p style='text-align: center'>
-<img width="545" height="325" src="edit-injector.png"
-     alt="Running Edit with the injector" />
-</p>
-
-<p>
-The main part of the window contains a list of all the components needed to run Edit.
-At the top is Edit itself, and shown below is ROX-Lib, which Edit needs in order to function.
-If you are happy with the selected versions, click on <b>Execute</b> to run the
-program.
-</p>
-
-<p>
-When you click on <b>Execute</b>, the injector will start downloading the two chosen
-versions (this time showing the progress in a window, now the GUI is being used):
-</p>
-
-<p style='text-align: center'>
-<img width="327" height="144" src="injector-downloading.png"
-     alt="Downloading Edit and ROX-Lib" />
-</p>
-
-<p>
-By default, the GUI confirmation box is only shown if the injector needs to download something.
-If you run the command again once <b>Edit</b> has been cached, Edit will run immediately. To get back to
-the dialog box, use the <b>--gui</b> option:
-</p>
-
-<pre>
-$ <b>0launch --gui http://rox.sourceforge.net/2005/interfaces/Edit</b>
-</pre>
-
-<h2>Creating an alias</h2>
-
-<p>
-It's annoying to have to keep typing in the full URL for Edit. The <b>0alias</b> command
-can be used to create little shell scripts to start programs easily:
-</p>
-
-<pre>
-$ <b>0alias rox-edit http://rox.sourceforge.net/2005/interfaces/Edit</b>
-Created script '/home/talex/bin/rox-edit'.
-To edit policy: rox-edit --versions
-(note: some shells require you to type 'rehash' now)
-</pre>
-
-<p>
-The command puts the script in the first directory in your $PATH, which must therefore be
-writable. You can now run edit like this:
-</p>
-
-<pre>
-$ <b>rox-edit</b>
-</pre>
-
-<p>
-To get back to the policy box (so you can change which versions of Edit and
-ROX-Lib you want used), run it like this:
-</p>
-
-<pre>
-$ <b>rox-edit --versions</b>
-</pre>
-
-<h2>Policy settings</h2>
-
-<p>
-You can affect which versions are chosen by changing your policy. Three aspects
-of your policy are shown in the main window: <b>Network use</b>, <b>Freshness</b>
-and <b>Help test new versions</b>. Click on <b>Help test new versions</b>, and
-you may see the version numbers increase, as the injector chooses newer, less
-well tested, versions. Note however that you may not see any change at all,
-since there may not be new testing versions available when you try it.
-</p>
-
-<p>
-To get the injector to notice that a new version is available, click on the <b>Refresh all now</b>
-button (which fetches a fresh copy of each listed interface). You can also set the freshness
-policy; the injector will automatically check for updates to interfaces that haven't been
-checked within the allowed time.
-</p>
-
-<p>
-These are not the only policy settings. The rest are per-component, and are
-accessed by double-clicking on a line in the list. This is described in the following sections.
-</p>
-
-<p>Note that all changes to your policy are saved as soon as you make them.
-Clicking on <b>Cancel</b> will close the window without running the program,
-but any changes made to the policy are not reversed.
-</p>
-
-
-<h3>Choosing different versions</h3>
-
-<p>
-The interface URI (<b>http://rox.sourceforge.net/2005/interfaces/Edit</b>) is
-used to get the default list of implementations. You can see the information
-about an interface by double-clicking on it in the list of interfaces. For
-example, double-clicking on <b>Edit</b> displays this dialog box:
-</p>
-
-<p style='text-align: center'>
-  <img width="627" height="345" src="edit-properties.png"
-  	alt="Properties of the Edit interface" />
-</p>
-
-<p>
-The information displayed is fetched from the interface file, which you can view in
-a web browser if you're interested:
-<a href="http://rox.sourceforge.net/2005/interfaces/Edit">Edit's interface</a>. This is
-a plain-text GPG-signed file. The injector stores the downloaded interface files
-locally (in <b>~/.cache/0install.net/interfaces</b>).
-</p>
-
-<h3>Stability</h3>
-
-<p>
-The interface file also gives a stability rating for each implementation. The following
-levels are allowed:
-</p>
-
-<ul>
-<li>Stable</li>
-<li>Testing</li>
-<li>Developer</li>
-<li>Buggy</li>
-<li>Insecure</li>
-</ul>
-
-<p>
-Stability ratings are kept independently of the implementations, and are expected to change over
-time. When any new release is made, its stability is initially set to <b>Testing</b>. If you
-have selected <b>Help test new versions</b> then you will then start using it.
-Otherwise, you will continue with the previous stable release. After a while
-(days, weeks or months, depending on the project) with no serious problems
-found, the author will change the implementation's stability to <b>Stable</b> so that
-everyone will use it.
-</p>
-
-<p>
-If problems are found, it will instead be marked as <b>Buggy</b>, or <b>Insecure</b>. The injector
-won't select either by default, but it is useful to see the reason (you might opt to
-continue using a buggy version if it works for you, but should never use an insecure
-one). <b>Developer</b> is like a more extreme version of <b>Testing</b>, where the program is
-expected to have bugs.
-</p>
-
-<p>
-You can use the <b>Preferred Stability</b> setting in the interface dialog to choose which
-versions to use. You can also change the stability rating of any implementation by clicking on it
-and choosing a new rating from the popup menu. User-set ratings are shown in capitals.
-</p>
-
-<p>
-As you make changes to the policy and ratings, the order of the implementations in the list
-will change. The version at the top is the one that the injector will actually use. In addition
-to the ratings above, you can set the rating to <b>Preferred</b>. Such versions always come first,
-unless they're not cached and you are in Off-line mode.
-</p>
-
-<p>
-Note: If you want to use the second item on the list because the first is
-buggy, for example, then it is better to mark the first version as buggy than to mark the
-second as preferred. This is because when a new version is available, you will want that to
-become the version at the top of the list, whereas a preferred version will always be first.
-</p>
-
-<h2>Further reading</h2>
-
-<ul>
-<li><a href="injector-packagers.html">The Injector: Packaging Guide</a> is for people who
-want to make software available to others through the injector.</li>
-<li><a href="injector-design.html">The Injector: Design</a> explains the design of the injector
-itself.</li>
-<li><a href="http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/803">Release notes and future plans</a>.</li>
-</ul>
- 
 </html>

@@ -10,6 +10,7 @@
     <item base='packagers-cs-2' label='Case Study #2'/>
   </item>
   <item base="injector" label="Injector">
+    <item base='injector-using' label='Tutorial'/>
     <item base='injector-packagers' label='Packagers'/>
     <item base='injector-design' label='Design'/>
     <item base='injector-security' label='Security'/>
