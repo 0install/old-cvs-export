@@ -21,12 +21,8 @@ Currently downloading:
 - http://0install.net/2005/interfaces/injector-gui
 Fetching key from http://0install.net/2005/interfaces/AE07828059A53CC1.gpg
 Currently downloading:
-- http://0install.net/2005/interfaces/injector
-Currently downloading:
-- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.4.tgz
-- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-0.8.tar.gz
-Adding impl with digest: sha1=8d05b57c9f3467f860ae8f4dd50c60dbe09f8f6d
-Adding impl with digest: sha1=916332220f1c5e253e4ceaa58519ec0c5a5a2329
+- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.5.tgz
+Adding impl with digest: sha1=19ac8dea7d359b00a12c380ec43f989a35790abc
 </pre>
 
 <p>
@@ -41,11 +37,10 @@ file, which tells it which versions are available.</li>
 <li>The interface is signed, so it downloads the key if you don't have it already.</li>
 <li>Normally, the injector would ask whether you trusted the key, but since the GUI
 is signed with the same key as the injector, it already knows this one.</li>
-<li>The GUI interface said that it requires the injector, so 0launch downloads the interface for that too.</li>
-<li>0launch then selected suitable implementations of the two interfaces (<b>injector-gui</b>
-version 0.4 and <b>injector</b> version 0.8).</li>
-<li>It downloaded the archives from sourceforge, unpacked them, checked that
-their signatures were correct, and moved them into the cache directory.</li>
+<li>0launch then selected a suitable implementation of the GUI interface (<b>injector-gui</b>
+version 0.5).</li>
+<li>It downloaded the archive from sourceforge, unpacked it, checked that
+the signature was correct, and moved it into the cache directory.</li>
 </ol>
 
 <div class='note'>TODO: Archives are currently unpacked to your home directory, in
