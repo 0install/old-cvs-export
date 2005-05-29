@@ -2,9 +2,9 @@
 Hash: SHA1
 
 <?xml version="1.0" ?>
-<interface last-modified="1116014511" uri="http://0install.net/2005/interfaces/injector" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch'>
+<interface last-modified="1117396320" uri="http://0install.net/2005/interfaces/injector" xmlns="http://zero-install.sourceforge.net/2004/injector/interface" main='0launch'>
   <name>Injector</name>
-  <summary>Chooses software components to run programs</summary>
+  <summary>chooses software components to run programs</summary>
   <description>
 A program is made up of many different components, typically written by
 different groups of people. Each component is available in multiple versions.
@@ -50,7 +50,7 @@ buttons). Thus, the injector must choose implementations of each dependancy
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFChQfBrgeCgFmlPMERAh+YAKCPRo94Yp8Z8FOdY2xphiAfnc9aAQCeKiEl
-76USDrNXhe6O0RI7FLgqcFU=
-=5qxE
+iD8DBQFCmh2HrgeCgFmlPMERAkuiAJ42UNrb1sDvbdCM5Xsoduqxuhy8tACfWYK2
+UXTHow0yQeDpOmoPMdD1yEQ=
+=1TWA
 -----END PGP SIGNATURE-----

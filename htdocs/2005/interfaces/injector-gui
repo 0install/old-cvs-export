@@ -4,10 +4,10 @@ Hash: SHA1
 <?xml version='1.0'?>
 <interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
 	   uri='http://0install.net/2005/interfaces/injector-gui'
-	   last-modified='1116015818'
+	   last-modified='1117395762'
 	   main='0launch-gui'>
   <name>Injector-GUI</name>
-  <summary>Graphical interface for the injector</summary>
+  <summary>graphical interface for the injector</summary>
   <description>
     The injector GUI displays a window showing which versions of various components will be used when running a program, and allows you to alter various policy settings to affect the selection process. You can use this to mark particular versions of libraries as preferred, bugggy, etc.
   </description>
@@ -26,11 +26,17 @@ Hash: SHA1
       <archive size='10826' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.4.tgz' extract='injector-gui-0.4'/>
     </implementation>
   </group>
+
+  <group>
+    <implementation version='0.5' id='sha1=19ac8dea7d359b00a12c380ec43f989a35790abc' stability='testing'>
+      <archive size='20914' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.5.tgz' extract='injector-gui-0.5'/>
+    </implementation>
+  </group>
 </interface>
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFChQzZrgeCgFmlPMERAgqDAJ9SFuR493hDA8zqaLSVgMPujoTcfgCeOre9
-NkKCiJHoaFYFaMPJmh1GrYA=
-=0vB3
+iD8DBQFCmh2ArgeCgFmlPMERAhlqAJ9dwwue8aBERp16uGi36ystPbgCCgCff7iV
+H0pfsSnGm++V3A1G9xEoOWQ=
+=cocO
 -----END PGP SIGNATURE-----
