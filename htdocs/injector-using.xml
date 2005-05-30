@@ -11,18 +11,22 @@ get more software!
 <h3>Example: Running Edit with the injector</h3>
 
 <p>
-Run <b>0launch</b>, giving it the URL for the program you want to run:
+Run <b>0launch</b>, giving it the URL for the program you want to run (<b>-v</b> gives
+verbose output):
 </p>
 
 <pre>
-$ <b>0launch http://rox.sourceforge.net/2005/interfaces/Edit</b>
-Need to download; switching to GUI mode
-Currently downloading:
-- http://0install.net/2005/interfaces/injector-gui
-Fetching key from http://0install.net/2005/interfaces/AE07828059A53CC1.gpg
-Currently downloading:
-- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.5.tgz
-Adding impl with digest: sha1=19ac8dea7d359b00a12c380ec43f989a35790abc
+$ <b>0launch -v http://rox.sourceforge.net/2005/interfaces/Edit</b>
+INFO:Need to download; switching to GUI mode
+INFO:Currently downloading:
+INFO:- http://0install.net/2005/interfaces/injector-gui
+INFO:Fetching key from http://0install.net/2005/interfaces/AE07828059A53CC1.gpg
+INFO:Updated interface cache entry for injector-gui
+INFO:(last modified at 2005-05-29 20:52:32 UTC)
+INFO:Currently downloading:
+INFO:- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.5.tgz
+INFO:Adding impl with digest: sha1=19ac8dea7d359b00a12c380ec43f989a35790abc
+INFO:Executing: .../.cache/0install.net/implementations/sha1=19ac8dea7d359b00a12c380ec43f989a35790abc/0launch-gui
 </pre>
 
 <p>
@@ -72,6 +76,13 @@ versions (this time showing the progress in a window, now the GUI is being used)
 <p style='text-align: center'>
 <img width="327" height="144" src="injector-downloading.png"
      alt="Downloading Edit and ROX-Lib" />
+</p>
+
+<p>When the downloads are complete, Edit itself runs:</p>
+
+<p style='text-align: center'>
+<img width="395" height="230" src="edit-running.png"
+     alt="Edit running" />
 </p>
 
 <p>

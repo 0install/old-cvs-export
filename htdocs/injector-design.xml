@@ -321,35 +321,13 @@ recursively.
 
 <h2>Running the injector on itself</h2>
 
-<p>(this section is just for fun ;-)</p>
-
 <p>
-If you look at the <b>0launch-gui</b> script, you will see that
-it actually runs the non-interactive version of the injector, <b>0launch-auto</b>, to find an
-implementation of <b>injector-gui</b>:
+The injector's GUI is just another application, and is fetched using the
+injector. You can therefore edit the policy for the GUI using the GUI:
 </p>
 
 <pre>
-#!/bin/sh
-exec /uri/0install/zero-install.sourceforge.net/bin/0launch \
-        http://0install.net/2005/interfaces/injector-gui "$@"
+$ 0launch -dg http://0install.net/2005/interfaces/injector-gui
 </pre>
-
-<p>
-Thus, your policy also affects which version of the GUI you get. If you run <b>injector-gui</b>
-instead of <b>injector-auto</b> then you can use the GUI to set the policy for itself! Eg:
-</p>
-
-<pre>
-$ <b>0launch-gui http://0install.net/2005/interfaces/injector-gui \
-	http://rox.sourceforge.net/2005/interfaces/Edit</b>
-</pre>
-
-<p>
-Here, we run <b>0launch-gui</b>, which runs injector-auto to find an
-implementation of the GUI. This is run, and displays the policy for itself.
-Once you've chosen a version of the GUI, the new version is run, and you can
-use that version to choose a version of Edit.
-</p>
 
 </html>
