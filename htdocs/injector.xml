@@ -25,7 +25,18 @@ Note: The injector is pure Python. You do <b>not</b> need the rest of Zero
 Install. No extra kernel modules required!
 </div>
 
-<h2>Installing the injector</h2>
+<h2>Packages</h2>
+
+<ul>
+  <li><a href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/zeroinstall-injector_0.9-1_all.deb'>zeroinstall-injector_0.9-1_all.deb</a> (Debian package)</li>
+</ul>
+
+<p>
+If a package for your distribution is listed above, install that and then <a href='injector-using.html'>try using it</a>!
+Otherwise, follow the instructions below to install using the generic tarball.
+</p>
+
+<h2>Installing from tarball</h2>
 
 <p>
 To use the injector, you will need:
