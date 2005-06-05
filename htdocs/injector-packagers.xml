@@ -63,7 +63,7 @@ what an interface file looks like).
 <p>
 We will need to pick a URL for Find. Since we must upload the interface file to this URL, we must pick
 a name we control. It is best to choose names that are unlikely to change, since other software that uses
-ours will identify it by the URL we pick. For this example, we will use <b>http://0install.net/tutorial/Find</b>.
+ours will identify it by the URL we pick. For this example, we will use <b>http://www.hayber.us/0install/Find</b>.
 This is the URL that will be used to download the interface file, so pick a URL that doesn't already exist!
 </p>
 
@@ -75,7 +75,7 @@ Copy the template below and adjust as appropriate:
 <pre><![CDATA[
 <?xml version="1.0" ?>
 <interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface"
-           uri="http://0install.net/tutorial/Find"
+           uri="http://www.hayber.us/0install/Find"
 	   main="Find/AppRun">
   <name>Find</name>
   <summary>a find-in-files utility</summary>
@@ -138,7 +138,7 @@ injector to import the local signed file, like this:
 
 <pre>
 $ <b>0launch --import Find.xml.asc</b>
-Interface: http://0install.net/tutorial/Find
+Interface: http://www.hayber.us/0install/Find
 The interface is correctly signed with the following keys:
 - Valid signature from 1E203D0FFF20A3B0FA1A0C2A989BA725182BDABD
 Do you want to trust all of these keys to sign interfaces?
@@ -156,9 +156,9 @@ We can now try running Find:
 </p>
 
 <pre>
-$ <b>0launch http://0install.net/tutorial/Find</b>
+$ <b>0launch http://www.hayber.us/0install/Find</b>
 Can't find all required implementations:
-- &lt;Interface http://0install.net/tutorial/Find&gt; -&gt; None
+- &lt;Interface http://www.hayber.us/0install/Find&gt; -&gt; None
 </pre>
 
 <p>
@@ -240,7 +240,7 @@ You can now re-sign the file, reimport and try again:
 <pre>
 $ <b>gpg --clearsign Find.xml</b>
 $ <b>0launch --import Find.xml.asc</b>
-$ <b>0launch http://0install.net/tutorial/Find</b>
+$ <b>0launch http://www.hayber.us/0install/Find</b>
 </pre>
 
 <p style='text-align: center'>
@@ -312,7 +312,7 @@ Re-sign and re-import the interface and try again:
 <pre>
 $ <b>gpg --clearsign Find.xml</b>
 $ <b>0launch --import Find.xml.asc</b>
-$ <b>0launch -g http://0install.net/tutorial/Find</b>
+$ <b>0launch -g http://www.hayber.us/0install/Find</b>
 </pre>
 
 <p>
@@ -324,7 +324,7 @@ Find should now run correctly.
 <p>
 So far, we have been importing the interface from a local file. To make it available to others,
 we simply upload the signed interface to a web-server, so that it can be downloaded by fetching
-<a href="http://0install.net/tutorial/Find">http://0install.net/tutorial/Find</a>.
+<a href="http://www.hayber.us/0install/Find">http://www.hayber.us/0install/Find</a>.
 </p>
 
 <p>
@@ -333,7 +333,7 @@ The easiest way to test it is to set HOME to a new directory and try running it:
 
 <pre>
 $ <b>mkdir /tmp/test</b>
-$ <b>HOME=/tmp/test 0launch http://0install.net/tutorial/Find</b>
+$ <b>HOME=/tmp/test 0launch http://www.hayber.us/0install/Find</b>
 Failed to download key from 'http://0install.net/tutorial/989BA725182BDABD.gpg':
 HTTP Error 404: Not Found
 </pre>
@@ -440,7 +440,7 @@ add an &lt;icon&gt; element to the interface file:
 </p>
 
 <pre>
-  &lt;icon type='image/png' href='http://0install.net/tutorial/Find.png'/&gt;
+  &lt;icon type='image/png' href='http://www.hayber.us/0install/Find.png'/&gt;
 </pre>
 
 </html>
