@@ -5,17 +5,20 @@
 
 <p>
 This guide shows how to make software available through <a href="injector.html">the injector</a>.
+Our example package will be <a href="http://www.hayber.us/rox/Find">Find</a>, a little
+utility for searching for files.
 </p>
 
 <h2>Interfaces and Implementations</h2>
 
 <dl>
 <dt>An interface</dt>
-<dd>describes what something does (eg, "Simple text editor").</dd>
+<dd>describes what something does (eg, "A Find in Files Utility").</dd>
 
 <dt>An implementation</dt>
-<dd>is something that does it (eg, Edit-1.9.6 or Edit-1.9.7).</dd>
+<dd>is something that does it (eg, "Find version 4" or "Find version 5").</dd>
 </dl>
+
 <p>
 In Zero Install, interfaces are named by globally unique URLs (like web pages). Some examples
 of interfaces are:
@@ -39,10 +42,10 @@ discovered. At present, it is still strong enough for our use, but we should mig
 to another algorithm at some point.</div>
 
 <p>
-When we run a program (like Edit) we need to choose an implementation of every
-interface on which it depends. Then, we need to tell the program where to find
-them all; this process is known as <i>Dependency Injection</i> (or <i>Inversion
-of Control</i>).</p>
+When we run a program (like Find) we need to choose an implementation of Find, and
+also an implementation of every interface on which it depends. Then, we need to
+tell the program where to find them all; this process is known as <i>Dependency
+Injection</i> (or <i>Inversion of Control</i>).</p>
 
 <p>
 Both tasks are handled by the injector. This takes as input an interface and
@@ -55,28 +58,34 @@ URL and downloading the XML file it names (click on one of the interfaces above 
 what an interface file looks like).
 </p>
 
-<h2>Format of an interface file</h2>
+<h2>Creating the interface file</h2>
 
 <p>
-An interface file is a GPG clear-signed XML file. The root &lt;interface&gt; element contains
-information about the interface itself, and a list of implementations (covered below). Edit's
-interface looks like this:
+We will need to pick a URL for Find. Since we must upload the interface file to this URL, we must pick
+a name we control. It is best to choose names that are unlikely to change, since other software that uses
+ours will identify it by the URL we pick. For this example, we will use <b>http://0install.net/tutorial/Find</b>.
+</p>
+
+<p>
+Start by creating an XML file (<b>Find.xml</b>) describing your application.
+Copy the template below and adjust as appropriate:
 </p>
 
 <pre><![CDATA[
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
 <?xml version="1.0" ?>
-<interface last-modified="1110752708"
-	   main="Edit/AppRun"
-           uri="http://rox.sourceforge.net/2005/interfaces/Edit"
-	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
-  [...]
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface"
+           uri="http://0install.net/tutorial/Find"
+	   main="Find/AppRun">
+  <name>Find</name>
+  <summary>a find-in-files utility</summary>
+  <description>
+Searches files for specific text, displaying the results in a window. Double click
+on the result line(s) to open the file at that point.
+
+Configuration options are available to customize the search command and the editor with which to
+open the files.
+  </description>
 </interface>
------BEGIN PGP SIGNATURE-----
-[...]
------END PGP SIGNATURE-----
 ]]></pre>
 
 <p>
@@ -84,7 +93,6 @@ The attributes on the root element are:
 </p>
 
 <dl>
-<dt>last-modified</dt> <dd>the time in seconds since the Unix epoch when the file was last modified</dd>
 <dt>uri</dt> <dd>the correct name for the interface (since there may be several URLs which will fetch this
 interface; this is to ensure everyone uses the canonical name)</dd>
 <dt>xmlns</dt> <dd>the XML namespace for all the elements (don't change this)</dd>
@@ -92,29 +100,68 @@ interface; this is to ensure everyone uses the canonical name)</dd>
 action when the user asks to run the interface</dd>
 </dl>
 
+<p>The first three elements describe the interface in varying levels of detail:</p>
+
+<dl>
+<dt>&lt;name&gt;</dt> <dd>a short name to identify the interface</dd>
+<dt>&lt;summary&gt;</dt> <dd>a short one-line description (note that the first word should
+not be upper-case unless it is a proper noun)</dd>
+<dt>&lt;description&gt;</dt> <dd>a full description, which can be several paragraphs long</dd>
+</dl>
+
+<h2>Signing the interface</h2>
+
 <p>
-The gpg signature is added to the XML by running <b>gpg --clearsign interface.xml</b>.
+All interface files must be signed, or the injector will reject them. If you do not already have a GPG
+key, create one now. You can accept the defaults for most fields; just enter your name and email address:
 </p>
 
-<h2>Interface details</h2>
+<pre>
+$ <b>gpg --gen-key</b>
+</pre>
 
 <p>
-Inside the root element are elements describing the interface. Edit has:
+The gpg signature is added to the XML like this:
 </p>
 
-<pre><![CDATA[
-<?xml version="1.0" ?>
-<interface ...>
-  <name>Edit</name>
-  <summary>Simple text editor</summary>
-  <description>
-    Edit is a simple text editor, with a ROX-style user interface. It has drag-and-drop saving, search-and-replace and multi-level undo.
-  </description>
-]]></pre>
+<pre>
+$ <b>gpg --clearsign Find.xml</b>
+</pre>
+
+<h2>Importing the interface</h2>
 
 <p>
-The summary is a short one-line message, while the description can be several paragraphs long.
-Following the details is a list of implementations of the interface.
+We could upload our interface to a web-server now and fetch it from there. However, for testing we can ask the
+injector to import the local signed file, like this:
+</p>
+
+<pre>
+$ <b>0launch --import Find.xml.asc</b>
+Interface: http://0install.net/tutorial/Find
+The interface is correctly signed with the following keys:
+- Valid signature from 1E203D0FFF20A3B0FA1A0C2A989BA725182BDABD
+Do you want to trust all of these keys to sign interfaces?
+Trust all [Y/N] <b>Y</b>
+Trusting 1E203D0FFF20A3B0FA1A0C2A989BA725182BDABD
+</pre>
+
+<p>
+The injector will ask you to confirm that you trust the key to sign interfaces. The fingerprint shown will vary,
+since it identifies your key.
+</p>
+
+<p>
+We can now try running Find:
+</p>
+
+<pre>
+$ <b>0launch http://0install.net/tutorial/Find</b>
+Can't find all required implementations:
+- &lt;Interface http://0install.net/tutorial/Find&gt; -&gt; None
+</pre>
+
+<p>
+However, it won't actually run, as we haven't told it about any implementations (versions) yet!
 </p>
 
 <h2>Implementations</h2>
@@ -128,61 +175,185 @@ way.
 </p>
 
 <p>
-Each implementation of an interface has a definition like this:
-</p>
-
-<pre><![CDATA[
-<implementation id="sha1=00720a16dd9e38c8d29b844730e930db13dc0783"
-		stability="stable" version="1.9.3">
-]]></pre>
-
-<p>
-When adding a new implementation, you will need to know the SHA1 digest value to
-use. Once the injector has downloaded your program, it will check that the digest
-is correct to ensure that the archive hasn't been tampered with. You can find out
-the digest my running <b>manifest.py</b> on the root directory of your unpacked
-program:
+We will add Find version 5 to our interface file. Download the archive and extract it:
 </p>
 
 <pre>
-$ python /usr/lib/python2.3/site-packages/zeroinstall/zerostore/manifest.py myprog
+$ <b>wget http://www.hayber.us/rox/find/Find-005.tgz</b>
+$ <b>mkdir download</b>
+$ <b>tar xzf Find-005.tgz -C download</b>
+</pre>
+
+<p>
+When adding a new implementation, we need to know the SHA1 digest value to use.
+Once the injector has downloaded a program, it will check that the digest is
+correct to ensure that the archive hasn't been tampered with. To find the SHA1 hash:
+</p>
+
+<pre>
+$ <b>python /usr/lib/python2.3/site-packages/zeroinstall/zerostore/manifest.py download</b>
 [...]
-sha1=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+sha1=fcab409db9f527687c71c954b9b64d27bced57fc
 </pre>
 
 <div class="note">TODO: There should be an easier way to do this in the next version!</div>
 
-<h2>Archives</h2>
+<p>
+This command prints out a manifest which shows the whole directory structure along with the
+SHA1 of each file inside it. On the last line, it prints the SHA1 of the manifest file itself;
+this is the value we need.
+</p>
 
 <p>
-For each implementation, you also need to tell the injector where it can download it. Here
-is an example from Edit's interface:
+Note that the digest is for the extracted directory structure; <i>not</i> for
+the compressed archive. Also note that we get the digest for the
+<b>download</b> directory itself rather than for the <b>Find</b> directory
+inside it. This is because tar archives can contain multiple top-level items.
+</p>
+
+<p>
+We will now add an &lt;implementation&gt; element to our <b>Find.xml</b> file, quoting the SHA1 of
+the manifest in the <b>id</b> attribute.
+</p>
+
+<pre>
+&lt;interface ...&gt;
+  [...]
+  <b>&lt;implementation id="sha1=fcab409db9f527687c71c954b9b64d27bced57fc"
+		stability="testing" version="5"&gt;
+    &lt;archive href="http://www.hayber.us/rox/find/Find-005.tgz" size="29721"/&gt;
+  &lt;/implementation&gt;</b>
+&lt;/interface&gt;
+</pre>
+
+<p>
+Inside the &lt;implementation&gt;, we have also added an &lt;archive&gt; element. This tells the injector
+that the implementation can be downloaded from this location. We give the size of the archive so that the
+injector can display a progress bar.
+</p>
+
+<p>
+You can now re-sign the file, reimport and try again:
+</p>
+
+<pre>
+$ <b>gpg --clearsign Find.xml</b>
+$ <b>0launch --import Find.xml.asc</b>
+$ <b>0launch http://0install.net/tutorial/Find</b>
+</pre>
+
+<p style='text-align: center'>
+<img width="507" height="278" src="launch-find.png" alt='Launching Find' />
+</p>
+
+<p>
+Find now downloads and runs (possibly complaining about a missing ROX-Lib; see below).
+</p>
+
+<h3>Archives containing versioned directories</h3>
+
+<p>
+For Find, we were lucky because the archive contained a directory simply called
+'Find'. Often, archives contain a top-level directory with the version number
+(eg, 'Find-005/Find').  The optional <b>extract</b> attribute solves this
+problem, by telling the injector to extract a particular subdirectory of an
+archive. So, if find had been distributed this way, we would have used this instead:
+</p>
+
+<pre>
+&lt;archive href="http://www.hayber.us/rox/find/Find-005.tgz" <b>extract='find-005'</b> size="29721"/&gt;
+</pre>
+
+<p>
+We would then calculate the manifest of the <b>find-005</b> directory instead of the <b>download</b> directory.
+</p>
+
+<h2>Dependencies</h2>
+
+<p>
+Find requires ROX-Lib, so you still can't actually run it yet (unless you have ROX-Lib
+installed locally). Now we will get the injector to select an implementation of ROX-Lib
+to use with Find.
+</p>
+
+<p>
+To avoid specifying the dependency again for each implementation, we will create a
+&lt;group&gt; element and put the dependency and the implementations inside it. All
+implementations in the group will have ROX-Lib as a dependency:
 </p>
 
 <pre><![CDATA[
-<implementation stability="stable" version="1.9.3" id="sha1=00720a16dd9e38c8d29b844730e930db13dc0783">
-  <archive extract="edit-1.9.3" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.3.tgz" size="24322"/>
-</implementation>
+  <group>]]><b><![CDATA[
+    <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib">
+      <environment insert="ROX-Lib2/python" name="PYTHONPATH"/>
+    </requires>]]></b><![CDATA[
+    <implementation id="sha1=fcab409db9f527687c71c954b9b64d27bced57fc"
+		  stability="testing" version="5">
+      <archive href="http://www.hayber.us/rox/find/Find-005.tgz" size="29721"/>
+    </implementation>
+  </group>
 ]]></pre>
 
 <p>
-The <b>href</b> attribute is the URL which will be used to fetch the archive, which must be
-a tgz archive. <b>size</b> is the size of the archive file, which used for the download progress
-display (you can also set a <b>size</b> on the implementation; that is the uncompressed size).
+The &lt;requires&gt; element names an interface which is required by all the implementations
+in this group. 
+The &lt;environment&gt; element inside tells the injector how to make its
+choice known to Find. In this case, it is by inserting
+<b>/path/of/cache/sha1=XXX/python</b> to the beginning of <b>PYTHONPATH</b>.
+When Find (a Python program) does <b>import rox</b>, it will then get the chosen
+version.
 </p>
 
 <p>
-The optional <b>extract</b> attribute tells the injector to extract a particular subdirectory
-of the archive. This is useful because many archives contain only a single top-level directory;
-we want the unpacked component to contain a directory called <b>Edit</b>, not
-<b>edit-1.9.3/Edit</b>.
+Re-sign and re-import the interface and try again:
+</p>
+
+<pre>
+$ <b>gpg --clearsign Find.xml</b>
+$ <b>0launch --import Find.xml.asc</b>
+$ <b>0launch -g http://0install.net/tutorial/Find</b>
+</pre>
+
+<p>
+Find should now run correctly.
+</p>
+
+<h2>Uploading the interface</h2>
+
+<p>
+So far, we have been importing the interface from a local file. To make it available to others,
+we simply upload the signed interface to a web-server, so that it can be downloaded by fetching
+<a href="http://0install.net/tutorial/Find">http://0install.net/tutorial/Find</a>.
 </p>
 
 <p>
-You might wonder why we don't just create an archive without the extra directory in the first
-place. The reason is that the injector is designed to work with <i>existing</i> archives; Edit
-1.9.3 pre-dates the injector by a long way, but the injector is able to use
-Edit's original archive (and ROX-Lib's too!) without modifications.
+The easiest way to test it is to set HOME to a new directory and try running it:
+</p>
+
+<pre>
+$ <b>mkdir /tmp/test</b>
+$ <b>HOME=/tmp/test 0launch http://0install.net/tutorial/Find</b>
+Failed to download key from 'http://0install.net/tutorial/989BA725182BDABD.gpg':
+HTTP Error 404: Not Found
+</pre>
+
+<p>
+We need to put out GPG public key up too! Export it and upload it (the name is
+the key ID):
+</p>
+
+<pre>
+$ <b>gpg --export -a <i>myname</i></b>
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+</pre>
+
+<p>
+Once the key is uploaded, the test should work. Other people can now use your interface.
+</p>
+
+<p>
+<strong>Excercise:</strong> add another version of Find to the interface.
 </p>
 
 <h2>Versions</h2>
@@ -256,67 +427,5 @@ continue using a buggy version if it seems to work for them, but they should nev
 one). <b>Developer</b> is like a more extreme version of <b>Testing</b>, where the program is
 expected to have bugs.
 </p>
-
-<h2>Groups</h2>
- 
-<p>
-To avoid specifying the same information multiple times, the &lt;group&gt;
-element can be used. Attributes set on a group are inherited by its child
-elements. 'path' attributes may be relative, in which case they are relative
-to the parent's path. Group may be nested inside other groups to any depth.
-Using groups is simply a short-hand notation. Eg:
-</p>
- 
-<pre><![CDATA[
-  <group stability="stable">
-    <implementation .../>
-    <implementation .../>
-    <implementation .../>
-    <implementation .../>
-  </group>
-]]></pre>
- 
-<h2>Dependencies</h2>
-
-<p>
-The interface file also lists the dependencies of each implementation; the
-injector locates an implementation of each dependency, recursively. All
-information about dependencies is handled at the interface level; this is
-because the same implementation may be used in different ways. Also, for
-software not specially designed for use with the injector, it allows us to keep
-the implementation in its original form.
-</p>
-
-<p>
-This diagram shows some dependencies for Memo (the dotted lines):
-</p>
-
-<p style='text-align: center'>
-<img width="554" height="345" src="depend.png"
-     alt='Interface files give implementations and dependencies' />
-</p>
-
-<p>
-Here is an extract from Edit's interface which gets the injector to find an
-implementation of ROX-Lib:
-</p>
-
-<pre><![CDATA[
-    <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib">
-      <version min="1.9.6"/>
-      <environment insert="ROX-Lib2/python" name="PYTHONPATH"/>
-    </requires>
-]]></pre>
-
-<div class='note'>TODO: &lt;version&gt; is currently ignored.</div>
-
-<p>
-The &lt;requires&gt; element names an interface which is required by all the implementations
-in this group. 
-The &lt;environment&gt; element inside tells the injector how to make its
-choice known to Edit. In this case, it is by inserting
-<b>/path/of/cache/sha1=XXX/python</b> to the beginning of <b>PYTHONPATH</b>.
-</p>
-
 
 </html>
