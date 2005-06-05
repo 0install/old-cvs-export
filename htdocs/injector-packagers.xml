@@ -64,6 +64,7 @@ what an interface file looks like).
 We will need to pick a URL for Find. Since we must upload the interface file to this URL, we must pick
 a name we control. It is best to choose names that are unlikely to change, since other software that uses
 ours will identify it by the URL we pick. For this example, we will use <b>http://0install.net/tutorial/Find</b>.
+This is the URL that will be used to download the interface file, so pick a URL that doesn't already exist!
 </p>
 
 <p>
@@ -343,9 +344,11 @@ the key ID):
 </p>
 
 <pre>
-$ <b>gpg --export -a <i>myname</i></b>
------BEGIN PGP PUBLIC KEY BLOCK-----
-...
+$ <b>gpg --list-secret-keys  --keyid-format long</b>
+pub   1024D/<b>989BA725182BDABD</b> 2005-06-05 [expires: 2006-06-05]
+uid                          Injector test key (testing only)
+sub   2048g/F14D7B28771AED10 2005-06-05 [expires: 2006-06-05]
+$ <b>gpg --export -a <i>myname</i> > 989BA725182BDABD.gpg</b>
 </pre>
 
 <p>
