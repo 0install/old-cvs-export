@@ -34,7 +34,7 @@ Hash: SHA1
   </group>
 
   <group>
-    <implementation version='0.6' id='sha1=f58ce8d285c317fe050f823e84ead0a0f3662dd0' stability='testing'>
+    <implementation version='0.6' id='sha1=f58ce8d285c317fe050f823e84ead0a0f3662dd0' stability='stable'>
       <archive size='21920' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.6.tgz' extract='injector-gui-0.6'/>
     </implementation>
   </group>
@@ -42,7 +42,7 @@ Hash: SHA1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCoX+crgeCgFmlPMERAg5iAKDH4+jlBEaIjgpp9bZ/PT4SubjlpwCfSTTB
-yw0dSl7J+EGQqp4ikdz9FLo=
-=Uhgo
+iD8DBQFCouTbrgeCgFmlPMERAnOFAJ9qajVVZ9JwWI4rQ1wcSd0243u4RQCgofFN
+p9mYNBS9q9535oE7d2bf/6U=
+=l+Ti
 -----END PGP SIGNATURE-----
