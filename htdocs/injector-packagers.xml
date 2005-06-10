@@ -39,10 +39,6 @@ Each <i>implementation</i> of an interface is identified by a cryptographic dige
 <li><b>sha1=c86d09f1113041f5eaaa8c3d1416fcf4dad8e2e0</b></li>
 </ul>
 
-<div class="note">TODO: Some weaknesses in the SHA1 algorithm have recently been
-discovered. At present, it is still strong enough for our use, but we should migrate
-to another algorithm at some point.</div>
-
 <p>
 When we run a program (like Find) we need to choose an implementation of Find, and
 also an implementation of every interface on which it depends. Then, we need to
@@ -59,6 +55,22 @@ The list of implementations of an interface is found by using the interface's na
 URL and downloading the XML file it names (click on one of the interfaces above to see
 what an interface file looks like).
 </p>
+
+<div class="note" style='text-align: left'>
+<h3>Note on weaknesses in SHA-1</h3>
+<p>Some weaknesses in the SHA-1 algorithm have recently been
+discovered. At present, it is still strong enough for our use, but we should migrate
+to another algorithm at some point.
+</p><p>
+Summary: As long as you sign your own programs (rather than verifying and signing
+programs from untrusted people), you're OK (a viable <i>preimage attack</i> would
+be required, not just a <i>collision attack</i>). If you check and sign programs
+from untrusted people (an unlikely situation), then MD5 is completely insecure but
+SHA-1 should be OK for a few years.
+</p>
+<p>See the <a href="http://www.cryptography.com/cnews/hash.html">HASH COLLISION Q&amp;A</a> for
+more details.</p>
+</div>
 
 <h2>Creating the interface file</h2>
 
