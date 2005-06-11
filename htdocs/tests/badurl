@@ -2,7 +2,7 @@
 Hash: SHA1
 
 <?xml version="1.0" ?>
-<interface uri="http://0install.net/tests/badurl"
+<interface uri="http://0install.net/tests/wrongurl"
 	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface"
 	   main='main'>
   <name>BadURL</name>
@@ -12,7 +12,7 @@ Hash: SHA1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCqylVrgeCgFmlPMERArDgAJ4ytJ9rApjBRsum81tEPemoN2IgZACgyy2A
-JVAevHqQSOrH86qUD35Y2ik=
-=1Tt8
+iD8DBQFCqyoSrgeCgFmlPMERAup9AKDLdmAuLcccR64O0cazMbg9pt5GBQCgqLTU
+7HU+ppn3V4gM43KEvNv1cZg=
+=4Gqz
 -----END PGP SIGNATURE-----
