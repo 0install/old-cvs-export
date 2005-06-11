@@ -2,7 +2,7 @@
 Hash: SHA1
 
 <?xml version="1.0" ?>
-<interface uri="http://0install.net/tests/newkey"
+<interface uri="http://0install.net/tests/multisig"
 	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface"
 	   main='main'>
   <name>MultiSig</name>
@@ -12,14 +12,14 @@ Hash: SHA1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCqyrrmx9df5ch2pARApjjAKC2lpsEWymuWexPxQFx/MOOQNFg3wCgmCZB
-u76R7Y10dqllH2mQvzxamJg=
-=Wufs
+iD8DBQFCqyw+wTviSk61WjcRAqXuAJwJTS6KbTcR5/OUI4s49oIINmt1ZQCfdh7l
+riz5rreu7Jwnk9rtbxC/eao=
+=1Caz
 -----END PGP SIGNATURE-----
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCqyvmwTviSk61WjcRAr2HAJ9sXtKL9foJutCAvK1jzp9FNo+u/wCeMYHp
-2u/ZnEkd3Mv/yz0TabmAYeI=
-=Z6se
+iD8DBQFCqyxdmx9df5ch2pARAoxtAKDRiiaFK4hHgXmeL50W+6y06wXqrQCfVRHa
+GqakyL0D+dr1aRsSPtz0WOM=
+=YEJy
 -----END PGP SIGNATURE-----
