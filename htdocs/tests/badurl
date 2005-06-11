@@ -1,0 +1,18 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+<?xml version="1.0" ?>
+<interface uri="http://0install.net/tests/badurl"
+	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface"
+	   main='main'>
+  <name>BadURL</name>
+  <summary>accessed with the wrong URL</summary>
+  <description>For testing only!</description>
+</interface>
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.0 (GNU/Linux)
+
+iD8DBQFCqyKfb88SG+I5DgsRAmA2AJ9COZcBRCtq8iRJVnbFAEAqXBIXCgCdGr7t
+aKvKQ4ynmk3hl4+bPwVQfzQ=
+=/zOL
+-----END PGP SIGNATURE-----

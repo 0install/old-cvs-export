@@ -1,0 +1,25 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+<?xml version="1.0" ?>
+<interface uri="http://0install.net/tests/newkey"
+	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface"
+	   main='main'>
+  <name>MultiSig</name>
+  <summary>signed with two keys</summary>
+  <description>For testing only!</description>
+</interface>
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.0 (GNU/Linux)
+
+iD8DBQFCqyLyb88SG+I5DgsRAgubAJ4gt2wWpq0wn6P1PS4tlo9ekNg7iACdEKv7
+TQcyAadBsONK4JB9BMOn+SA=
+=n+lc
+-----END PGP SIGNATURE-----
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.0 (GNU/Linux)
+
+iD8DBQFCqyTTajKJhPcRDsgRAjMJAKCCke2Kp8JYtA1wB9fk1LqCPVm+kACgo+xP
+wAJ5HmA0TNAUWZk63CTMd0c=
+=Ev7w
+-----END PGP SIGNATURE-----
