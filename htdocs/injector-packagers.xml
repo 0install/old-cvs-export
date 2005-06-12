@@ -209,12 +209,10 @@ correct to ensure that the archive hasn't been tampered with. To find the SHA1 h
 </p>
 
 <pre>
-$ <b>python /usr/lib/python2.3/site-packages/zeroinstall/zerostore/manifest.py download</b>
+$ <b>0store manifest download</b>
 [...]
 sha1=fcab409db9f527687c71c954b9b64d27bced57fc
 </pre>
-
-<div class="note">TODO: There should be an easier way to do this in the next version!</div>
 
 <p>
 This command prints out a manifest which shows the whole directory structure along with the
