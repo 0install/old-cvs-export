@@ -31,18 +31,18 @@ Hash: SHA1
     <implementation version='0.5' id='sha1=19ac8dea7d359b00a12c380ec43f989a35790abc' stability='stable'>
       <archive size='20914' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.5.tgz' extract='injector-gui-0.5'/>
     </implementation>
-  </group>
-
-  <group>
     <implementation version='0.6' id='sha1=f58ce8d285c317fe050f823e84ead0a0f3662dd0' stability='stable'>
       <archive size='21920' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.6.tgz' extract='injector-gui-0.6'/>
+    </implementation>
+    <implementation version='0.7' id='sha1=2b9a9c71e4785504fedba386bbb5bd96881e6e6d' stability='testing'>
+      <archive size='22139' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.7.tgz' extract='injector-gui-0.7'/>
     </implementation>
   </group>
 </interface>
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.0 (GNU/Linux)
 
-iD8DBQFCouTbrgeCgFmlPMERAnOFAJ9qajVVZ9JwWI4rQ1wcSd0243u4RQCgofFN
-p9mYNBS9q9535oE7d2bf/6U=
-=l+Ti
+iD8DBQFCryOorgeCgFmlPMERAlkVAKDQXc0ot4me2tBNITWVXxkRbAsbwwCgpSvO
+2n049JqC8Nt274FwtVFaZLs=
+=amcZ
 -----END PGP SIGNATURE-----
