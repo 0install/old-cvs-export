@@ -40,8 +40,7 @@ file, which tells it which versions are available.</li>
 <li>The interface is signed, so it downloads the key if you don't have it already.</li>
 <li>Normally, the injector would ask whether you trusted the key, but since the GUI
 is signed with the same key as the injector, it already knows this one.</li>
-<li>0launch then selected a suitable implementation of the GUI interface (<b>injector-gui</b>
-version 0.7).</li>
+<li>0launch then selected a suitable implementation of the GUI interface (<b>injector-gui-0.7</b>).</li>
 <li>It downloaded the archive from sourceforge, unpacked it, checked that
 the signature was correct, and moved it into the cache directory.</li>
 </ol>

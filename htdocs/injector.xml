@@ -49,7 +49,7 @@ To use the injector, you will need:
 <li><a href="http://0install.net/public_key.gpg">My GPG key</a>. You can download and import
 it with:
 <pre>
-$ gpg --recv-key --keyserver www.keyserver.net 59A53CC1
+$ <b>gpg --recv-key --keyserver www.keyserver.net 59A53CC1</b>
 </pre>
 </li>
 </ul>

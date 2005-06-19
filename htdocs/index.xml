@@ -43,7 +43,7 @@ again will start the filer instantly (no network access required).
 
 <p>
 The filesystem worked very well, and most of the ROX desktop is now available
-this way. The problem was the need for the kernel modules. Modules are
+this way. The problem was the need for the kernel module. Linux modules are
 difficult to install, can't be distributed as binaries, only work on Linux,
 need to be recompiled whenever the kernel is upgraded, and are a security risk
 if buggy (sysadmins are reluctant to install them).
