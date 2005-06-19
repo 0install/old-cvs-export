@@ -1,22 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <layout>
   <item base="index" label="Overview"/>
-  <item base="install" label="Installation"/>
-  <item base="compare" label="Motivation"/>
-  <item base="faq" label="FAQ"/>
-  <item base="docs" label="Documentation"/>
-  <item base="packagers" label="Packagers">
-    <item base='packagers-cs-1' label='Case Study #1'/>
-    <item base='packagers-cs-2' label='Case Study #2'/>
-  </item>
+
   <item base="injector" label="Injector">
+    <item base='injector' label='Overview'/>
     <item base='injector-using' label='Tutorial'/>
     <item base='injector-packagers' label='Packagers'/>
     <item base='injector-design' label='Design'/>
     <item base='injector-security' label='Security'/>
     <item base='injector-tests' label='Tests'/>
   </item>
-  <item base="security" label="Security"/>
+
+  <item base="filesystem" label="Filesystem">
+    <item base="filesystem" label="Overview"/>
+    <item base="install" label="Installation"/>
+    <item base="docs" label="Documentation"/>
+    <item base="packagers" label="Packagers">
+      <item base="packagers" label="Overview"/>
+      <item base='packagers-cs-1' label='Case Study #1'/>
+      <item base='packagers-cs-2' label='Case Study #2'/>
+    </item>
+    <item base="security" label="Security"/>
+    <item base="technical" label="Technical"/>
+  </item>
+
+  <item base="compare" label="Motivation"/>
+  <item base="faq" label="FAQ"/>
   <item base="support" label="Support"/>
-  <item base="technical" label="Technical"/>
 </layout>
