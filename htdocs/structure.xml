@@ -3,7 +3,7 @@
   <item base="index" label="Overview"/>
 
   <item base="injector" label="Injector">
-    <item base='injector' label='Overview'/>
+    <item base='injector' label='Injector:'/>
     <item base='injector-using' label='Tutorial'/>
     <item base='injector-packagers' label='Packagers'/>
     <item base='injector-design' label='Design'/>
@@ -12,7 +12,7 @@
   </item>
 
   <item base="filesystem" label="Filesystem">
-    <item base="filesystem" label="Overview"/>
+    <item base="filesystem" label="Filesystem:"/>
     <item base="install" label="Installation"/>
     <item base="docs" label="Documentation"/>
     <item base="packagers" label="Packagers">
@@ -24,7 +24,12 @@
     <item base="technical" label="Technical"/>
   </item>
 
-  <item base="compare" label="Motivation"/>
-  <item base="faq" label="FAQ"/>
+  <item base="doc" label="Documentation">
+    <item base="doc" label="Documentation:"/>
+    <item base="compare" label="Debian"/>
+    <item base="faq" label="FAQ"/>
+    <item base="links" label="Links"/>
+  </item>
+
   <item base="support" label="Support"/>
 </layout>

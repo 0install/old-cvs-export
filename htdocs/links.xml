@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8'?>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+
+<h2>Similar systems</h2>
+
+<dl class='spaced'>
+<dt>Java Web Start</dt>
+<dd>
+It appears the Sun have developed a similar system to Zero Install,
+<a href="http://java.sun.com/products/javawebstart">Java Web Start</a>,
+although this only works for Java applications.
+</dd>
+
+<dt>Konvalo</dt>
+<dd>
+<a href="http://www.konvalo.org/">Konvalo</a> is a very similar idea
+to Zero Install, implemented using CODA.
+</dd>
+
+</dl>
+
+<h2>Articles about Zero Install</h2>
+<p>Here are some discussions about Zero Install I've found on the web (Google, emails, etc). Let me
+know if you find any more!</p>
+<ul>
+<li><a href="http://www.pro-linux.de/news/2005/8310.html">Neue Zero Install-Implementation</a> article on pro-linux.de (in German)</li>
+<li><a href="ZeroInstall-Ottawa-2004.sxi">My slides from the 2004 Desktop Developers' Conference</a> (in Ottawa, Canada, July 19-20, 2004; these slides include the questions asked during the talk)</li>
+<li><a href="http://diariored.com/blog/000753.php">Zero Install System: instalar programas se va a acabar</a> (in Spanish)</li>
+<li><a href="http://www.golem.de/0404/30666.html">Zero Install: Software-Installation der Zukunft?</a> (in German)</li>
+<li><a href="http://www.linuxfrench.net/article.php?id_article=1268">Zero Install : si t’installes, t’es un Zéro!</a> (in French)</li>
+<li><a href="http://osnews.com/comment.php?news_id=6596">Introduction to the Zero Install System</a> (OSnews article and comments)</li>
+<li><a href="http://slashdot.org/article.pl?sid=04/04/03/174249&amp;mode=nested&amp;tid=106&amp;tid=185">Zero Install: The Future of Linux on the Desktop?</a> (Slashdot article)</li>
+<li><a href="http://freshmeat.net/articles/view/1049/">Zero Install and the Web of Software</a> (my freshmeat editorial and comments)</li>
+<li><a href="http://osnews.com/comment.php?news_id=5394">Zero Install and the Web of Software</a> (OSnews article and comments)</li>
+<li><a href="http://slashdot.org/~Sanity/journal/47655">Package Management in the ultimate operating system</a></li>
+<li><a href="http://ed.puddingbowl.org/archives/001198.html">Ed Heil's Weblog</a></li>
+<li><a href="http://www.varlinux.org/vl/html/modules/newbb/viewtopic.php?topic_id=201&amp;forum=8">Blue Sky Platform discussion</a></li>
+<li><a href="http://forums.gentoo.org/viewtopic.php?t=114652">Gentoo forums discussion</a></li>
+<li><a href="http://freedesktop.org/pipermail/xdg/2004-March/003461.html">Using Zero Install for sandboxing</a></li>
+</ul>
+
+<p>
+<a href="http://www.w3.org/DesignIssues/Installation.html">Tim Berners-Lee's "Installation, Catalogs, and Caches"</a> (DRAFT version) mentions Zero Install, too! (though the comment about needing a constant connection is wrong)
+</p>
+
+</html>

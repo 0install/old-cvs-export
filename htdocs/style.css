@@ -178,6 +178,15 @@ div.footer {
 	text-align: center;
 	color: #444;
 	margin: 2em 2em 1em 2em;
+	clear: both;
+}
+
+dl dt {
+	margin-top: .5em;
+}
+
+dl dd {
+	margin-top: .1em;
 }
 
 dl.spaced {
@@ -190,4 +199,21 @@ dl.spaced dt {
 
 dl.spaced dd {
 	margin-top: .2em;
+}
+
+div.figure {
+	margin: 1em;
+	padding: 0;
+	border: 1px dashed #888;
+}
+
+div.figure img {
+	padding: 1em 1em 0.5em 1em;
+}
+
+div.figure p {
+	font-weight: bold;
+	text-align: center;
+	padding: 0;
+	margin: 0 1em 0.5em 1em;
 }

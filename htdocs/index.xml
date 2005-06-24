@@ -1,6 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
 <html xmlns='http://www.w3.org/1999/xhtml'>
 
+<div class='figure' style='float: right'>
+  <img width="545" height="325" src="edit-injector.png"
+     alt="Running Edit with the injector" />
+  <p>Running Edit with the injector</p>
+</div>
+
 <p>
 The Zero Install system aims to provide a better way of installing software than traditional systems (tarballs, apt-get,
 bundles, setup.exe, etc). Here are some of our goals:
@@ -35,6 +41,12 @@ with this command:
 <pre>
 $ /uri/0install/rox.sourceforge.net/rox
 </pre>
+
+<div class='figure' style='float: left'>
+  <img width="443" height="199" src="apps.png"
+       alt='ROX-Filer window showing Memo application on the remote machine' />
+  <p>Running Memo via the filesystem</p>
+</div>
 
 <p>
 The first time you do this, Zero Install downloads ROX-Filer, saves it in the disk cache, and runs it. Running the command
