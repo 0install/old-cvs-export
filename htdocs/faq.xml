@@ -9,10 +9,14 @@
 <p>It isn't. Try it. Now.</p>
 
 <h3>How do I provide software using Zero Install?</h3>
-<p>You need to create some index files using the 0build script, and then
-upload them to a web server. See <i><a href="packagers.html">Documentation
-for packagers</a></i> for more information.
-</p>
+
+<p>You need to be able to upload some static files to a web server.</p>
+
+<p>For the distributing using the injector, read the <i>
+<a href='injector-packagers.html'>Injector Packaging Guide</a></i>.</p>
+
+<p>For the filesystem, see the <i><a href="packagers.html">Documentation for
+packagers</a></i> for instructions.</p>
 
 <h3>Isn't fetching stuff over the web really slow?</h3>
 <p>You have to get stuff over the web anyway the first time. The
@@ -46,15 +50,17 @@ and user confusion.
 
 <p>
 No! Installing using tarballs or traditional packages will typically mean
-downloading around three to four times as much data you would using Zero
-Install, because Zero Install only downloads what you actually use.
+downloading around three to four times as much data you would using the Zero
+Install filesystem, because Zero Install only downloads what you actually use.
 </p>
 
 <p>
-Tarballs/Debs/RPMs may be better if you want to download everything in one
-go and then disconnect from the net. However, if you have a slow
-connection that's always on (or it's easy to start a connection when you
-need to), Zero Install will be better.
+The injector tends to download more, as it downloads complete packages at once.
+However, it can still save you some time, since it might only download the
+documentation package when you click on Help, for example, if it's in a
+separate package. For comparison, in a traditional system such as Debian,
+clicking on Help in the Gimp displays a dialog telling you to ask root to run
+<b>apt-get install gimp-helpbrowser</b>.
 </p>
 
 <p>
@@ -66,13 +72,20 @@ the same compression scheme.
 </p>
 
 <h3>What about people without Internet connections?</h3>
-<p>You can still install from CD. Either install an application in the
-normal AppDir fashion (ie, by dragging to your home directory), or by
-providing a web-cache on the CD and merging it with the master one (we
-could provide software to do this easily).
+
+<p>You can still install from CD. For the filesystem, we can provide a
+web-cache on the CD and merge it with the master one (we could provide
+software to help with this, although there isn't any at the moment).
 </p>
 
-<h3>This is just a network filesystem, isn't it?</h3>
+<p>
+The injector provides the <b>0store</b> command for this purpose
+(<b>man 0store</b> for details).
+</p>
+
+<h3>The Zero Install filesystem is just another network filesystem, isn't
+it?</h3>
+
 <p>Yes. It uses HTTP to fetch a small index archive, and can then use any
 other system (HTTP, FTP or various peer-to-peer and mirroring systems) to
 fetch the actual data (see the <a href="technical.html">technical details</a>
@@ -140,11 +153,6 @@ manually 'install' multiple PNG images to see a page, but software is
 different!</h3>
 <p>Why?</p>
 
-<h3>Isn't this like Windows Update?</h3>
-<p>From what I've heard, that's something completely different. That
-tells you when something needs upgrading (which this scheme doesn't
-do) and then does a traditional download-unpack-setup.</p>
-
 <h3>What about when resources move?</h3>
 <p>Everything you've already accessed at least once will continue to
 work. Users trying software for the first time will find that it
@@ -154,13 +162,20 @@ www.gtk.org and libxml from www.xmlsoft.org. If those sites change
 their names, the download instructions will be broken. It really
 doesn't make any
 difference.
-</p><p>
 As with the regular web, people can leave redirections to the new
-site. The system administrator can also specify a list of redirections
-manually if required (this also allows all access to a particular
+site.</p>
+
+<p>For the filesystem, the system administrator can also specify a list of
+redirections manually if required (this also allows all access to a particular
 library to use a modified version, for example). See the
 <a href="docs.html">documentation page</a> for details of the 0divert
 command.
+</p>
+
+<p>
+The injector allows ordinary users to do this too. The <b>0launch --import</b>
+command lets you import the interface from any location, and <b>0store</b>
+allows adding any archive to the cache (provided its message digest matches).
 </p>
 
 <h3>How secure is this?</h3>
@@ -179,7 +194,8 @@ user has to trust the other user not to have modified his copy, and
 use that.
 </p>
 <p>
-See the <a href="security.html">security issues</a> document for
+See the <a href="security.html">filesystem security issues</a> and
+<a href='injector-security.html'>injector security issues</a> documents for
 more information.
 </p>
 
@@ -371,6 +387,13 @@ not portable (or rather, D code is, but the compiler isn't yet).
 The solution may be to have two implementations of zero-install; one written
 in C to be small for boot-strapping, and one written in
 Python/D/scheme/whatever for larger systems.
+</p>
+
+<p>
+The injector is pure Python, and doesn't run with any special privileges. The (currently
+unwritten) hashdrop utility, which allows downloads to be shared safely between users,
+will be a small setuid program probably written in C. This is optional (without it, downloads
+aren't shared), and should be very small and simple.
 </p>
 
 <h3>Does this replace /etc, /var, /tmp, etc?</h3>
