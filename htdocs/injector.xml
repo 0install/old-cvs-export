@@ -20,11 +20,6 @@ and downloads and runs the ones you choose:
      alt="Running Edit with the injector" />
 </p>
 
-<div class='note'>
-Note: The injector is pure Python. You do <b>not</b> need the rest of Zero
-Install. No extra kernel modules required!
-</div>
-
 <h2>Packages</h2>
 
 <ul>
@@ -127,7 +122,7 @@ You now have two new commands: <b>0launch</b>, which takes the URL of a program 
 </p>
 
 <p>
-Now it's time to <a href='injector-using.html'>try using it</a>!
+Now it's time to <a href='injector-using.html'>try using it...</a>
 </p>
 
 </html>

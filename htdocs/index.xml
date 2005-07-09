@@ -7,8 +7,6 @@
   <p>Running Edit with the injector</p>
 </div>
 
-<p><strong>Quick start:</strong> <a href='injector.html'>Install 0launch</a></p>
-
 <p>
 The Zero Install system aims to provide a better way of installing software than traditional systems (tarballs, apt-get,
 bundles, setup.exe, etc). Here are some of our goals:
@@ -31,7 +29,11 @@ bundles, setup.exe, etc). Here are some of our goals:
  <dd>If one user downloads a malicious program, other users aren't affected.</dd>
 </dl>
 
-<p><a href='doc.html'>Read more...</a></p>
+<p style='text-align: center'>
+  <span class='note'>
+  <strong>Quick start:</strong> <a href='injector.html'>Install 0launch now!</a>
+  </span>
+</p>
 
 <h2>Two implementations</h2>
 
