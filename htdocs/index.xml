@@ -29,6 +29,8 @@ bundles, setup.exe, etc). Here are some of our goals:
  <dd>If one user downloads a malicious program, other users aren't affected.</dd>
 </dl>
 
+<p><a href='doc.html'>Read more...</a></p>
+
 <h2>Two implementations</h2>
 
 <p>
