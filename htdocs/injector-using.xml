@@ -21,11 +21,11 @@ INFO:Need to download; switching to GUI mode
 INFO:Currently downloading:
 INFO:- http://0install.net/2005/interfaces/injector-gui
 INFO:Fetching key from http://0install.net/2005/interfaces/AE07828059A53CC1.gpg
-INFO:Updated interface cache entry for Injector-GUI (modified 2005-06-19 14:37:24 UTC)
+INFO:Updated interface cache entry for Injector-GUI (modified 2005-07-12 19:26:35 UTC)
 INFO:Currently downloading:
-INFO:- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.7.tgz
-INFO:Caching new implementation (digest sha1=2b9a9c71e4785504fedba386bbb5bd96881e6e6d)
-INFO:Executing: ~/.cache/0install.net/implementations/sha1=2b9a9c71e4785504fedba386bbb5bd96881e6e6d/0launch-gui
+INFO:- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.8.tgz
+INFO:Caching new implementation (digest sha1=a0c48942f864e4b850ca6206cf963bee0c239d0b)
+INFO:Executing: ~/.cache/0install.net/implementations/sha1=a0c48942f864e4b850ca6206cf963bee0c239d0b/0launch-gui
 </pre>
 
 <p>
@@ -40,7 +40,7 @@ file, which tells it which versions are available.</li>
 <li>The interface is signed, so it downloads the key if you don't have it already.</li>
 <li>Normally, the injector would ask whether you trusted the key, but since the GUI
 is signed with the same key as the injector, it already knows this one.</li>
-<li>0launch then selected a suitable implementation of the GUI interface (<b>injector-gui-0.7</b>).</li>
+<li>0launch then selected a suitable implementation of the GUI interface (<b>injector-gui-0.8</b>).</li>
 <li>It downloaded the archive from sourceforge, unpacked it, checked that
 the signature was correct, and moved it into the cache directory.</li>
 </ol>
