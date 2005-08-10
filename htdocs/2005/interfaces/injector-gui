@@ -4,7 +4,6 @@ Hash: SHA1
 <?xml version='1.0'?>
 <interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
 	   uri='http://0install.net/2005/interfaces/injector-gui'
-	   last-modified='1117395762'
 	   main='0launch-gui'>
   <name>Injector-GUI</name>
   <summary>graphical interface for the injector</summary>
@@ -40,12 +39,15 @@ Hash: SHA1
     <implementation version='0.8' id='sha1=a0c48942f864e4b850ca6206cf963bee0c239d0b' stability='stable'>
       <archive size='23429' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.8.tgz' extract='injector-gui-0.8'/>
     </implementation>
+    <implementation version='0.9' id='sha1=c67a1ad1691c482f89b2337ce4fefc4930e62342' stability='testing'>
+      <archive size='24431' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.9.tgz' extract='injector-gui-0.9'/>
+    </implementation>
   </group>
 </interface>
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.1 (GNU/Linux)
 
-iD8DBQFC1AtbrgeCgFmlPMERAj2AAKCJmPQ4s76WxjTHSoH2Q9sQxCDxqwCgn6kw
-cjRs9DOS4F8YwlRz9w7t8eI=
-=oPgT
+iD8DBQFC+d8UrgeCgFmlPMERAnlCAKCdXAFa1BuiX7D9Ioc+q3H97BzHFgCgmogU
+D9rkSfkYtK14bnVHkIvk6QA=
+=xmo2
 -----END PGP SIGNATURE-----
