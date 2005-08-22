@@ -25,7 +25,7 @@ and downloads and runs the ones you choose:
 <ul>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector_0.14-1_all.deb?download'>zeroinstall-injector_0.14-1_all.deb download page</a> (Debian package)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.14-1mdk.noarch.rpm?download'>zeroinstall-injector-0.14-1mdk.noarch.rpm download page</a> (Mandrake/Mandriva 10.1 RPM)</li>
-  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.13-1suse.noarch.rpm?download'>zeroinstall-injector-0.13-1suse.noarch.rpm download page</a> (SuSE 9.3 RPM)</li>
+  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.14-1suse.noarch.rpm?download'>zeroinstall-injector-0.14-1suse.noarch.rpm download page</a> (SuSE 9.3 RPM)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.13-1.src.rpm?download'>Source RPM</a> [ <a href='http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/994'>Instructions</a> ]</li>
   <li><a href="http://thread.gmane.org/gmane.comp.desktop.rox.devel/7405">GoboLinux instructions</a> (anyone want to create a recipe?)
 [ <a href="http://thread.gmane.org/gmane.comp.desktop.rox.devel/7410">hint for old versions of tar</a> ]</li>
