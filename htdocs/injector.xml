@@ -23,7 +23,7 @@ and downloads and runs the ones you choose:
 <h2>Packages</h2>
 
 <ul>
-  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector_0.14-1_all.deb?download'>zeroinstall-injector_0.14-1_all.deb download page</a> (Debian package)</li>
+  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector_0.15-1_all.deb?download'>zeroinstall-injector_0.15-1_all.deb download page</a> (Debian package)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.14-1mdk.noarch.rpm?download'>zeroinstall-injector-0.14-1mdk.noarch.rpm download page</a> (Mandrake/Mandriva 10.1 RPM)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.14-1suse.noarch.rpm?download'>zeroinstall-injector-0.14-1suse.noarch.rpm download page</a> (SuSE 9.3 RPM)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.13-1.src.rpm?download'>Source RPM</a> [ <a href='http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/994'>Instructions</a> ]</li>
@@ -65,7 +65,7 @@ href="http://sourceforge.net/project/showfiles.php?group_id=76468&amp;package_id
 download page</a>, or using wget:
 </p>
 <pre>
-$ <b>wget http://osdn.dl.sourceforge.net/sourceforge/zero-install/zeroinstall-injector-0.14.tar.gz.gpg</b>
+$ <b>wget http://osdn.dl.sourceforge.net/sourceforge/zero-install/zeroinstall-injector-0.15.tar.gz.gpg</b>
 </pre>
 
 <p>
@@ -74,8 +74,8 @@ you will need later!
 </p>
 
 <pre>
-$ <b>gpg zeroinstall-injector-0.14.tar.gz.gpg</b>
-gpg: Signature made Sun 14 Aug 2005 20:07:19 BST using DSA key ID 59A53CC1
+$ <b>gpg zeroinstall-injector-0.15.tar.gz.gpg</b>
+gpg: Signature made Fri 26 Aug 2005 19:47:14 BST using DSA key ID 59A53CC1
 gpg: Good signature from "Thomas Leonard &lt;XXXXX@users.sourceforge.net&gt;"
 gpg: WARNING: This key is not certified with a trusted signature!
 gpg:          There is no indication that the signature belongs to the owner.
@@ -92,8 +92,8 @@ some other source of information).
 You should now extract the archive, and change directory inside it:
 </p>
 <pre>
-$ <b>tar xzf zeroinstall-injector-0.14.tar.gz</b>
-$ <b>cd zeroinstall-injector-0.14</b>
+$ <b>tar xzf zeroinstall-injector-0.15.tar.gz</b>
+$ <b>cd zeroinstall-injector-0.15</b>
 </pre>
 
 <table>
