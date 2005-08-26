@@ -10,6 +10,8 @@ get more software.
 
 <h3>Example: Running Edit with the injector</h3>
 
+<div class='note'>Run this as a normal user, not as root!</div>
+
 <p>
 Run <b>0launch</b>, giving it the URL for the program you want to run (<b>-v</b> gives
 verbose output):
