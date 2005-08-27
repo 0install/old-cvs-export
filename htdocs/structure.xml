@@ -7,6 +7,7 @@
     <item base='injector-using' label='Tutorial'/>
     <item base='injector-packagers' label='Packagers'/>
     <item base='injector-design' label='Design'/>
+    <item base="injector-faq" label="FAQ"/>
     <item base='injector-security' label='Security'/>
     <item base='injector-tests' label='Tests'/>
   </item>
@@ -20,6 +21,7 @@
       <item base='packagers-cs-1' label='Case Study #1'/>
       <item base='packagers-cs-2' label='Case Study #2'/>
     </item>
+    <item base="fs-faq" label="FAQ"/>
     <item base="security" label="Security"/>
     <item base="technical" label="Technical"/>
   </item>
