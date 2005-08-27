@@ -115,7 +115,7 @@ never ever removing anything.
 <h3>How can I run my own version of something, instead of downloading a released version?</h3>
 
 <p>
-Lets say you want to run a CVS (developer) version of Edit. Start by checking out the latest
+Let's say you want to run a CVS (developer) version of Edit. Start by checking out the latest
 version from CVS, as normal (just press Return when asked for a password):
 </p>
 
