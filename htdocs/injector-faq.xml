@@ -112,4 +112,67 @@ for a year. For users with dial-up and 80Gb disks, that probably means
 never ever removing anything.
 </p>
 
+<h3>How can I run my own version of something, instead of downloading a released version?</h3>
+
+<p>
+Lets say you want to run a CVS (developer) version of Edit. Start by checking out the latest
+version from CVS, as normal (just press Return when asked for a password):
+</p>
+
+<pre>
+$ cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/rox login
+$ cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/rox co -P Edit
+</pre>
+
+<p>
+Now, if you try to run it directly, it will probably complain that it can't find ROX-Lib (a library
+it needs). The required libraries are listed in the <b>Edit.xml</b> file, and you can run that
+using <b>0launch</b>:
+</p>
+
+<pre>
+$ cd Edit
+$ ./AppRun
+*** This program needs ROX-Lib2 (version 1.19.14) to run.
+$ 0launch Edit.xml
+[ edit runs ]
+</pre>
+
+<p>
+Of course, you could do <b>0alias edit-cvs Edit.xml</b> to make a command that runs this version
+easily.
+</p>
+
+<h3>How can I register my own version under the original's URI?</h3>
+
+<p>
+The answer to the last question showed how to run a local version of a program directly, using 0launch
+to fetch the libraries it needed. However, if you (or some other program) run Edit using the normal
+URI (<b>http://rox.sourceforge.net/2005/interfaces/Edit</b>), your version won't show up. To add it,
+use <b>--add-feed</b> :
+</p>
+
+<pre>
+$ cd Edit
+$ 0launch --add-feed Edit.xml
+Feed list for interface 'Edit' is now:
+- /home/talex/Projects/Edit/Edit.xml
+$ 0launch -g http://rox.sourceforge.net/2005/interfaces/Edit
+</pre>
+
+<p>
+When the GUI opens, you should see your local copy listed (versions ending in .0
+conventionally indicate snapshot versions).
+</p>
+
+<p style='text-align: center'>
+<img width="754" height="302" src="edit-cvs.png"
+     alt='The injector GUI showing the Snapshot version of Edit' />
+</p>
+
+<p>
+This is particularly useful for libraries, since they are always used by other programs rather
+than run directly.
+</p>
+
 </html>
