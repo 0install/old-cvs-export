@@ -28,22 +28,68 @@ You should also click on one of the two links above if you're looking for <b>scr
 
 <h2>Goals</h2>
 
+<div class='figure' style='float: right'>
+  <img width="610" height="331" src="debian-help.png"
+     alt="A Debian user asks for help" />
+  <p>A Debian user tries to read the OpenOffice documentation.<br/>
+  Zero Install would have offered to download it instead.</p>
+</div>
+
 <p>
 Let's expand a little on the goals set out on the <a href='index.html'>title page</a>:
 </p>
 
 <dl class='spaced'>
  <dt>Anyone can install software</dt>
- <dd>You don't have to be root just to install a word-processor. Most packaging systems only allow the root
- user to install software using the packaging system's automatic downloading and dependency handling. Other users
- must often install from source or handle dependencies themselves. Zero Install allows any user to get a program
- and its dependencies onto the machine and running.</dd>
 
- <dt>Anyone can distribute software</dt>
- <dd>One of the more frustrating aspects of open source software is finding a
+ <dd>
+ <p>
+ You don't have to be root just to install a word-processor, or its
+ documentation. Most packaging systems only allow the root user to install
+ software.
+ </p>
+ 
+ <p>
+ Traditionally, if a user needs a package that isn't installed, they just get an
+ error message. In the screenshot, the system administrator must install the
+ openoffice.org-help package before the user can read the documentation, or
+ the user must install from source and handle any dependencies themselves.
+ On a Zero Install system, Zero Install would have offered to download the
+ documentation when the user selected <b>Help</b>.
+ </p>
+
+ <p>
+ Of course, Debian could fix this particular problem by making the OpenOffice package
+ depend on the documentation package. But then, installing OpenOffice would require far
+ more disk space if you didn't need the documentation (and most of the time, for most
+ versions of most software packages, you <i>don't</i> need the docmentation... but an
+ administrator can't know ahead of time what will be needed by their users). Also, users
+ still wouldn't be able to install OpenOffice itself in the first place.
+ </p>
+ 
+ </dd>
+
+ <dt style='clear: both'>Anyone can distribute software</dt>
+ <dd>
+ <p>
+ One of the more frustrating aspects of open source software is finding a
  program you want, only to discover that there is no package available for your
- distribution. You don't need to be blessed by a distribution (or anyone else)
- to be part of Zero Install; all you need is a web page.</dd>
+ distribution. Eg, on Debian (I'm not picking on Debian, it's just I've got a
+ Debian system here!):
+ </p>
+
+<pre># apt-get install rox-session
+E: Couldn't find package rox-session</pre>
+ 
+ <p>
+ You don't need to be blessed by a distribution (or anyone else)
+ to be part of Zero Install; all you need is a web page. Software is named
+ by URL:
+ </p>
+
+ <pre>$ 0launch http://rox.sourceforge.net/2005/interfaces/ROX-Session</pre>
+ 
+ </dd>
 
  <dt>It doesn't matter whether software is installed or not</dt>
  <dd>Traditional systems make running software a two-step process: first you
