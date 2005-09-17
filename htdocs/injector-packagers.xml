@@ -446,4 +446,26 @@ one). <b>Developer</b> is like a more extreme version of <b>Testing</b>, where t
 expected to have bugs.
 </p>
 
+<h2>Problems with manifest digests</h2>
+
+<p>
+Usually, if it complains that the expected manifest doesn't match the actual one, it's because you ran
+"0store manifest" on the wrong directory. Try creating an empty directory, extracting your tar file inside that,
+and then taking the manifest of the directory itself (containing the extracted items).
+</p>
+
+<p>
+There is one other possible problem, where the 'actual' manifest changes each time the archive is extracted!
+This happens when you include only some deep subdirectories in the archive, but not the top-level directory. Eg:
+</p>
+
+<pre>
+$ tar czf archive.tgz deeply/nested/path
+</pre>
+
+<p>
+When tar extracts the archive, it restores the original mtime of 'path', but creates 'deeply' and 'nested' with the current
+time. This is what causes the digest to change. Solution: only list top-level directories when creating archives!
+</p>
+
 </html>
