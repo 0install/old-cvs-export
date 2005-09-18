@@ -56,8 +56,14 @@ different!</h3>
 <p>About as secure as any system which ultimately involves running
 software written by people you don't know who live in far away
 countries. However, since the downloading is automatic, there are more
-chances for automatic checking (eg, verifying GPG signatures, etc).
+chances for automatic checking (eg, verifying GPG signatures, etc):
 </p>
+
+<p style='text-align: center'>
+<img width="576" height="363" src="trustbox.png"
+     alt='You are asked to confirm each new key'/>
+</p>
+
 <p>
 To be more precise, it has all the advantages of application
 directories (no install step, so no chance for anything to run as
