@@ -54,7 +54,7 @@ Hash: SHA1
     <implementation version='0.13' id='sha1=d328057ab0a8f3e6ed571c2fe8574d709b437204' stability='stable' released='2005-09-09'>
       <archive size='26622' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.13.tgz' extract='injector-gui-0.13'/>
     </implementation>
-    <implementation version='0.14' id='sha1=2a7a02bb4d9714ffe0da4b6bfabdd62110f9f0ea' stability='testing' released='2005-09-18'>
+    <implementation version='0.14' id='sha1=2a7a02bb4d9714ffe0da4b6bfabdd62110f9f0ea' stability='stable' released='2005-09-18'>
       <archive size='27466' href='http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.14.tgz' extract='injector-gui-0.14'/>
     </implementation>
   </group>
@@ -62,7 +62,7 @@ Hash: SHA1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.1 (GNU/Linux)
 
-iD8DBQFDLUIqrgeCgFmlPMERAhFgAKCQXZOh/4rIviIlGdPm/EN99yjx+ACgtWW6
-+n1Ymy0zZ0q68TdILrNdq+s=
-=vEKK
+iD8DBQFDMFwhrgeCgFmlPMERAudKAJ9hhODfJELPOnOmgWA8yoiFZXm9RgCeKEZ2
+Zo6nDKST+STbfN+zs0gxuQo=
+=5I7J
 -----END PGP SIGNATURE-----

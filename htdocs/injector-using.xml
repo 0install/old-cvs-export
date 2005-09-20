@@ -19,15 +19,15 @@ verbose output):
 
 <pre>
 $ <b>0launch -v http://rox.sourceforge.net/2005/interfaces/Edit</b>
-INFO:Need to download; switching to GUI mode
-INFO:Currently downloading:
-INFO:- http://0install.net/2005/interfaces/injector-gui
-INFO:Fetching key from http://0install.net/2005/interfaces/AE07828059A53CC1.gpg
-INFO:Updated interface cache entry for Injector-GUI (modified 2005-07-12 19:26:35 UTC)
-INFO:Currently downloading:
-INFO:- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.8.tgz
-INFO:Caching new implementation (digest sha1=a0c48942f864e4b850ca6206cf963bee0c239d0b)
-INFO:Executing: ~/.cache/0install.net/implementations/sha1=a0c48942f864e4b850ca6206cf963bee0c239d0b/0launch-gui
+INFO:root:Need to download; switching to GUI mode
+INFO:root:Interface &lt;Interface http://0install.net/2005/interfaces/injector-gui&gt; has no implementations!
+INFO:root:Currently downloading:
+INFO:root:- http://0install.net/2005/interfaces/injector-gui
+INFO:root:Updated interface cache entry for Injector-GUI (modified 2005-09-20 19:59:45 UTC)
+INFO:root:Currently downloading:
+INFO:root:- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.14.tgz
+INFO:root:Caching new implementation (digest sha1=2a7a02bb4d9714ffe0da4b6bfabdd62110f9f0ea)
+INFO:root:Executing: ~/.cache/0install.net/implementations/sha1=2a7a02bb4d9714ffe0da4b6bfabdd62110f9f0ea/0launch-gui
 </pre>
 
 <p>
@@ -39,17 +39,16 @@ So what happened?
 it switched to graphical mode (use <b>--console</b> to disable this).</li>
 <li>First, it needed to download the GUI itself. It fetched the GUI's interface
 file, which tells it which versions are available.</li>
-<li>The interface is signed, so it downloads the key if you don't have it already.</li>
 <li>Normally, the injector would ask whether you trusted the key, but since the GUI
 is signed with the same key as the injector, it already knows this one.</li>
-<li>0launch then selected a suitable implementation of the GUI interface (<b>injector-gui-0.8</b>).</li>
+<li>0launch then selected a suitable implementation of the GUI interface (<b>injector-gui-0.14</b>).</li>
 <li>It downloaded the archive from sourceforge, unpacked it, checked that
 the signature was correct, and moved it into the cache directory.</li>
 </ol>
 
 <div class='note'>TODO: Archives are currently unpacked to your home directory, in
 <b>~/.cache/0install.net/implementations</b>. In future, they will unpack to
-a shared directory under <b>/var/cache</b>, using a setuid helper (which will
+<b>/var/cache/0install.net/implementations</b>, using a setuid helper (which will
 check the cryptographic digest first, of course).</div>
 
 <p>
