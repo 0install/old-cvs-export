@@ -97,6 +97,24 @@ Thanks to the University of Southampton for the 0install.org, 0install.net, zero
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match='*[name() = "no"]'>
+    <td class='no'>
+      <xsl:choose>
+        <xsl:when test='text()'><xsl:apply-templates select='@*|node()'/></xsl:when>
+	<xsl:otherwise>No</xsl:otherwise>
+      </xsl:choose>
+    </td>
+  </xsl:template>
+
+  <xsl:template match='*[name() = "yes"]'>
+    <td class='yes'>
+      <xsl:choose>
+        <xsl:when test='text()'><xsl:apply-templates select='@*|node()'/></xsl:when>
+	<xsl:otherwise>Yes</xsl:otherwise>
+      </xsl:choose>
+    </td>
+  </xsl:template>
+
   <xsl:template match='*[name() = "toc"]'>
     <xsl:variable name='level'><xsl:value-of select='@level'/></xsl:variable>
     <ol>

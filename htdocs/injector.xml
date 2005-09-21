@@ -95,7 +95,7 @@ $ <b>tar xzf zeroinstall-injector-0.16.tar.gz</b>
 $ <b>cd zeroinstall-injector-0.16</b>
 </pre>
 
-<table>
+<table class='split'>
  <col id="col1"/>
  <tr><th>Installing normally</th><th>Installing without root access</th></tr>
  <tr>

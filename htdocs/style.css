@@ -126,16 +126,45 @@ div.heading p.thanks {
 	color: #836d52;
 }
 
-table          { border-collapse: collapse; }
+table    { border-collapse: collapse; }
 *#col1         { border-right: 3px solid #888; }
-td, th { padding: 1em; }
-th { border-bottom: 1px solid #888; }
+table.split td { padding: 1em; }
+table.split th { padding: 1em; }
+table.split th { border-bottom: 1px solid #888; }
 
 table.frontpage {
 	width: 100%;
 }
 table.frontpage *#col1 { border-right: 4px dashed #aaa; }
 table.frontpage th { border-bottom: 4px dashed #aaa; }
+
+table.matrix {
+	border: 1px solid black;
+}
+
+table.matrix th {
+	border: 1px solid black;
+	padding: .3em;
+	background: #ff8;
+}
+
+table.matrix td {
+	border: 1px solid #888;
+	padding: .3em;
+	background: #ffc;
+}
+
+table.matrix td.yes {
+	background: #8f8;
+}
+
+table.matrix td.no {
+	background: #f88;
+}
+
+th {
+  white-space: nowrap;
+}
 
 div.navbar {
 	margin-left: 2em;
