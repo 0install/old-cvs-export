@@ -56,9 +56,6 @@
       <body>
         <div class='heading'>
           <div style='float:right'>
-	    <a href="http://creativecommons.org/licenses/by-sa/2.5/">
-	      <img src="http://creativecommons.org/images/public/somerights20.gif" alt='Attribution-ShareAlike' width='88' height='31'/>
-	    </a>
 	    <a href="http://sourceforge.net/projects/zero-install">
 	      <img width="88" height="31" alt="SF logo"
      	       src="http://sourceforge.net/sflogo.php?group_id=7023&amp;type=1"/>
