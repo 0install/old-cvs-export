@@ -87,7 +87,21 @@
 	
         <div class='footer'>
 	 <p>
-Thanks to the University of Southampton for the 0install.org, 0install.net, zero-install.org and zero-install.net domain names!
+	   Thanks to the University of Southampton for the 0install.org, 0install.net,
+	   zero-install.org and zero-install.net domain names!
+	 </p>
+	 <p>
+	    Web-site &#169; Copyright 2005, Thomas Leonard.<br/>
+	    Permission is granted to use the site (excluding the software,
+	    which is licensed separately) in accordance with the terms of the
+	    <a href="http://creativecommons.org/licenses/by-sa/2.5/">Creative
+	    Commons Attribution-ShareAlike 2.5 license</a>.
+	  </p>
+	 <p>
+	   <a href="http://creativecommons.org/licenses/by-sa/2.5/">
+	      <img src="http://creativecommons.org/images/public/somerights20.gif"
+	      	   alt='Attribution-ShareAlike' width='88' height='31'/>
+	   </a>
 	 </p>
 	</div>
       </body>
