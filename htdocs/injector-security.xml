@@ -11,8 +11,9 @@ This page describes the injector's security model.
 I've noticed that if you describe a security model with digital signatures
 and GPG keys, people start worrying about all kinds of unlikely theoretical
 exploits. Whereas if you just stick software on the web with no security
-what-so-ever, everyone seems happy to download and use it anyway.
-Still, I'll have a go at describing the injector's security model anyway.
+what-so-ever, everyone seems completely happy to use it. But for those few
+people who do care about security, this document explains how the injector
+tries to improve the situation.
 </p>
 
 <h2>Overview</h2>
@@ -32,7 +33,7 @@ with a simple sandboxing system based on users. The system has a number of
 users, and each user can run whatever software they please. Ideally, it is
 not possible for malicious code executed by one user to damage the system or
 threaten the security of any other user. However, the code can do anything that
-the user running it is permitted to do (such as to delete all that user's
+the user running it is permitted to do (such as delete all that user's
 files, or log all the user's keystrokes and send them to another computer).
 </p>
 
@@ -96,7 +97,12 @@ information too.
 A trusted programmer is identified by their GPG key's fingerprint. When the
 user runs a program, the injector downloads the interface and checks that it
 is signed by someone the user trusts. If not, the user is asked to confirm
-that they trust the holder of the key to provide software to them.
+that they trust the holder of the key to provide software to them:
+</p>
+
+<p style='text-align: center'>
+<img width="576" height="363" src="trustbox.png"
+     alt='You are asked to confirm each new key'/>
 </p>
 
 <p>
@@ -109,8 +115,8 @@ interfaces, this is unlikely to provide any real benefit.
 The injector updates interfaces at the request of the user (clicking the
 'Refresh all now' button), or automatically (weekly, for example) if the
 user sets their freshness policy to request this. When updating an interface
-(even automatically) the injector displays the dialog box and requires the
-user to accept the new version and click on Execute).
+(even automatically) the injector displays a dialog box asking the user
+whether they want to download the new version.
 </p>
 
 <p>
@@ -132,8 +138,9 @@ options:
 <li>Break into the developer's private machine, get their private GPG key,
 install a keystroke logger, and get the GPG pass-phrase. Then break into the
 web server and install a compromised signed interface.</li>
-<li>Sign the interface with a different key, and trick users into accepting
-it.</li>
+<li>Break into the webserver and install an interface signed with their own
+key (a new key with a new fingerprint, but claiming to belong to the original
+author), and trick users into accepting it.</li>
 </ul>
 
 <p>
@@ -146,19 +153,6 @@ them accept keys themselves.
 The first option can be made even harder if the developer has a second
 (non-networked) machine with the GPG key, although not all developers will
 have a spare machine for this purpose.
-</p>
-
-<h2>Future work</h2>
-
-<p>
-Improve the UI of the trust dialog. Eg, get users to cut-and-paste the
-fingerprint in from somewhere instead of just clicking OK, or provide some
-way to tie in with GPG's web-of-trust.
-</p>
-
-<p>
-Provide a service which holds a list of known-bad keys. Get the injector
-to check new keys with this service.
 </p>
 
 </html>
