@@ -418,32 +418,43 @@ version) to an interface should be handled by creating a new interface. Eg:
 
 <p>
 The interface file also gives a stability rating for each implementation. The following
-levels are allowed:
+levels are allowed (must be lowercase in the interface files):
 </p>
 
 <ul>
-<li>Stable</li>
-<li>Testing</li>
-<li>Developer</li>
-<li>Buggy</li>
-<li>Insecure</li>
+<li>stable</li>
+<li>testing</li>
+<li>developer</li>
+<li>buggy</li>
+<li>insecure</li>
 </ul>
 
 <p>
 Stability ratings are kept independently of the implementations, and are expected to change over
-time. When any new release is made, its stability should be set to <b>Testing</b>. Users who
+time. When any new release is made, its stability should be set to <b>testing</b>. Users who
 have selected <b>Help test new versions</b> will then start using it. Other users will continue
 with the previous stable release. After a while (days, weeks or months, depending on the project)
-with no serious problems found, the implementation's stability can be changed to <b>Stable</b>
+with no serious problems found, the implementation's stability can be changed to <b>stable</b>
 so that everyone will use it.
 </p>
 
 <p>
-If problems are found, it can instead be marked as <b>Buggy</b>, or <b>Insecure</b>. The injector
+If problems are found, it can instead be marked as <b>buggy</b>, or <b>insecure</b>. The injector
 won't select either by default, but it is useful to users to see the reason (users may opt to
 continue using a buggy version if it seems to work for them, but they should never use an insecure
-one). <b>Developer</b> is like a more extreme version of <b>Testing</b>, where the program is
+one). <b>developer</b> is like a more extreme version of <b>testing</b>, where the program is
 expected to have bugs.
+</p>
+
+<h3>When to use 'buggy'</h3>
+
+<p>
+Don't mark old releases as <b>buggy</b> every time you do a new release, just
+because a few bugs have been fixed.  People who have selected <b>Network
+use: Full</b> will automatically upgrade to the new version anyway, so marking an older
+version as buggy only affects people who have explicitly stated that they <b>don't</b>
+want to use the latest version, but would prefer to use an older release to
+save network use.
 </p>
 
 <h2>Problems with manifest digests</h2>
