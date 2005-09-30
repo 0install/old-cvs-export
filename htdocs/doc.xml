@@ -64,7 +64,7 @@ Let's expand a little on the goals set out on the <a href='index.html'>title pag
  Of course, Debian could fix this particular problem by making the OpenOffice package
  depend on the documentation package. But then, installing OpenOffice would require far
  more disk space if you didn't need the documentation (and most of the time, for most
- versions of most software packages, you <i>don't</i> need the docmentation... but an
+ versions of most software packages, you <i>don't</i> need the documentation... but an
  administrator can't know ahead of time what will be needed by their users). Also, users
  still wouldn't be able to install OpenOffice itself in the first place.
  </p>
