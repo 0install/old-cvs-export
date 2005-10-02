@@ -270,6 +270,9 @@ Album, Depend, Desktop2App, DownloadManager, Fetch, Launch, Mail, NetStat, Thumb
 
  <li><a href="http://lgames.sourceforge.net/">lgames.sourceforge.net</a> provides a selection of classic games,
 including Barrage, LBreakout, LMarbles, Lpairs and Ltris.</li>
+
+ <li><a href="http://user.cs.tu-berlin.de/~karlb/penguin-command/">user.cs.tu-berlin.de</a> provides the
+ Penguin-Command game (<a href='http://people.freenet.de/LinuxCNC/0install/penguin-command'>hosted on people.freenet.de</a>).</li>
 </ul>
 
 <h2>Further reading</h2>
