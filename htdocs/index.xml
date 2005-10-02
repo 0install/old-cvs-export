@@ -29,6 +29,8 @@ bundles, setup.exe, etc). Here are some of our goals:
  <dd>If one user downloads a malicious program, other users aren't affected.</dd>
 </dl>
 
+<p>[ <a href='doc.html'>Read more...</a> ]</p>
+
 <p style='text-align: center'>
   <span class='note'>
   <strong>Quick start:</strong> <a href='injector.html'>Install 0launch now!</a>
