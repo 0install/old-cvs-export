@@ -9,11 +9,12 @@ Hash: SHA1
   <description>This interface can be used as a feed for the master interface.
 </description>
   <implementation id='sha1=123' version='1.0'/>
+  <feed-for interface='http://0install.net/tests/master'/>
 </interface>
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.1 (GNU/Linux)
 
-iD8DBQFDUP0WAWhfEWB7ssURAh+dAJ45spROhXs9ZsHhMaRzeIGZGLQa0wCeJRjy
-iSWAw0k/Tt1kiSAGDqL4uk8=
-=lJkI
+iD8DBQFDUP6QAWhfEWB7ssURAhlNAKDs2Y/kqy/WVVnV+TsyZHISXPZ1CACg6a5X
+HVZOUgmRHwtuitKMKTKRMuU=
+=NwOX
 -----END PGP SIGNATURE-----
