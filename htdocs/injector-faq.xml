@@ -155,15 +155,22 @@ easily.
 The answer to the last question showed how to run a local version of a program directly, using 0launch
 to fetch the libraries it needed. However, if you (or some other program) run Edit using the normal
 URI (<b>http://rox.sourceforge.net/2005/interfaces/Edit</b>), your version won't show up. To add it,
-use <b>--add-feed</b> :
+use <b>--feed</b> (<b>--add-feed</b> on older versions):
 </p>
 
 <pre>
-$ cd Edit
-$ 0launch --add-feed Edit.xml
+$ <b>cd Edit</b>
+$ <b>0launch --feed Edit.xml</b>
+Feed 'Edit.xml':
+
+1) Add as feed for 'http://rox.sourceforge.net/2005/interfaces/Edit'
+
+Enter a number, or CTRL-C to cancel [1]: 
+
 Feed list for interface 'Edit' is now:
 - /home/talex/Projects/Edit/Edit.xml
-$ 0launch -g http://rox.sourceforge.net/2005/interfaces/Edit
+
+$ <b>0launch -g http://rox.sourceforge.net/2005/interfaces/Edit</b>
 </pre>
 
 <p>
