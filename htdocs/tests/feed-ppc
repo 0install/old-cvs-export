@@ -2,7 +2,7 @@
 Hash: SHA1
 
 <?xml version="1.0" ?>
-<interface uri="http://0install.net/tests/feed1"
+<interface uri="http://0install.net/tests/feed-ppc"
 	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
   <name>Feed-PPC</name>
   <summary>PPC feed for master</summary>
@@ -15,7 +15,7 @@ Hash: SHA1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.1 (GNU/Linux)
 
-iD8DBQFDUjv8AWhfEWB7ssURAkXqAJsGVX405cj/e6m+nNtFsS8V17BBXQCeKo8a
-Mf8KAX9n5a1qIPZ4fEJog9I=
-=GBQo
+iD8DBQFDUjyIAWhfEWB7ssURAtlAAKCjR4IzAoQoX1JExtWPLUkWNUSM+wCfZtwC
+Tk5Uckf+YUIxGApT/wW972E=
+=wcK0
 -----END PGP SIGNATURE-----
