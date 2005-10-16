@@ -9,11 +9,12 @@ Hash: SHA1
   <description>This interface contains no implementations itself, but
 other interfaces feed into it.</description>
   <feed src='http://0install.net/tests/feed1'/>
+  <feed src='http://0install.net/tests/feed-ppc' arch='Linux-PPC'/>
 </interface>
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.1 (GNU/Linux)
 
-iD8DBQFDUPTwAWhfEWB7ssURAh+dAJ4kryxzia5a8qUfOnmP8ePvIOA98ACgxLJd
-8OLCRjTFqiA3LYgruogf/u4=
-=aaQu
+iD8DBQFDUjwLAWhfEWB7ssURAq4kAKCb4zcB0cxSNnD935Gt3vqqvMK+UwCeMKGL
+rMuxVJt4jTeydQS54AL90LA=
+=++rS
 -----END PGP SIGNATURE-----
