@@ -77,6 +77,14 @@ This interface has been signed with multiple keys. You should be prompted
 to confirm both.
 </dd>
 
+<dt>http://0install.net/tests/master</dt>
+<dd>
+This interface contains no implementations itself, but has two additional
+feeds. The first is always available (sha1=123), while the second will only be
+fetched if 'PPC' binaries are supported (sha1=456). (note that the
+implementations cannot actually be downloaded).
+</dd>
+
 </dl>
 
 </html>
