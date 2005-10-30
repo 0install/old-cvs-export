@@ -8,6 +8,15 @@ Now that you've <a href='injector.html'>installed the injector</a>, let's try us
 get more software.
 </p>
 
+<div class='note'>
+<strong>2005-10-30</strong> It seems that <a href='http://news.bbc.co.uk/1/hi/england/hampshire/4390048.stm'>our
+university department has burned down</a>. This probably explains why DNS isn't working. Therefore, please
+add this line to your <b>/etc/hosts</b> file:
+<pre>
+66.35.250.210   0install.net
+</pre>
+</div>
+
 <h3>Example: Running Edit with the injector</h3>
 
 <div class='note'>Run this as a normal user, not as root!</div>
