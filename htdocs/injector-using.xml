@@ -328,7 +328,8 @@ INFO:root:Executing: /home/talex/Projects/Edit/AppRun
 </pre>
 
 <p>
-In the example above, the injector ends up using my local CVS copies of both Edit and ROX-Lib.
+In the example above, the injector ends up using my local CVS copies of both Edit and ROX-Lib. If you still
+have problems, please <a href='support.html'>write to the mailing list</a>.
 </p>
 
 <h2>Further reading</h2>
