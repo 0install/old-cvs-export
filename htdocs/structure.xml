@@ -5,11 +5,14 @@
   <item base="injector" label="Injector">
     <item base='injector' label='Injector:'/>
     <item base='injector-using' label='Tutorial'/>
-    <item base='injector-packagers' label='Packagers'/>
-    <item base='injector-design' label='Design'/>
+    <item base='injector-feeds' label='Packages'/>
+    <item base='injector-packagers' label='Developers'>
+      <item base='injector-packagers' label='Packaging guide'/>
+      <item base='injector-design' label='Design'/>
+      <item base='injector-tests' label='Tests'/>
+    </item>
     <item base="injector-faq" label="FAQ"/>
     <item base='injector-security' label='Security'/>
-    <item base='injector-tests' label='Tests'/>
   </item>
 
   <item base="filesystem" label="Filesystem">

@@ -90,7 +90,7 @@
 	 <p>
 	    Web-site &#169; Copyright 2005, Thomas Leonard.<br/>
 	    Permission is granted to use the site (excluding the software,
-	    which is licensed separately) in accordance with the terms of the
+	    which is licensed separately)<br/>in accordance with the terms of the
 	    <a href="http://creativecommons.org/licenses/by-sa/2.5/">Creative
 	    Commons Attribution-ShareAlike 2.5 license</a>.
 	  </p>

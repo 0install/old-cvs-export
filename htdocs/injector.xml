@@ -1,6 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
+<div class='figure' style='float: right'>
+<img width="545" height="325" src="edit-injector.png"
+     alt="Running Edit with the injector" />
+  <p>Running Edit with the injector</p>
+</div>
+
 <h2>The Injector</h2>
 
 <p>
@@ -15,18 +21,13 @@ according to a policy you give it. The injector finds out which versions are ava
 and downloads and runs the ones you choose:
 </p>
 
-<p style='text-align: center'>
-<img width="545" height="325" src="edit-injector.png"
-     alt="Running Edit with the injector" />
-</p>
-
 <h2>Packages</h2>
 
 <dl>
   <dt>RPMs</dt>
 <dd>
 <ul>
-  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.16-1mdk.noarch.rpm?download'>zeroinstall-injector-0.16-1mdk.noarch.rpm download page</a> (Mandrake/Mandriva 10.1 RPM)</li>
+  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1mdk.noarch.rpm?download'>zeroinstall-injector-0.17-1mdk.noarch.rpm download page</a> (Mandrake/Mandriva 10.1 RPM)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1suse.noarch.rpm?download'>zeroinstall-injector-0.17-1suse.noarch.rpm download page</a> (SuSE 9.3 RPM)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.13-1.src.rpm?download'>Source RPM</a> [ <a href='http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/994'>Instructions</a> ]</li>
 </ul>
