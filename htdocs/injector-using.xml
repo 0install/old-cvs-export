@@ -327,7 +327,7 @@ $ <b>wget http://...</b>
 </pre>
 
 <p>
-If wget also fails, try viewing it in your web browser. If one of these works, but 0launch
+If wget also fails, try opening the URL in your web browser. If one of these works, but 0launch
 doesn't, it may be that you are using an HTTP proxy. Your web browser is configured to use it,
 but your <b>http_proxy</b> environment variable is not set. Check your browser configuration
 and ensure that <b>http_proxy</b> is set correctly, e.g.:
