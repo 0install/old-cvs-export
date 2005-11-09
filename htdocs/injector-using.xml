@@ -12,6 +12,7 @@ Now that you've <a href='injector.html'>installed the injector</a>, let's try us
 get more software.
 </p>
 
+<!--
 <div class='note'>
 <strong>2005-10-30</strong> It seems that <a href='http://news.bbc.co.uk/1/hi/england/hampshire/4390048.stm'>our
 university department has burned down</a>. This probably explains why DNS isn't working. Therefore, please
@@ -20,14 +21,13 @@ add this line to your <b>/etc/hosts</b> file:
 66.35.250.210   0install.net
 </pre>
 </div>
+-->
 
 <h3>Example: Running Edit with the injector</h3>
 
-<div class='note'>Run this as a normal user, not as root!</div>
-
 <p>
-Run <b>0launch</b>, giving it the URL for the program you want to run (<b>-v</b> gives
-verbose output):
+Run <b>0launch</b> (as a normal user, <b>not</b> as root!), giving it the URL
+for the program you want to run (<b>-v</b> gives verbose output):
 </p>
 
 <pre>
@@ -42,6 +42,11 @@ INFO:root:- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui
 INFO:root:Caching new implementation (digest sha1=2a7a02bb4d9714ffe0da4b6bfabdd62110f9f0ea)
 INFO:root:Executing: ~/.cache/0install.net/implementations/sha1=2a7a02bb4d9714ffe0da4b6bfabdd62110f9f0ea/0launch-gui
 </pre>
+
+<ul>
+<li>If you get an error running this command, jump to
+<a href='#troubleshooting'>the trouble-shooting section</a>.</li>
+</ul>
 
 <p>
 So what happened?
@@ -263,7 +268,7 @@ through the injector. See the <a href='injector-packagers.html'>packaging guide<
 on how to provide software yourself.
 </p>
 
-<h2>Trouble-shooting</h2>
+<h2><a name='troubleshooting'/>Trouble-shooting</h2>
 
 <p>
 If the injector isn't doing what you expect, run it with logging turned up
@@ -307,8 +312,35 @@ INFO:root:Executing: /home/talex/Projects/Edit/AppRun
 </pre>
 
 <p>
-In the example above, the injector ends up using my local CVS copies of both Edit and ROX-Lib. If you still
-have problems, please <a href='support.html'>write to the mailing list</a>.
+In the example above, the injector ends up using my local CVS copies of both Edit and ROX-Lib.
+</p>
+
+<p>
+If you get download errors, try fetching the failing URL using wget, e.g.:
+</p>
+
+<pre>
+$ <b>0launch http://...</b>
+Error downloading 'http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.16.tgz':
+HTTP Error 403: Forbidden: header 'Content-Type' value denied
+$ <b>wget http://...</b>
+</pre>
+
+<p>
+If wget also fails, try viewing it in your web browser. If one of these works, but 0launch
+doesn't, it may be that you are using an HTTP proxy. Your web browser is configured to use it,
+but your <b>http_proxy</b> environment variable is not set. Check your browser configuration
+and ensure that <b>http_proxy</b> is set correctly, e.g.:
+</p>
+
+<pre>
+$ <b>export http_proxy=http://myproxy.server:444</b>
+$ <b>0launch http://...</b>
+</pre>
+
+<p>
+If you still have problems, please <a href='support.html'>write to the mailing
+list</a>, and send the output of the commands above.
 </p>
 
 <h2>Further reading</h2>
