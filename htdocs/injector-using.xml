@@ -312,11 +312,18 @@ INFO:root:Executing: /home/talex/Projects/Edit/AppRun
 </pre>
 
 <p>
-In the example above, the injector ends up using my local CVS copies of both Edit and ROX-Lib.
+In the example above, the injector ends up using my local CVS copies of both Edit and ROX-Lib. Here
+are some known problems, and their solutions:
 </p>
 
+<ul>
+ <li><a href="http://news.gmane.org/find-root.php?message_id=%3c437318D8.1050604%40antplc.com%3e">Forbidden: header 'Content-Type' value denied</a> (firewall mis-configuration)</li>
+ <li><a href="http://news.gmane.org/find-root.php?message_id=%3c43775ABB.8060601%40hayber.us%3e">Failed to extract archive; exit code 512"</a> (incorrect environment setting)</li>
+ <li><a href="http://news.gmane.org/find-root.php?message_id=%3c76ebe6440511150110t3eb4f4e5p98c59f96b1c8ae5e%40mail.gmail.com%3e">TypeError: iterable argument required</a> (badly formed http_proxy setting)</li>
+</ul>
+
 <p>
-If you get download errors, try fetching the failing URL using wget, e.g.:
+If you get other download errors, try fetching the failing URL using wget, e.g.:
 </p>
 
 <pre>
