@@ -12,6 +12,65 @@ format and the manifest file format.
 
 <h2>Interfaces</h2>
 
+<p>
+Interface files are introduced in the <a href='injector-packagers.html'>packager's guide</a>.
+They have the following syntax (? follows optional items, * means zero-or-more, order of elements
+is not important, and extension elements can appear anywhere as long as they use a different
+namespace):
+</p>
+
+<pre>
+&lt;?xml version='1.0'?&gt;
+&lt;interface xmlns='http://zero-install.sourceforge.net/2004/injector/interface'
+	   uri='...' ?
+	   main='...' ?&gt;
+  &lt;name&gt;...&lt;/name&gt;
+  &lt;summary&gt;...&lt;/summary&gt;
+  &lt;description&gt;...&lt;/description&gt;
+
+  &lt;icon type='...' href='...'/&gt; *
+  &lt;feed src='...' arch='...'/&gt; *
+  &lt;feed-for interface='...'/&gt; *
+
+  [group-or-implementation] *
+
+&lt;/interface&gt;
+</pre>
+
+<p>
+A group-or-implementation can be either a group, with this syntax:
+</p>
+
+<pre>
+  &lt;group version='...' ?
+       	  released='...' ?
+	  main='...' ?
+          stability='...' ?
+          arch='...' ? &gt;
+    [group-or-implementation] *
+  &lt;/group&gt;
+</pre>
+
+<p>
+Or, a group-or-implementation can be an implementation, with this syntax (an unspecified
+argument is inherited from the closest ancestor &lt;group&gt; which defines it):
+</p>
+
+<pre>
+  &lt;implementation
+	id='...'
+  	version='...' ?
+	main='...' ?
+  	released='...' ?
+	stability='...' ?
+	arch='...' ? &gt;
+    &lt;archive
+      href='...'
+      size='...'
+      extract='...' ? /&gt; *
+  &lt;/implementation&gt;
+</pre>
+
 <h2>Manifest files</h2>
 
 <p>

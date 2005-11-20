@@ -8,6 +8,7 @@
     <item base='injector-feeds' label='Packages'/>
     <item base='injector-packagers' label='Developers'>
       <item base='injector-packagers' label='Packaging guide'/>
+      <item base='injector-specs' label='Specifications'/>
       <item base='injector-design' label='Design'/>
       <item base='injector-tests' label='Tests'/>
     </item>
