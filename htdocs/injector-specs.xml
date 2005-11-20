@@ -4,7 +4,7 @@
 <h2>The Injector: Specifications</h2>
 
 <p>
-This document is a formal description of the two innjector file formats: the interface XML file
+This document is a formal description of the two injector file formats: the interface XML file
 format and the manifest file format.
 </p>
 
