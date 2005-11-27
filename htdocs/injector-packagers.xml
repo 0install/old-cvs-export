@@ -9,68 +9,12 @@ Our example package will be <a href="http://www.hayber.us/rox/Find">Find</a>, a 
 utility for searching for files.
 </p>
 
+<p>
+You should already be familiar with the general operation of the injector. In not, start by reading
+the <a href='injector-using.html'>user tutorial</a> and the <a href='injector-design.html'>design overview</a>.
+</p>
+
 <toc level='h2'/>
-
-<h2>Interfaces and Implementations</h2>
-
-<dl>
-<dt>An interface</dt>
-<dd>describes what something does (eg, "A Find in Files Utility").</dd>
-
-<dt>An implementation</dt>
-<dd>is something that does it (eg, "Find version 4" or "Find version 5").</dd>
-</dl>
-
-<p>
-In Zero Install, interfaces are named by globally unique URLs (like web pages). Some examples
-of interfaces are:
-</p>
-
-<ul>
-<li><a href="http://rox.sourceforge.net/2005/interfaces/Edit">http://rox.sourceforge.net/2005/interfaces/Edit</a></li>
-<li><a href="http://rox.sourceforge.net/2005/interfaces/ROX-Lib">http://rox.sourceforge.net/2005/interfaces/ROX-Lib</a></li>
-</ul>
-
-<p>
-Each <i>implementation</i> of an interface is identified by a cryptographic digest, eg:
-</p>
-<ul>
-<li><b>sha1=235cb9dd77ef78ef2a79abe98f1fcc404bba4889</b></li>
-<li><b>sha1=c86d09f1113041f5eaaa8c3d1416fcf4dad8e2e0</b></li>
-</ul>
-
-<p>
-When we run a program (like Find) we need to choose an implementation of Find, and
-also an implementation of every interface on which it depends. Then, we need to
-tell the program where to find them all; this process is known as <i>Dependency
-Injection</i> (or <i>Inversion of Control</i>).</p>
-
-<p>
-Both tasks are handled by the injector. This takes as input an interface and
-selects a set of implementations based on the user's policy.
-</p>
-
-<p>
-The list of implementations of an interface is found by using the interface's name as a
-URL and downloading the XML file it names (click on one of the interfaces above to see
-what an interface file looks like).
-</p>
-
-<div class="note" style='text-align: left'>
-<h3>Note on weaknesses in SHA-1</h3>
-<p>Some weaknesses in the SHA-1 algorithm have recently been
-discovered. At present, it is still strong enough for our use, but we should migrate
-to another algorithm at some point.
-</p><p>
-Summary: As long as you sign your own programs (rather than verifying and signing
-programs from untrusted people), you're OK (a viable <i>preimage attack</i> would
-be required, not just a <i>collision attack</i>). If you check and sign programs
-from untrusted people (an unlikely situation), then MD5 is completely insecure but
-SHA-1 should be OK for a few years.
-</p>
-<p>See the <a href="http://www.cryptography.com/cnews/hash.html">HASH COLLISION Q&amp;A</a> for
-more details.</p>
-</div>
 
 <h2>Running Find directly</h2>
 
@@ -81,7 +25,9 @@ error:
 </p>
 
 <pre>
-$ <b>cd Find-006</b>
+$ <b>wget http://www.hayber.us/rox/find/Find-006.tgz</b>
+$ <b>tar xzf Find-006.tgz</b>
+$ <b>cd Find</b>
 $ <b>./AppRun</b>
 *** This program needs ROX-Lib2 (version 2.0.0) to run.
 </pre>
@@ -161,7 +107,7 @@ version.
 </p>
 
 <p>
-Save the interface as <b>Find-006/Find.xml</b> (i.e., inside the Find-006 directory). We can now run
+Save the interface as <b>Find.xml</b> inside the <b>Find</b> directory. We can now run
 <b>0launch</b> on this file to run Find:
 </p>
 
@@ -180,7 +126,7 @@ Find runs:
 
 <p>
 As usual, you can run <b>0launch -g ./Find.xml</b> to force the 0launch GUI to appear. You will see that there
-is a single version of Find available.
+is a single version of Find available, but that you can choose any version of ROX-Lib to use with it.
 </p>
 
 <h2>Fetching Find with the injector</h2>
@@ -188,7 +134,7 @@ is a single version of Find available.
 <p>
 So far we are running a local copy of a program, but using the injector to fetch its dependencies. This is
 already quite useful, and we can include the <b>Find.xml</b> file with the package to make it easier for
-other people to use it this way. The next step is to fetch Find itself using the injector.
+other people to use it this way. However, we can also fetch Find itself using the injector...
 </p>
 
 <p>
@@ -245,7 +191,7 @@ The attributes of <b>&lt;archive&gt;</b> are:
  <dt>extract</dt> <dd>(optional) a subdirectory of the archive to use. We could have omitted this and
  changed the implementation's <b>main</b> to <b>Find/AppRun</b> instead, but it's better to keep the
  main attribute the same, if possible. Note that if you don't use <b>extract</b> then you must run
- <b>store manifest</b> on an <b>otherwise-empty</b> directory containing
+ <b>0store manifest</b> on an <i>otherwise-empty</i> directory containing
  <b>Find</b>, not on <b>Find</b> itself.</dd>
 </dl>
 
@@ -253,6 +199,23 @@ The attributes of <b>&lt;archive&gt;</b> are:
 If you run the new <b>Find.xml</b>, the injector should download and unpack the
 archive into the cache, and run Find from it.
 </p>
+
+<div class="note" style='text-align: left'>
+<h3>Note on weaknesses in SHA-1</h3>
+<p>Some weaknesses in the SHA-1 algorithm have recently been
+discovered. At present, it is still strong enough for our use, but we should migrate
+to another algorithm at some point.
+</p><p>
+Summary: As long as you sign your own programs (rather than verifying and signing
+programs from untrusted people), you're OK (a viable <i>preimage attack</i> would
+be required, not just a <i>collision attack</i>). If you check and sign programs
+from untrusted people (an unlikely situation), then MD5 is completely insecure but
+SHA-1 should be OK for a few years.
+</p>
+<p>See the <a href="http://www.cryptography.com/cnews/hash.html">HASH COLLISION Q&amp;A</a> for
+more details.</p>
+</div>
+
 
 <h2>Publishing the interface</h2>
 
