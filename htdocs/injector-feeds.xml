@@ -35,4 +35,9 @@ including Barrage, LBreakout, LGeneral, LMarbles, Lpairs and Ltris.</li>
  Penguin-Command game (<a href='http://people.freenet.de/LinuxCNC/0install/penguin-command'>hosted on people.freenet.de</a>).</li>
 </ul>
 
+<p>
+If you want to make additional programs available this way, please read the
+<a href='injector-packagers.html'>packaging guide</a>.
+</p>
+
 </html>
