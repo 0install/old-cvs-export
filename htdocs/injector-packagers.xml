@@ -186,7 +186,8 @@ The attributes of <b>&lt;archive&gt;</b> are:
 </p>
 
 <dl>
- <dt>href</dt> <dd>a URL from which the archive can be downloaded.</dd>
+ <dt>href</dt> <dd>a URL from which the archive can be downloaded (in escaped
+ form, so a space is written as %20, etc).</dd>
  <dt>size</dt> <dd>the size of the archive (for progress bars).</dd>
  <dt>extract</dt> <dd>(optional) a subdirectory of the archive to use. We could have omitted this and
  changed the implementation's <b>main</b> to <b>Find/AppRun</b> instead, but it's better to keep the
