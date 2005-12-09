@@ -267,7 +267,7 @@ $ <b>gpg --clearsign Find.xml</b>
 </pre>
 
 <p>
-Now upload the resulting <b>File.xml.asc</b> file to your web server, so that it can be downloaded
+Now upload the resulting <b>Find.xml.asc</b> file to your web server, so that it can be downloaded
 by fetching <b>http://www.hayber.us/0install/Find</b>, and try it out:
 </p>
 
