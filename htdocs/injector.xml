@@ -45,6 +45,7 @@ and downloads and runs the ones you choose:
 <dt>Other</dt>
 <dd>
 <ul>
+  <li><a href="http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-noarch-1slackware.tgz?download">zeroinstall-injector-0.17-noarch-1slackware.tgz download page</a> (Slackware 10.2 package)</li>
   <li><a href="http://thread.gmane.org/gmane.comp.desktop.rox.devel/7405">GoboLinux instructions</a> (anyone want to create a recipe?)</li>
   <li>Other (follow instructions below)</li>
 </ul>
