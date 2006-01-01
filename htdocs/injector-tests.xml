@@ -85,6 +85,14 @@ fetched if 'PPC' binaries are supported (sha1=456). (note that the
 implementations cannot actually be downloaded).
 </dd>
 
+<dt>http://0install.net/tests/xmlsig.xml</dt>
+<dd>
+This interface is signed sightly differently. The signature appears in an
+XML comment block at the end (meaning that the whole file including the
+signature is a valid XML document). It should be accepted (requires
+injector version 0.18 or later).
+</dd>
+
 </dl>
 
 </html>
