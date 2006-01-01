@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<interface uri="http://0install.net/tests/xmlsig.xml"
+	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface"
+	   main='main'>
+  <name>XMLsig</name>
+  <summary>signed with an XML comment block</summary>
+  <description>For testing only!</description>
+</interface>
+<!-- Base64 Signature
+iD8DBQBDuDBZAWhfEWB7ssURAnQOAKDEY9BUYE1fKefaIteyl7qmptgwCwCgxe91sfoYcSmz8rn9
+QFMab9C1i4Y=
+-->
