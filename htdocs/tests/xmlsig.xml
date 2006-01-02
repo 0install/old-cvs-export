@@ -1,4 +1,5 @@
 <?xml version="1.0" ?>
+<?xml-stylesheet href="http://0install.net/2005/style.xsl" type='text/xsl'?>
 <interface uri="http://0install.net/tests/xmlsig.xml"
 	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface"
 	   main='main'>
@@ -7,6 +8,7 @@
   <description>For testing only!</description>
 </interface>
 <!-- Base64 Signature
-iD8DBQBDuDBZAWhfEWB7ssURAnQOAKDEY9BUYE1fKefaIteyl7qmptgwCwCgxe91sfoYcSmz8rn9
-QFMab9C1i4Y=
+iD8DBQBDuFWuAWhfEWB7ssURAgjHAJ9sKGXATS2uXi/OBF5Q4xzdTZTAVQCeIQLZLKx2vpIqZEKN
+6HsfovGQzxY=
+
 -->
