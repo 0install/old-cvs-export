@@ -52,7 +52,7 @@
 
   <xsl:template match='zi:group'>
     <dl class='group'>
-      <xsl:apply-templates mode='attribs' select='@stability|@version|@id|@arch'/>
+      <xsl:apply-templates mode='attribs' select='@stability|@version|@id|@arch|@released'/>
       <xsl:apply-templates select='zi:group|zi:requires|zi:implementation'/>
     </dl>
   </xsl:template>
@@ -64,7 +64,7 @@
 
   <xsl:template match='zi:implementation'>
     <dl class='impl'>
-      <xsl:apply-templates mode='attribs' select='@stability|@version|@id|@arch'/>
+      <xsl:apply-templates mode='attribs' select='@stability|@version|@id|@arch|@released'/>
       <xsl:apply-templates/>
     </dl>
   </xsl:template>
