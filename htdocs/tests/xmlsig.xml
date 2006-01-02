@@ -1,14 +1,41 @@
 <?xml version="1.0" ?>
-<?xml-stylesheet href="http://0install.net/2005/style.xsl" type='text/xsl'?>
-<interface uri="http://0install.net/tests/xmlsig.xml"
-	   xmlns="http://zero-install.sourceforge.net/2004/injector/interface"
-	   main='main'>
-  <name>XMLsig</name>
-  <summary>signed with an XML comment block</summary>
-  <description>For testing only!</description>
+<?xml-stylesheet href="http://0install.net/2006/stylesheets/interface.xsl" type='text/xsl'?>
+<?xml version="1.0" ?>
+<interface main="Edit/AppRun" uri="http://rox.sourceforge.net/2005/interfaces/Edit" xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
+  <name>Edit</name>
+  <summary>simple text editor</summary>
+  <description>
+    Edit is a simple text editor, with a ROX-style user interface. It has drag-and-drop saving, search-and-replace and multi-level undo.
+  </description>
+  <icon type='image/png' href='http://rox.sourceforge.net/Icons/Edit.png'/>
+  
+  <group stability="stable">
+    <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib">
+      <environment insert="ROX-Lib2/python" name="PYTHONPATH"/>
+    </requires>
+    <implementation id="sha1=00720a16dd9e38c8d29b844730e930db13dc0783" stability="stable" version="1.9.3">
+      <archive extract="edit-1.9.3" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.3.tgz" size="24322"/>
+    </implementation>
+    <implementation id="sha1=d75d71af38d65654f5245d1a2ec4949cf94d527f" stability="stable" version="1.9.4">
+      <archive extract="edit-1.9.4" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.4.tgz" size="30952"/>
+    </implementation>
+    <implementation id="sha1=c690569d7f7a4ed508eeeb1a350b1efeb6766682" stability="stable" version="1.9.5">
+      <archive extract="edit-1.9.5" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.5.tgz" size="35143"/>
+    </implementation>
+    <implementation id="sha1=2faec01972dc8a4553ff0af90f93061ac66176eb" stability="stable" version="1.9.6">
+      <archive extract="edit-1.9.6" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.6.tgz" size="38916"/>
+    </implementation>
+    <implementation id="sha1=c86d09f1113041f5eaaa8c3d1416fcf4dad8e2e0" stability="stable" version="1.9.7">
+      <archive extract="edit-1.9.7" href="http://heanet.dl.sourceforge.net/sourceforge/rox/edit-1.9.7.tgz" size="44646"/>
+    </implementation>
+    <implementation id="sha1=329e6c0191f65ef2996b49837d04c4cfe6934758" stability="stable" version="2.0" released='2005-09-21'>
+      <archive extract="edit-2.0" href="http://osdn.dl.sourceforge.net/sourceforge/rox/edit-2.0.tgz" size="61195"/>
+    </implementation>
+  </group>
 </interface>
+
 <!-- Base64 Signature
-iD8DBQBDuFWuAWhfEWB7ssURAgjHAJ9sKGXATS2uXi/OBF5Q4xzdTZTAVQCeIQLZLKx2vpIqZEKN
-6HsfovGQzxY=
+iD4DBQBDuQelAWhfEWB7ssURAl3IAJjZ20yT+VE1aiq+qVRHFlhekQ1IAJ9haeVixo0LhsR8teC9
+7oTqET5nzQ==
 
 -->
