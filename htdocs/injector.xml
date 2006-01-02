@@ -27,8 +27,8 @@ and downloads and runs the ones you choose:
   <dt>RPMs</dt>
 <dd>
 <ul>
-  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1mdk.noarch.rpm?download'>zeroinstall-injector-0.17-1mdk.noarch.rpm download page</a> (Mandrake/Mandriva 10.1 RPM)</li>
-  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1suse.noarch.rpm?download'>zeroinstall-injector-0.17-1suse.noarch.rpm download page</a> (SuSE 9.3 RPM)</li>
+  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1mdk.noarch.rpm?download'>zeroinstall-injector-0.17-1mdk.noarch.rpm download page</a> (Mandrake/Mandriva 10.1 RPM) (contributed by Piero Ottuzzi)</li>
+  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1suse.noarch.rpm?download'>zeroinstall-injector-0.17-1suse.noarch.rpm download page</a> (SuSE 9.3 RPM) (contributed by Thomas Formella)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.13-1.src.rpm?download'>Source RPM</a> [ <a href='http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/994'>Instructions</a> ]</li>
 </ul>
 </dd>
@@ -45,7 +45,7 @@ and downloads and runs the ones you choose:
 <dt>Other</dt>
 <dd>
 <ul>
-  <li><a href="http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-noarch-1slackware.tgz?download">zeroinstall-injector-0.17-noarch-1slackware.tgz download page</a> (Slackware 10.2 package)</li>
+  <li><a href="http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-noarch-1slackware.tgz?download">zeroinstall-injector-0.17-noarch-1slackware.tgz download page</a> (Slackware 10.2 package) (contributed by Peter Santoro)</li>
   <li><a href="http://thread.gmane.org/gmane.comp.desktop.rox.devel/7405">GoboLinux instructions</a> (anyone want to create a recipe?)</li>
   <li>Other (follow instructions below)</li>
 </ul>
@@ -53,7 +53,7 @@ and downloads and runs the ones you choose:
 </dl>
 
 <p>
-If a package for your distribution is listed above, install that and then <a href='injector-using.html'>try using it</a>!
+If an injector package for your distribution is listed above, install that and then <a href='injector-using.html'>try using it</a>!
 Otherwise, follow the instructions below to install using the generic tarball.
 </p>
 
