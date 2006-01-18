@@ -27,9 +27,10 @@ and downloads and runs the ones you choose:
   <dt>RPMs</dt>
 <dd>
 <ul>
+  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1fc.noarch.rpm?download'>zeroinstall-injector-0.17-1fc.noarch.rpm download page</a> (Fedora Core 4; Python 2.4) (contributed by Juan Carlos Jimenez Garcia)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1mdk.noarch.rpm?download'>zeroinstall-injector-0.17-1mdk.noarch.rpm download page</a> (Mandrake/Mandriva 10.1 RPM) (contributed by Piero Ottuzzi)</li>
   <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1suse.noarch.rpm?download'>zeroinstall-injector-0.17-1suse.noarch.rpm download page</a> (SuSE 9.3 RPM) (contributed by Thomas Formella)</li>
-  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.13-1.src.rpm?download'>Source RPM</a> [ <a href='http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/994'>Instructions</a> ] (this is old version, but it should be easy to update)</li>
+  <li><a href='http://prdownloads.sourceforge.net/zero-install/zeroinstall-injector-0.17-1fc.src.rpm?download'>Source RPM</a> [ <a href='http://thread.gmane.org/gmane.comp.file-systems.zero-install.devel/994'>Instructions</a> ]</li>
 </ul>
 </dd>
 
