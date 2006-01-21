@@ -135,7 +135,7 @@ secure.
 
 <p>
 APT relies on a database to keep track of what's installed and what isn't.
-This database must be kept in sync with the filesystem... if the user deletes
+This database must be kept in sync with the filesystem... if the admin deletes
 a file to save space, then APT will continue to think that the file is
 installed.
 </p>
