@@ -61,6 +61,15 @@ with APT is to <i>bypass</i> the security system, so that the software can
 perform its (potentially dangerous) installation operations.
 </p>
 
+<p>
+(In <a href='http://groups.google.com/group/linux.debian.user/msg/285738f5520c18fe?hl=en'>zero install - serious critiques?</a>, a Debian user suggests that the admin of the machine should
+have full control over what software is installed. This is appropriate for some systems (though
+probably not in a university), and a whilelist should be used in that case. However, consider
+the case of a jointly-owned family computer if you want a situation where users
+clearly must be allowed to install software, and where installing each user's software as
+root would be an unreasonable risk.)
+</p>
+
 <h3>Confusing</h3>
 
 <p>
