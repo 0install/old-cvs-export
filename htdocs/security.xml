@@ -91,6 +91,44 @@ efficient. Trojans and virus don't normally have difficult installers anyway
 ;-)</dd>
 </dl>
 
+<h2>Other opinions</h2>
+
+<dl>
+<dt><a href='http://www.licquia.org/archives/2004/07/21/zero-install-and-snake-oil'>The Licquia Blog » Blog Archive » Zero Install and Snake Oil</a></dt>
+<dd>(site is down at present, but see comments there when it comes back up)</dd>
+
+<dt><a href='http://www.interact-sw.co.uk/iangblog/2004/04/07/roxzeroinstall'>Ian Griffiths' weblog: Making Authenticode Look Good</a></dt>
+<dd>
+<p>
+<i>"What amazed me (and not in a good way) about ROX Zero Install was the 'security' [...]
+Comforting though it is that my [root] system cannot be compromised, it's still
+distinctly troubling that the code runs using my user account with no
+additional restrictions applied. That means that it can do anything I can - if
+it wants to delete all my files it can."</i>
+</p>
+<p>
+This is a comparison of running non-ZeroInstall sandboxed Java programs with
+ZeroInstall non-sandboxed ROX applications. The sandboxed applets are indeed
+more secure. Still, this is due to the sandboxing rather than to the caching
+and dependency handling (the Zero Install part). A sandboxed Java applet run
+through Zero Install should be just as secure as a sandboxed Java applet run
+not through Zero Install.
+</p>
+
+<p>
+Running ROX through Zero Install (user-level risk) falls somewhere between
+installing ROX with APT (root-level risk) and running an applet in your
+web-browser. Of course, a Java applet that can't delete files wouldn't make for
+a very good file manager.
+</p>
+<p>
+In summary: Using Zero Install instead of APT should gain you more security. Replacing
+sandboxed web applets with similar non-sandboxed programs will lead to a decrease in security.
+Use Zero Install for what it's intended for; things you would otherwise have installed as root.
+</p>
+</dd>
+</dl>
+
 <h2>Introduction</h2>
 
 <p>
