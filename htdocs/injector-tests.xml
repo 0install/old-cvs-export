@@ -93,6 +93,13 @@ signature is a valid XML document). It should be accepted (requires
 injector version 0.18 or later).
 </dd>
 
+<dt><a href='http://0install.net/tests/inkscape.xml'>http://0install.net/tests/inkscape.xml</a></dt>
+<dd>
+The archive is in RPM format (so you can install directly from the version on inkscape.org).
+It requires injector version 0.18 or later (now <a href='http://sourceforge.net/svn/?group_id=76468'>available
+hrough subversion</a>).
+</dd>
+
 </dl>
 
 </html>
