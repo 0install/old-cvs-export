@@ -26,12 +26,12 @@
 
   <group main='usr/bin/inkscape'>
     <implementation id="sha1=86a158085e4da2bc336823ea3bbeabe2d5f9f36a" version="0.43" released='2005-11-21'>
-      <archive href='http://prdownloads.sourceforge.net/inkscape/inkscape-0.43-0.static.i386.rpm?download' size='9439186'/>
+      <archive href='http://heanet.dl.sourceforge.net/sourceforge/inkscape/inkscape-0.43-0.static.i386.rpm' size='9439186'/>
     </implementation>
   </group>
 </interface>
 <!-- Base64 Signature
-iD8DBQBD03ovAWhfEWB7ssURAkr2AKCo3OQZDe0k+Sfb3ValBP5/JwghnQCgmtek4zmIdlMMh54Y
-ugkUF6n8MEk=
+iD8DBQBD034iAWhfEWB7ssURAqsnAJ9+YEkbt2wkHeo5LrEr7sqeuARWfwCcDwmdmd8C8XKT/gwp
+shmS0dqAPLw=
 
 -->
