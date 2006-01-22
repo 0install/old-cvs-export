@@ -11,7 +11,7 @@ Tgif is an interactive drawing tool that allows the user to draw and
 manipulate objects in the X Window System.
 </description>
 
-  <!--<icon href='http://example.com/logo.png' type='image/png'/>-->
+  <icon href='http://0install.net/tests/Tgif.png' type='image/png'/>
 
   <group main='usr/X11R6/bin/tgif'>
     <implementation id="sha1=daae8cac59589b6cfe1ada6de977b79b24e78ee1" version="4.1.44" released='2005-01-14'>
@@ -20,7 +20,7 @@ manipulate objects in the X Window System.
   </group>
 </interface>
 <!-- Base64 Signature
-iD8DBQBD04maAWhfEWB7ssURApWgAJwKppZYA37fqUlOeRzitetVD+G+5QCfWuzQxTU6OIFiPPlQ
-IsBb+BKI4JQ=
+iD8DBQBD04vBAWhfEWB7ssURAicqAKDHNKMrxN3pI7QtrBiF4Fq0/t4CcACgw2lUfhYucMcOna9E
+Piatl6/BovM=
 
 -->
