@@ -222,14 +222,14 @@ not need to be backed up (cache stored under <b>/var</b>).</dd>
 control too. May be mounted read-only most of the time.</dd>
 
 <dt>/home</dt>
-<dd>User data. Must be writeable, and often changes. Should be backed up regularly.</dd>
+<dd>User data. Must be writable, and often changes. Should be backed up regularly.</dd>
 
 <dt>/var</dt>
-<dd>Changes quickly (contains print and mail queues, logs, etc). Must be writeable. Doesn't
+<dd>Changes quickly (contains print and mail queues, logs, etc). Must be writable. Doesn't
 need to be backed up, but data should persist over reboots.</dd>
 
 <dt>/tmp</dt>
-<dd>Changes quickly and must be writeable, but need not persist over reboots (can use
+<dd>Changes quickly and must be writable, but need not persist over reboots (can use
 tmpfs rather than a physical disk).</dd>
 </dl>
 

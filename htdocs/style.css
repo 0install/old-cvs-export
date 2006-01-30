@@ -256,3 +256,7 @@ span.note {
 ul.spaced li {
 	padding-bottom: 1em;
 }
+
+span.comment {
+	color: blue;
+}

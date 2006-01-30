@@ -36,7 +36,7 @@ be a 'pass') but it should give the general idea.
 
 </table>
 
-<h3>Explaination of features</h3>
+<h3>Explanation of features</h3>
 
 <dl>
  <dt>Users can install software</dt>		
@@ -46,7 +46,7 @@ be a 'pass') but it should give the general idea.
  <dd>If a program requires some library to function, the system will locate, download and install the library too.</dd>
 
  <dt>Automatic upgrading</dt>			
- <dd>The system can check for and install upgrades automatically or at the operators's request. User does not have to
+ <dd>The system can check for and install upgrades automatically or at the operator's request. User does not have to
  perform a full install operation manually on each package.</dd>
  
  <dt>Libraries shared between programs</dt>
@@ -56,7 +56,7 @@ be a 'pass') but it should give the general idea.
  <dt>Downloads shared between users</dt>		
  <dd>If two users install/use the same program, it is only downloaded once and stored once.<br/>
  Notes: It's quite easy to share downloads from the injector; the administrator takes a copy of the user's download,
- verifies that its name matches its digest (<b>0store verify</b>) and puts it in the shared cache if so. In furture,
+ verifies that its name matches its digest (<b>0store verify</b>) and puts it in the shared cache if so. In future,
  a setuid helper will be provided to make this automatic.</dd>
  
  <dt>Multiple versions coexist</dt>
@@ -94,7 +94,7 @@ be a 'pass') but it should give the general idea.
  <dd>If you have a way of running an application in a sandboxed environment (eg, a Java virtual machine), then the
  installation system will let you install and run the program without forcing you to run any of the downloaded
  code outside of the sandbox.<br/>
- Notes: The injector supports this, but you need a little bit of Python code to make it run your sandbox instread of
+ Notes: The injector supports this, but you need a little bit of Python code to make it run your sandbox instead of
  running the chosen binary directly. Future versions will provide a command-line option for this.</dd>
 
  <dt>Usable when off-line</dt>

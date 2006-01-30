@@ -5,7 +5,7 @@
 
 <p>
 Packagers make software available to others through Zero Install.
-To do this, you will need to be able to upload files to a publically-accessible
+To do this, you will need to be able to upload files to a publicly-accessible
 web server (eg, apache). The web server doesn't need to do anything special
 (there's no dynamic content, CGI scripts or anything like that); it just needs
 to serve the files you upload.
@@ -96,7 +96,7 @@ $ <b>/uri/0install/.../MyProg/platform/1.0.2/MyProg</b>
 
 <p>
 When accessed via Zero Install, the symlink's target will be the name of
-the user's platform (ie, it will appear as 'platform -> Linux-ix86' on
+the user's platform (i.e., it will appear as 'platform -> Linux-ix86' on
 Linux ix86 type systems).
 </p>
 

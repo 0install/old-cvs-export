@@ -96,7 +96,7 @@ $ ./0push
 <p>
 Now it's time to test it (ideally from another machine). At this point it's a
 good idea to try renaming our site directory to make sure that scons isn't
-running anything from there (ie, it's getting everything though Zero Install):
+running anything from there (i.e., it is getting everything though Zero Install):
 </p>
 
 <pre>

@@ -258,7 +258,7 @@ Versions are ordered like this:
 </ul>
 
 <p>
-The injector doesn't care about anything other than the sort order (ie, whether
+The injector doesn't care about anything other than the sort order (i.e., whether
 one version comes before or after another). It is assumed that an
 implementation can be safely replaced by one with a later version number, but
 not with an earlier one. So, if you ask for "1.2.1" then you might get "1.2.2"

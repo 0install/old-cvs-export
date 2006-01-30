@@ -66,7 +66,7 @@ this <a href="http://www.ilrt.bris.ac.uk/discovery/chatlogs/rdfig/2004-08-31.htm
 </ul>
 
 <div class='note'>Don't want to install a kernel module? You might like to try <a href='injector.html'>the
-Zero Install Injector</a>. This project archieves similar goals to the filesystem implementation below,
+Zero Install Injector</a>. This project achieves similar goals to the filesystem implementation below,
 but is written in pure Python and doesn't even need root access to install.
 </div>
 
@@ -147,7 +147,7 @@ $ <b>cd lazyfs-linux-0.1.26</b>
 </pre>
 
 <p>If you have my GPG key (see page header) in your keyring, the first step
-will tell you whether the achive is correctly signed. If not, you'll get the
+will tell you whether the archive is correctly signed. If not, you'll get the
 message shown above, but you can still continue anyway. The reason for using
 GPG here is partly to increase security, and partly to make sure you've got
 GPG installed (you'll need it later!).
@@ -338,7 +338,7 @@ part of libdbus. If you're using Debian packages, you need to install the
 </div>
 
 <p>
-No windows appear on the screen when you run this, but any futher downloads
+No windows appear on the screen when you run this, but any further downloads
 will display a progress box. Note that the GTK library is not yet in
 Zero Install, so you need to have that installed by traditional methods. In the same
 apps directory as ZeroProgress, you will also find 'ShowLog', which will display Zero
