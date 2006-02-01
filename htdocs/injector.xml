@@ -1,12 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
-<div class='figure' style='float: right'>
-<img width="545" height="325" src="edit-injector.png"
-     alt="Running Edit with the injector" />
-  <p>Running Edit with the injector</p>
-</div>
-
 <h2>The Injector</h2>
 
 <p>
@@ -87,7 +81,7 @@ href="http://sourceforge.net/project/showfiles.php?group_id=76468&amp;package_id
 download page</a>, or using wget:
 </p>
 <pre>
-$ <b>wget http://osdn.dl.sourceforge.net/sourceforge/zero-install/zeroinstall-injector-0.17.tar.gz.gpg</b>
+$ <b>wget http://osdn.dl.sf.net/sourceforge/zero-install/zeroinstall-injector-0.17.tar.gz.gpg</b>
 </pre>
 
 <p>

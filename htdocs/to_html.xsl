@@ -12,38 +12,26 @@
   <xsl:param name="file">unknown</xsl:param>
 
   <xsl:template match='item'>
-      <xsl:text>&#160;</xsl:text>
+    <li>
       <a href="{@base}.html">
-      <xsl:if test='descendant-or-self::item[$file = concat(@base, ".html")]'>
+      <xsl:if test='$file = concat(@base, ".html")'>
 	<xsl:attribute name='class'>selected</xsl:attribute>
       </xsl:if>
-       <span>
-        <xsl:value-of select='@label'/>
-       </span>
+        &#160;<xsl:value-of select='@label'/>&#160;
       </a>
-      <xsl:text>&#160;</xsl:text>
+      <!-- Expanded contents -->
+      <xsl:if test='item and (../descendant-or-self::item[concat(@base, ".html") = $file])'>
+       <ul>
+        <xsl:apply-templates select='item'/>
+       </ul>
+      </xsl:if>
+    </li>
   </xsl:template>
 
   <xsl:template name='make-links'>
-<xsl:text>
-</xsl:text>
-    <div class='pages'>
+    <ul class='pages'>
       <xsl:apply-templates select='document("structure.xml")/layout/item'/>
-    </div>
-    <!-- second level navigation -->
-    <xsl:for-each select='document("structure.xml")/layout/item[descendant-or-self::item[concat(@base, ".html") = $file]]'>
-        <div class='pages'>
-          <xsl:apply-templates select='item'/>
-	</div>
-    </xsl:for-each>
-    <!-- third level navigation -->
-    <xsl:for-each select='document("structure.xml")/layout/item/item[descendant-or-self::item[concat(@base, ".html") = $file]]'>
-        <div class='pages'>
-          <xsl:apply-templates select='item'/>
-	</div>
-    </xsl:for-each>
-<xsl:text>
-</xsl:text>
+    </ul>
   </xsl:template>
 
   <xsl:template match='/*'>
@@ -54,33 +42,15 @@
       </head>
 
       <body>
-        <div class='heading'>
-          <div style='float:right'>
-	    <a href="http://sourceforge.net/projects/zero-install">
-	      <img width="88" height="31" alt="SF logo"
-     	       src="http://sourceforge.net/sflogo.php?group_id=7023&amp;type=1"/>
-	    </a>
-	    <a href="http://jigsaw.w3.org/css-validator/check/referer">
-	      <img style="border:0;width:88px;height:31px"
-	   		src="http://jigsaw.w3.org/css-validator/images/vcss" 
-	    		alt="Valid CSS!"/>
-	    </a>
-	    <a class='outside' href="http://validator.w3.org/check/referer">
-	      <img src="http://www.w3.org/Icons/valid-xhtml10"
-	    	   alt="Valid XHTML 1.0!" height="31" width="88"/>
-	    </a>
-	  </div>
-
-	  <h1>The Zero Install system</h1>
-
-        </div>
-	<div class='navbar'>
-	  <xsl:call-template name='make-links'/>
-	</div>
-        <div class='main'>
-          <p class='author'>Dr Thomas Leonard [ <a href="support.html">contact</a> | <a href="public_key.gpg">GPG public key</a> | <a href="http://rox.sourceforge.net/desktop/blog/1">blog</a> | <a href="http://sourceforge.net/developer/user_donations.php?user_id=40461">donations</a> ]</p>
-          <xsl:apply-templates/>
-        </div>
+	<h1>The Zero Install system</h1>
+	<table>
+	 <tr>
+	  <td class='sidebar'>
+	   <xsl:call-template name='make-links'/>
+	  </td>
+          <td class='main'>
+            <p class='author'>Dr Thomas Leonard [ <a href="support.html">contact</a> | <a href="public_key.gpg">GPG public key</a> | <a href="http://rox.sourceforge.net/desktop/blog/1">blog</a> | <a href="http://sourceforge.net/developer/user_donations.php?user_id=40461">donations</a> ]</p>
+            <xsl:apply-templates/>
 	
         <div class='footer'>
 	 <p>
@@ -100,7 +70,25 @@
 	      	   alt='Attribution-ShareAlike' width='88' height='31'/>
 	   </a>
 	 </p>
+	   <div class='logos'>
+	    <a href="http://sourceforge.net/projects/zero-install">
+	      <img width="88" height="31" alt="SF logo"
+     	       src="http://sourceforge.net/sflogo.php?group_id=7023&amp;type=1"/>
+	    </a>
+	    <a href="http://jigsaw.w3.org/css-validator/check/referer">
+	      <img style="border:0;width:88px;height:31px"
+	   		src="http://jigsaw.w3.org/css-validator/images/vcss" 
+	    		alt="Valid CSS!"/>
+	    </a>
+	    <a class='outside' href="http://validator.w3.org/check/referer">
+	      <img src="http://www.w3.org/Icons/valid-xhtml10"
+	    	   alt="Valid XHTML 1.0!" height="31" width="88"/>
+	    </a>
+	   </div>
 	</div>
+	  </td>
+	 </tr>
+        </table>
       </body>
     </html>
   </xsl:template>

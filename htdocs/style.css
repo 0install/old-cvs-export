@@ -11,31 +11,12 @@ body {
 	color: black;
 }
 
-div.main {
-	padding: 0 2em 0 2em;
-	max-width: 100em;
-	margin-left: auto;
-	margin-right: auto;
-}
-
 p.author {
 	text-align: right;
 }
 
-div.heading {
-	margin: 0;
-	padding: 1em;
-	border: 0;
-}
-
 div.main a:hover {
 	background: #ffefa1;
-}
-
-h1 {
-	padding: 0;
-	margin: 0 0 0 1em;
-	text-align: left;
 }
 
 h2:first-child {
@@ -44,15 +25,6 @@ h2:first-child {
 
 h2 {
 	margin-top: 4em;
-}
-
-th {
-	text-align: left;
-}
-
-td {
-	vertical-align: top;
-	width: 50%;
 }
 
 p.q {
@@ -126,15 +98,18 @@ div.heading p.thanks {
 	color: #836d52;
 }
 
-table    { border-collapse: collapse; }
+table    {
+	border-collapse: collapse;
+}
 *#col1         { border-right: 3px solid #888; }
 table.split td { padding: 1em; }
-table.split th { padding: 1em; }
-table.split th { border-bottom: 1px solid #888; }
-
-table.frontpage {
-	width: 100%;
+table.split th {
+	border-bottom: 1px solid #888;
+	vertical-align: top;
+	width: 50%;
+	padding: 1em;
 }
+
 table.frontpage *#col1 { border-right: 4px dashed #aaa; }
 table.frontpage th { border-bottom: 4px dashed #aaa; }
 
@@ -163,42 +138,54 @@ table.matrix td.no {
 }
 
 th {
-  white-space: nowrap;
+	white-space: nowrap;
 }
 
-div.navbar {
-	margin-left: 2em;
-	margin-right: 2em;
+h1 {
+	padding: .2em;
+	margin: 0;
 	text-align: center;
 	background: #def;
-	border-top: 1px solid #88f;
-	border-bottom: 1px solid #88f;
 }
 
-div.navbar a {
-	text-decoration: none;
-	padding-left: .8em;
-	padding-right: .8em;
+td.sidebar {
+	vertical-align: top;
+	background: #def;
 	padding: 0;
+	margin: 0;
 }
 
-div.navbar a.selected {
-	background: #88f;
-	color: white;
+td.main {
+	vertical-align: top;
+	border-top: 1px solid #88f;
+	border-left: 1px solid #88f;
+	padding-right: 2em;
+	padding-left: 2em;
 }
 
-div.navbar a:hover {
-	background: #88f;
-	color: white;
-}
-
-div.navbar a {
-	color: #008;
-}
-
-div.navbar span {
+td.sidebar ul {
+	list-style: none;
+	padding: 0;
 	padding-left: 1em;
-	padding-right: 1em;
+	font-size: smaller;
+}
+
+td.sidebar a {
+	text-decoration: none;
+	padding: 0;
+	color: #008;
+	margin-left: 1em;
+	white-space: nowrap;
+}
+
+td.sidebar a.selected {
+	background: #88f;
+	color: white;
+}
+
+td.sidebar a:hover {
+	background: #88f;
+	color: white;
 }
 
 div.footer {
@@ -231,9 +218,10 @@ dl.spaced dd {
 }
 
 div.figure {
-	margin: 1em;
 	padding: 0;
-	border: 1px dashed #888;
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
 }
 
 div.figure img {
@@ -242,7 +230,6 @@ div.figure img {
 
 div.figure p {
 	font-weight: bold;
-	text-align: center;
 	padding: 0;
 	margin: 0 1em 0.5em 1em;
 }

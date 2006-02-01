@@ -265,7 +265,8 @@ Starting zero-install...
 zero-install: libdbus 0.20 or 0.21 detected.
 $ <b>tail /var/log/daemon.log</b>
 Aug 22 15:35:55 everest zero-install: Started: using cache directory '/var/cache/zero-inst'
-Aug 22 15:35:55 everest zero-install: Network errors are logged to '/var/cache/zero-inst/.0inst-wget.log'
+Aug 22 15:35:55 everest zero-install: Network errors are logged to
+                                      '/var/cache/zero-inst/.0inst-wget.log'
 Aug 22 15:35:55 everest zero-install: libdbus 0.20 or 0.21 detected.
 </pre>
 

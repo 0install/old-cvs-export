@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
 <html xmlns='http://www.w3.org/1999/xhtml'>
 
-<div class='figure' style='float: right'>
-  <img width="545" height="325" src="edit-injector.png"
-     alt="Running Edit with the injector" />
-  <p>Running Edit with the injector</p>
-</div>
+<p style='text-align: center; padding: 0.5em'>
+  <span class='note'>
+  <strong>Quick start:</strong> <a href='injector.html'>Install 0launch now!</a>
+  </span>
+</p>
 
 <p>
 The Zero Install system aims to provide a better way of installing software than traditional systems (tarballs, apt-get,
@@ -31,12 +31,6 @@ bundles, setup.exe, etc). Here are some of our goals:
 
 <p>[ <a href='doc.html'>Read more...</a> ]</p>
 
-<p style='text-align: center'>
-  <span class='note'>
-  <strong>Quick start:</strong> <a href='injector.html'>Install 0launch now!</a>
-  </span>
-</p>
-
 <h2>Two implementations</h2>
 
 <p>
@@ -50,7 +44,7 @@ with this command:
 $ /uri/0install/rox.sourceforge.net/rox
 </pre>
 
-<div class='figure' style='float: left'>
+<div class='figure'>
   <img width="443" height="199" src="apps.png"
        alt='ROX-Filer window showing Memo application on the remote machine' />
   <p>Running Memo via the filesystem</p>
@@ -74,5 +68,11 @@ We addressed these issues by creating the <a href='injector.html'>Zero Install
 Injector</a>, which is pure Python and doesn't even need root access to
 install.
 </p>
+
+<div class='figure'>
+  <img width="545" height="325" src="edit-injector.png"
+     alt="Running Edit with the injector" />
+  <p>Running Edit with the injector</p>
+</div>
 
 </html>
