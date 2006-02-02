@@ -154,6 +154,7 @@ td.sidebar {
 	background: #def;
 	padding: 0;
 	margin: 0;
+	padding-left: 15px;	/* For expanders */
 }
 
 td.main {
@@ -165,17 +166,33 @@ td.main {
 }
 
 td.sidebar ul {
-	list-style: none;
 	padding: 0;
-	padding-left: 1em;
+	list-style: none;
+	margin-left: 1em;
 	font-size: smaller;
+}
+
+td.sidebar li {
+	margin: 0;
+	padding: 0;
+}
+
+td.sidebar li.leaf {
+	list-style-image: url(icons/square.png);
+}
+
+td.sidebar li.open {
+	list-style-image: url(icons/open.png);
+}
+
+td.sidebar li.closed {
+	list-style-image: url(icons/closed.png);
 }
 
 td.sidebar a {
 	text-decoration: none;
 	padding: 0;
 	color: #008;
-	margin-left: 1em;
 	white-space: nowrap;
 }
 

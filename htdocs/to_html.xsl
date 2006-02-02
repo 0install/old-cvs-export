@@ -13,11 +13,22 @@
 
   <xsl:template match='item'>
     <li>
+      <xsl:choose>
+        <xsl:when test='item and (../descendant-or-self::item[concat(@base, ".html") = $file])'>
+	  <xsl:attribute name='class'>open</xsl:attribute>
+        </xsl:when>
+        <xsl:when test='item'>
+	  <xsl:attribute name='class'>closed</xsl:attribute>
+        </xsl:when>
+	<xsl:otherwise>
+	  <xsl:attribute name='class'>leaf</xsl:attribute>
+	</xsl:otherwise>
+      </xsl:choose>
       <a href="{@base}.html">
       <xsl:if test='$file = concat(@base, ".html")'>
 	<xsl:attribute name='class'>selected</xsl:attribute>
       </xsl:if>
-        &#160;<xsl:value-of select='@label'/>&#160;
+        <xsl:value-of select='@label'/>&#160;
       </a>
       <!-- Expanded contents -->
       <xsl:if test='item and (../descendant-or-self::item[concat(@base, ".html") = $file])'>
