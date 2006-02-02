@@ -178,15 +178,15 @@ td.sidebar li {
 }
 
 td.sidebar li.leaf {
-	list-style-image: url(icons/square.png);
+	list-style-image: url(navicons/square.png);
 }
 
 td.sidebar li.open {
-	list-style-image: url(icons/open.png);
+	list-style-image: url(navicons/open.png);
 }
 
 td.sidebar li.closed {
-	list-style-image: url(icons/closed.png);
+	list-style-image: url(navicons/closed.png);
 }
 
 td.sidebar a {
