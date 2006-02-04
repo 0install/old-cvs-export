@@ -149,6 +149,11 @@ h1 {
 	background: #def;
 }
 
+td.sidebar h2 {
+	font-size: small;
+	padding-right: 1em;
+}
+
 td.sidebar {
 	vertical-align: top;
 	background: #def;
@@ -175,6 +180,7 @@ td.sidebar ul {
 td.sidebar li {
 	margin: 0;
 	padding: 0;
+	padding-right: .1em;
 }
 
 td.sidebar li.leaf {

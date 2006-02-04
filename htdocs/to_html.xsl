@@ -40,8 +40,15 @@
   </xsl:template>
 
   <xsl:template name='make-links'>
+    <h2>Navigation</h2>
     <ul class='pages'>
       <xsl:apply-templates select='document("structure.xml")/layout/item'/>
+    </ul>
+    <h2>SourceForge</h2>
+    <ul>
+     <li class='leaf'><a href='http://sourceforge.net/projects/zero-install'>Project page</a></li>
+     <li class='leaf'><a href='http://sourceforge.net/svn/?group_id=76468'>Subversion access</a></li>
+     <li class='leaf'><a href='http://sourceforge.net/project/showfiles.php?group_id=76468'>File releases</a></li>
     </ul>
   </xsl:template>
 
