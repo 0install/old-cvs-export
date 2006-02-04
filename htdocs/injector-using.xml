@@ -27,28 +27,22 @@ add this line to your <b>/etc/hosts</b> file:
 
 <p>
 Run <b>0launch</b> (as a normal user, <b>not</b> as root!), giving it the URL
-for the program you want to run (<b>-v</b> gives verbose output):
+for the program you want to run:
 </p>
 
 <pre>
-$ <b>0launch -v http://rox.sourceforge.net/2005/interfaces/Edit</b>
-INFO:root:Need to download; switching to GUI mode
-INFO:root:Interface &lt;Interface http://0install.net/2005/interfaces/injector-gui&gt;
-          has no implementations!
-INFO:root:Currently downloading:
-INFO:root:- http://0install.net/2005/interfaces/injector-gui
-INFO:root:Updated interface cache entry for Injector-GUI (modified 2005-09-20 19:59:45 UTC)
-INFO:root:Currently downloading:
-INFO:root:- http://osdn.dl.sourceforge.net/sourceforge/zero-install/injector-gui-0.14.tgz
-INFO:root:Caching new implementation (digest sha1=2a7a02bb4d9714ffe0da4b6bfabdd62110f9f0ea)
-INFO:root:Executing: ~/.cache/0install.net/implementations/
-          sha1=2a7a02bb4d9714ffe0da4b6bfabdd62110f9f0ea/0launch-gui
+$ <b>0launch http://rox.sourceforge.net/2005/interfaces/Edit</b>
 </pre>
 
 <ul>
 <li>If you get an error running this command, jump to
 <a href='injector-trouble.html'>the trouble-shooting section</a>.</li>
 </ul>
+
+<p style='text-align: center'>
+<img width="575" height="327" src="confirm-tal.png"
+     alt="Confirming Thomas Leonard's GPG key" />
+</p>
 
 <p>
 So what happened?
@@ -57,23 +51,25 @@ So what happened?
 <ol>
 <li>The injector realised that it needed to download some files to run Edit, so
 it switched to graphical mode (use <b>--console</b> to disable this).</li>
-<li>First, it needed to download the GUI itself. It fetched the GUI's interface
-file, which tells it which versions are available.</li>
-<li>Normally, the injector would ask whether you trusted the key, but since the GUI
-is signed with the same key as the injector, it already knows this one.</li>
-<li>0launch then selected a suitable implementation of the GUI interface (<b>injector-gui-0.14</b>).</li>
-<li>It downloaded the archive from sourceforge, unpacked it, checked that
-the signature was correct, and moved it into the cache directory.</li>
+<li>First, it checks for updates to the graphical user interface (GUI) itself.
+It downloaded the GUI's interface file, which tells it which versions are
+available.</li>
+<li>The injector prompts you to confirm that you will accept software signed with my key.</li>
+<li>If a newer version of the GUI was found, you would be prompted to download it (or choose
+a different version) at this point.</li>
 </ol>
 
-<div class='note'>TODO: Archives are currently unpacked to your home directory, in
-<b>~/.cache/0install.net/implementations</b>. In future, they will unpack to
-<b>/var/cache/0install.net/implementations</b>, using a setuid helper (which will
-check the cryptographic digest first, of course).</div>
-
-<p>
-Once the GUI has been fetched, it displays this dialog box:
+<p>Having got a copy of the GUI that everyone is happy with, the injector proceeds to
+run Edit in the same way:
 </p>
+
+<ol>
+<li>It downloads Edit's interface file.</li>
+<li>Edit is also signed with my key, so you don't have to confirm a second time.</li>
+<li>Edit requires the ROX-Lib library, so it fetches ROX-Lib's interface too. This is
+also signed with my key.</li>
+<li>It selects suitable versions of Edit and ROX-Lib and prompts you to accept them:</li>
+</ol>
 
 <p style='text-align: center'>
 <img width="545" height="325" src="edit-injector.png"
@@ -89,13 +85,28 @@ program.
 
 <p>
 When you click on <b>Execute</b>, the injector will start downloading the two chosen
-versions (this time showing the progress in a window, now the GUI is being used):
+versions:
 </p>
 
 <p style='text-align: center'>
 <img width="327" height="144" src="injector-downloading.png"
      alt="Downloading Edit and ROX-Lib" />
 </p>
+
+<p>
+The downloaded archives are unpacked into temporary directories and their contents
+checked against the digests in the interface files. If correct, the extracted directories
+are placed in a cache to save having to download them again next time you run Edit. The injector
+does not put files anywhere except in the cache, and uses a separate sub-directory for each
+archive it downloads. Each sub-directory is named after the digest of its contents, which allows
+downloads to be shared safely between users.
+</p>
+
+<div class='note'>TODO: Archives are currently cached in
+<b>~/.cache/0install.net/implementations</b>. In future, they will go in
+<b>/var/cache/0install.net/implementations</b>, using a setuid helper (which will
+check the cryptographic digest of the contents matches the directory name
+first, of course).</div>
 
 <p>When the downloads are complete, Edit itself runs:</p>
 
