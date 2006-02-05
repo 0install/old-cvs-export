@@ -95,7 +95,22 @@ efficient. Trojans and virus don't normally have difficult installers anyway
 
 <dl>
 <dt><a href='http://www.licquia.org/archives/2004/07/21/zero-install-and-snake-oil'>The Licquia Blog » Blog Archive » Zero Install and Snake Oil</a></dt>
-<dd>(site is down at present, but see comments there when it comes back up)</dd>
+<dd>
+<p>
+<i>
+"I don’t care about meaningless distinctions between “user” and “system”
+security (as if user security was less important, or as if there haven’t been
+scads of privilege escalation vulnerabilities). When you say “the only risk is
+right here; there is no risk there”, you are selling snake oil. That you are
+selling snake oil to yourself as well makes it no less dangerous."
+</i>
+</p>
+Jeff, a developer of Debian's APT system, provides a critique of the Zero Install
+documentation.
+<p>
+
+</p>
+</dd>
 
 <dt><a href='http://www.interact-sw.co.uk/iangblog/2004/04/07/roxzeroinstall'>Ian Griffiths' weblog: Making Authenticode Look Good</a></dt>
 <dd>
