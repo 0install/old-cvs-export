@@ -11,7 +11,6 @@
   <xsl:template match="/zi:interface">
     <html>
       <head>
-        <link rel='stylesheet' type='text/css' href='style.css' />
         <title>
           <xsl:value-of select="zi:name"/>
         </title>
@@ -21,16 +20,27 @@
 	  dd { padding-bottom: 1em; }
 	  dl.group { margin: 0.5em; padding: 0.5em; border: 1px dashed #888;}
 	  dl.impl { padding: 0.2em 1em 0.2em 1em; margin: 0.5em; border: 1px solid black; background: #ffa;}
+	  pre { background: #ddd; color: black; padding: 0.2cm; }
 	</style>
       </head>
       <body>
         <h1><xsl:value-of select="zi:name"/> - <xsl:value-of select='zi:summary'/></h1>
-	<p>This is a Zero Install feed. See <a href='http://0install.net'>0install.net</a>
-	for more details.</p>
+	<p>This is a Zero Install feed. To run this program from the command-line, use this
+	command:</p>
+	<pre>$ 0launch <xsl:value-of select='/zi:interface/@uri'/></pre>
+	<p>
+	Uses of graphical environments can drag <a href='{/zi:interface/@uri}'>the feed's URL</a> to
+	an installer such as <a href='http://rox.sourceforge.net/desktop/AddApp'>AddApp</a>.
+	</p>
+	<p>
+	If you don't have the <b>0launch</b> command, download it from
+	<a href='http://0install.net/injector.html'>the 0install.net web-site</a>, which also contains
+	documentation about how the Zero Install system works.</p>
 
 	<dl>
 	  <xsl:apply-templates mode='dl' select='*|@*'/>
 	</dl>
+	<h2>Available versions</h2>
         <xsl:apply-templates select='zi:group|zi:requires|zi:implementation'/>
       </body>
     </html>
