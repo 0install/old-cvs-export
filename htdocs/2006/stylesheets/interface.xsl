@@ -29,7 +29,7 @@
 	command:</p>
 	<pre>$ 0launch <xsl:value-of select='/zi:interface/@uri'/></pre>
 	<p>
-	Uses of graphical environments can drag <a href='{/zi:interface/@uri}'>the feed's URL</a> to
+	Users of graphical environments can drag <a href='{/zi:interface/@uri}'>the feed's URL</a> to
 	an installer such as <a href='http://rox.sourceforge.net/desktop/AddApp'>AddApp</a>.
 	</p>
 	<p>
