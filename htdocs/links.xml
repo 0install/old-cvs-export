@@ -69,11 +69,17 @@ packaging formats troublesome</a>.</li>
 that packages are executable files, the design doesn't seem to allow this to be fixed.</li>
 <li>Downloads cannot be safely shared between users.</li>
 <li>No checking for updates or support for multiple versions.</li>
+<li>Being closer to traditional installation, it's easier to package existing
+applications with Autopackage.</li>
 </ul>
-See the <a href='matrix.html'>matrix</a> for a longer comparison.
 </dd>
 
 </dl>
+
+<p>
+See the <a href='matrix.html'>matrix</a> for a comparison of Zero Install's features with
+those of other installation systems.
+</p>
 
 <h2>Articles about Zero Install</h2>
 <p>Here are some discussions about Zero Install I've found on the web (Google, emails, etc). Let me

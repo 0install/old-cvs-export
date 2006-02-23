@@ -3,6 +3,13 @@
 
 <h2>Zero Install security overview: Filesystem implementation</h2>
 
+<div class='note'>
+This document describes the <strong>old</strong> filesystem implementation
+of Zero Install. This has been replaced by <a href='injector.html'>the injector</a>.
+New users should read <a href='injector-security.html'>the Injector's Security Model</a>
+instead of this.
+</div>
+
 <p>
 This page discusses some of the security issues relating to Zero Install.
 </p>
