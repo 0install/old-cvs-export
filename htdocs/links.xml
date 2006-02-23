@@ -54,6 +54,25 @@ Therefore, a central repository is required to avoid naming conflicts.
 </ul>
 </dd>
 
+<dt>Autopackage</dt>
+<dd>
+Like Zero Install, <a href='http://autopackage.org/'>Autopackage</a> aims to
+let users install software and to make software distribution decentralised.
+The work done by the Autopackage developers to make packages relocatable is 
+necessary for the Zero Install injector too. Some differences between this and
+Zero Install:
+<ul>
+<li>A script inside each package installs the files, making sandboxing
+difficult. It also <a href='http://www.kitenet.net/~joey/blog/entry/autopackage_designed_by_monkeys-2005-03-28-14-20.html'>makes conversion to other
+packaging formats troublesome</a>.</li>
+<li>Security features such as GPG signatures have not been implemented. Given
+that packages are executable files, the design doesn't seem to allow this to be fixed.</li>
+<li>Downloads cannot be safely shared between users.</li>
+<li>No checking for updates or support for multiple versions.</li>
+</ul>
+See the <a href='matrix.html'>matrix</a> for a longer comparison.
+</dd>
+
 </dl>
 
 <h2>Articles about Zero Install</h2>
