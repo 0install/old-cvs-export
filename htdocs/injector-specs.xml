@@ -32,13 +32,16 @@ namespace):
   &lt;feed src='...' arch='...'/&gt; *
   &lt;feed-for interface='...'/&gt; *
 
-  [group-or-implementation] *
+  [group] *
+  [implementation] *
 
 &lt;/interface&gt;
 </pre>
 
+<h3>Group</h3>
+
 <p>
-A group-or-implementation can be either a group, with this syntax:
+A group has this syntax:
 </p>
 
 <pre>
@@ -47,13 +50,17 @@ A group-or-implementation can be either a group, with this syntax:
 	  main='...' ?
           stability='...' ?
           arch='...' ? &gt;
-    [group-or-implementation] *
+    [requires] *
+    [group] *
+    [implementation] *
   &lt;/group&gt;
 </pre>
 
+<h3>Implementation</h3>
+
 <p>
-Or, a group-or-implementation can be an implementation, with this syntax (an unspecified
-argument is inherited from the closest ancestor &lt;group&gt; which defines it):
+An implementation has this syntax (an unspecified argument is inherited from
+the closest ancestor &lt;group&gt; which defines it):
 </p>
 
 <pre>
@@ -70,6 +77,82 @@ argument is inherited from the closest ancestor &lt;group&gt; which defines it):
       extract='...' ? /&gt; *
   &lt;/implementation&gt;
 </pre>
+
+<h3>Requires</h3>
+
+<p>
+A &lt;requires&gt; element means that every implementation within the same group (including nested
+sub-groups) requires an implementation of the specified interface when run. The injector will choose a
+suiteable implementation, downloading one if required.
+</p>
+
+<p>
+The location of the chosen implementation is passed to the program by setting environment variables,
+as specified by the &lt;environment&gt; elements (typically, there will be exactly one of these in each
+&lt;requires&gt; element). Each environment element gives the name of the variable and the relative path
+of the item within the implementation to insert into the variable's value. The absolute path of the
+item is prepended to the current value of the variable, separated by a colon character. If the
+environment variable is not currently set then the path is prepended to the
+value of the default attribute. If no default value is given either then the
+environment variable's value is set to the absolute path directly.
+</p>
+
+<pre>
+  &lt;requires
+	interface='...'&gt;
+    &lt;environment
+	  name='...'
+	  insert='...'
+	  default='...' ? /&gt; *
+  &lt;/requires&gt;
+</pre>
+
+<p>
+For example, &lt;environment name='PATH' insert='bin'/&gt; would perform something similar to the
+bash shell statement <b>export PATH=/path/to/impl/bin:$PATH</b>.
+</p>
+
+<h3>Metadata</h3>
+
+<p>
+All elements can contain extension elements, provided they are not in the Zero
+Install namespace used by the elements defined here. The injector does not
+currently make use of these elements itself, but other programs may find them
+useful. In future, some of these may be used (for example, the GUI may display
+the license terms).
+</p>
+
+<p>
+The use of <a href='http://dublincore.org'>Dublin Core</a> is suggested for the following concepts, which
+have the following meanings when found as a direct child of a &lt;group&gt; or &lt;implementation&gt; element:
+</p>
+
+<dl>
+<dt>dc:creator</dt>
+<dd>The primary author of the program.</dd>
+
+<dt>dc:publisher</dt>
+<dd>The person making the software available through Zero Install.</dd>
+
+<dt>dc:license</dt>
+<dd>License terms (a URI for the license is suggested).</dd>
+
+</dl>
+
+<p>
+Other Dublin Core terms that may be useful include contributor,
+dateCopyrighted, language, rights and rightsHolder.
+</p>
+
+<p>
+These terms are not required as they are duplicated by the core Zero Install terms: identifier (id),
+available (released) and requires (requires).
+</p>
+
+<p>
+The source element may be used in future to record the source interface used to build this implementation.
+</p>
+
 
 <h2>Manifest files</h2>
 
