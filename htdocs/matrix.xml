@@ -26,7 +26,7 @@ be a 'pass') but it should give the general idea.
  <tr><th>Downloads shared between users</th>		<no/>			<td>No user downloads</td><no/>		<no/>			<no/>			<yes/>			<yes/>			<no>Planned</no></tr>
  <tr><th>Multiple versions coexist</th>			<yes/>			<no/>			<no/>		<yes/>			<no/>			<yes/>			<yes/>			<yes/></tr>
  <tr><th>Uninstall</th>					<td>Sometimes</td>	<yes/>			<yes/>		<yes/>			<yes>(cache)</yes>	<yes>(cache)</yes>	<yes>(cache)</yes>	<yes>(cache)</yes></tr>
- <tr><th>Digital signatures</th>			<no/>			<td>Add-on</td>		<no/>		<no/>			<td>Only one</td>	<td>In theory</td>	<td>Only upgrades</td>	<yes/></tr>
+ <tr><th>Digital signatures</th>			<no/>			<yes/>			<no/>		<no/>			<td>Only one</td>	<td>In theory</td>	<td>Only upgrades</td>	<yes/></tr>
  <tr><th>Conflict-free</th>				<no/>			<no/>			<no/>		<yes/>			<yes/>			<yes/>			<yes/>			<yes/></tr>
  <tr><th>Decentralised</th>				<yes/>			<no/>			<yes/>		<no/>			<yes/>			<yes/>			<yes/>			<yes/></tr>
  <tr><th>Non-root install of system</th>		<yes/>			<no/>			<yes/>		<no/>			<yes/>			<no/>			<no/>			<yes/></tr>
@@ -100,5 +100,12 @@ be a 'pass') but it should give the general idea.
  <dt>Usable when off-line</dt>
  <dd>Once a program has been installed, the program can be run again while disconnected.</dd>
 </dl>
+
+<h2>See also</h2>
+
+<ul>
+<li><a href='http://www.kitenet.net/~joey/pkg-comp/'>Comparing Linux/UNIX Binary Package Formats</a>
+(by Joey Hess, author of <a href='http://kitenet.net/programs/alien/'>Alien</a>)</li>
+</ul>
 
 </html>
