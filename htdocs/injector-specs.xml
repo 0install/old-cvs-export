@@ -132,7 +132,8 @@ have the following meanings when found as a direct child of a &lt;group&gt; or &
 <dd>The primary author of the program.</dd>
 
 <dt>dc:publisher</dt>
-<dd>The person making the software available through Zero Install.</dd>
+<dd>The person who created this implementation. For a binary, this is the person who
+compiled it.</dd>
 
 <dt>dc:license</dt>
 <dd>License terms (a URI for the license is suggested).</dd>
